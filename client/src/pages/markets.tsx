@@ -36,8 +36,8 @@ const Markets = () => {
     <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
       {/* Page Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Markets</h2>
-        <p className="text-neutral-mid mt-1">Explore cryptocurrency market prices and trends</p>
+        <h2 className="text-2xl font-bold dark:text-white">Markets</h2>
+        <p className="text-neutral-mid dark:text-gray-400 mt-1">Explore cryptocurrency market prices and trends</p>
       </div>
       
       {/* Search Bar */}
@@ -56,20 +56,20 @@ const Markets = () => {
       </div>
       
       {/* Market Data Table */}
-      <Card className="shadow-sm border border-gray-100">
+      <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead>
               <tr>
-                <th className="px-6 py-3 bg-neutral-light text-left text-xs font-medium text-neutral-mid uppercase tracking-wider">#</th>
-                <th className="px-6 py-3 bg-neutral-light text-left text-xs font-medium text-neutral-mid uppercase tracking-wider">Asset</th>
-                <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">Price</th>
-                <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">24h %</th>
-                <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">Market Cap</th>
-                <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">Chart</th>
+                <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">#</th>
+                <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Asset</th>
+                <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">24h %</th>
+                <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Market Cap</th>
+                <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Chart</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 Array(10).fill(0).map((_, index) => (
                   <tr key={index}>

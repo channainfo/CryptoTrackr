@@ -16,8 +16,8 @@ const Portfolio = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Portfolio</h2>
-            <p className="text-neutral-mid mt-1">Manage your cryptocurrency holdings</p>
+            <h2 className="text-2xl font-bold dark:text-white">Portfolio</h2>
+            <p className="text-neutral-mid dark:text-gray-400 mt-1">Manage your cryptocurrency holdings</p>
           </div>
           <div className="mt-4 sm:mt-0 space-x-2">
             <Button onClick={() => setIsAddModalOpen(true)}>
@@ -28,22 +28,22 @@ const Portfolio = () => {
         </div>
         
         {/* Portfolio Summary */}
-        <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border border-gray-100 mb-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 md:p-6 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-neutral-lighter rounded-lg">
-              <p className="text-sm text-neutral-mid">Total Balance</p>
-              <p className="text-2xl font-bold mt-1">${portfolioSummary.totalValue.toLocaleString()}</p>
+            <div className="p-4 bg-neutral-lighter dark:bg-zinc-800 rounded-lg">
+              <p className="text-sm text-neutral-mid dark:text-gray-400">Total Balance</p>
+              <p className="text-2xl font-bold mt-1 dark:text-white">${portfolioSummary.totalValue.toLocaleString()}</p>
             </div>
-            <div className="p-4 bg-neutral-lighter rounded-lg">
-              <p className="text-sm text-neutral-mid">24h Change</p>
+            <div className="p-4 bg-neutral-lighter dark:bg-zinc-800 rounded-lg">
+              <p className="text-sm text-neutral-mid dark:text-gray-400">24h Change</p>
               <p className={`text-2xl font-bold mt-1 ${portfolioSummary.dayChange >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                 {portfolioSummary.dayChange >= 0 ? '+' : ''}{portfolioSummary.dayChange.toLocaleString()}
                 <span className="text-sm ml-1">({portfolioSummary.dayChangePercent.toFixed(1)}%)</span>
               </p>
             </div>
-            <div className="p-4 bg-neutral-lighter rounded-lg">
-              <p className="text-sm text-neutral-mid">Asset Count</p>
-              <p className="text-2xl font-bold mt-1">{portfolioSummary.assetCount}</p>
+            <div className="p-4 bg-neutral-lighter dark:bg-zinc-800 rounded-lg">
+              <p className="text-sm text-neutral-mid dark:text-gray-400">Asset Count</p>
+              <p className="text-2xl font-bold mt-1 dark:text-white">{portfolioSummary.assetCount}</p>
             </div>
           </div>
         </div>
