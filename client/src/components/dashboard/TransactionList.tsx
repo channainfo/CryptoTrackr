@@ -75,7 +75,7 @@ const TransactionList = ({ limit = 3, showViewAll = true }: TransactionListProps
           )}
           
           {displayedTransactions.length === 0 && !isLoading && (
-            <div className="py-6 text-center text-neutral-mid">
+            <div className="py-6 text-center text-neutral-mid dark:text-gray-400">
               No transactions yet.
             </div>
           )}
