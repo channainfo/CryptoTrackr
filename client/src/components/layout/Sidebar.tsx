@@ -27,12 +27,12 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
   
   return (
     <aside className={cn(
-      "flex flex-col bg-white border-r border-gray-200",
+      "flex flex-col bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-gray-800",
       isMobile ? "w-full h-full" : "hidden md:flex w-64"
     )}>
-      <div className="flex items-center px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800">
         <Ticket className="h-6 w-6 text-primary" />
-        <h1 className="ml-2 text-xl font-bold text-primary">CryptoFolio</h1>
+        <h1 className="ml-2 text-xl font-bold text-primary">Trailer</h1>
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
@@ -40,8 +40,8 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
           <Link key={item.href} href={item.href} className={cn(
             "flex items-center px-4 py-3 rounded-lg transition-colors",
             location === item.href 
-              ? "bg-primary-light bg-opacity-10 text-primary font-medium" 
-              : "text-neutral-dark hover:bg-neutral-light"
+              ? "bg-primary-light bg-opacity-10 text-primary font-medium dark:bg-primary-dark dark:bg-opacity-20" 
+              : "text-neutral-dark hover:bg-neutral-light dark:text-neutral-light dark:hover:bg-zinc-800"
           )}>
             <item.icon className="h-5 w-5 mr-3" />
             {item.label}
@@ -49,15 +49,15 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
         ))}
       </nav>
       
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center dark:bg-primary-dark dark:bg-opacity-20">
               <span className="text-primary font-medium">AM</span>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium">Alex Morgan</p>
-              <p className="text-xs text-neutral-mid">alex@example.com</p>
+              <p className="text-sm font-medium dark:text-white">Alex Morgan</p>
+              <p className="text-xs text-neutral-mid dark:text-neutral-light">alex@example.com</p>
             </div>
           </div>
           {!isMobile && <ThemeToggle />}
