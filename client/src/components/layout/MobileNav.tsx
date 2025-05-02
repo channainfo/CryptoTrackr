@@ -20,19 +20,17 @@ const MobileNav = () => {
   return (
     <nav className="md:hidden flex items-center justify-around px-4 py-3 bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0">
       {navItems.map((item) => (
-        <Link key={item.href} href={item.href}>
-          <a className="flex flex-col items-center">
-            <item.icon className={cn(
-              "h-5 w-5",
-              location === item.href ? "text-primary" : "text-neutral-mid"
-            )} />
-            <span className={cn(
-              "text-xs mt-1",
-              location === item.href ? "text-primary" : "text-neutral-mid"
-            )}>
-              {item.label}
-            </span>
-          </a>
+        <Link key={item.href} href={item.href} className="flex flex-col items-center">
+          <item.icon className={cn(
+            "h-5 w-5",
+            location === item.href ? "text-primary" : "text-neutral-mid"
+          )} />
+          <span className={cn(
+            "text-xs mt-1",
+            location === item.href ? "text-primary" : "text-neutral-mid"
+          )}>
+            {item.label}
+          </span>
         </Link>
       ))}
     </nav>

@@ -36,16 +36,14 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
       
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => (
-          <Link key={item.href} href={item.href}>
-            <a className={cn(
-              "flex items-center px-4 py-3 rounded-lg transition-colors",
-              location === item.href 
-                ? "bg-primary-light bg-opacity-10 text-primary font-medium" 
-                : "text-neutral-dark hover:bg-neutral-light"
-            )}>
-              <item.icon className="h-5 w-5 mr-3" />
-              {item.label}
-            </a>
+          <Link key={item.href} href={item.href} className={cn(
+            "flex items-center px-4 py-3 rounded-lg transition-colors",
+            location === item.href 
+              ? "bg-primary-light bg-opacity-10 text-primary font-medium" 
+              : "text-neutral-dark hover:bg-neutral-light"
+          )}>
+            <item.icon className="h-5 w-5 mr-3" />
+            {item.label}
           </Link>
         ))}
       </nav>
