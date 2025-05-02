@@ -1,39 +1,31 @@
-import { useTheme } from "@/components/ui/theme-provider";
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
 
+// Super simple direct theme toggle without context
 const ThemeToggle = () => {
-  const { setTheme } = useTheme();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  
-  // Check if we're in dark mode by looking at the HTML classes
-  useEffect(() => {
-    const checkMode = () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      setIsDarkMode(isDark);
-    };
-    
-    // Initial check
-    checkMode();
-    
-    // Set up a mutation observer to watch for class changes on the html element
-    const observer = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        if (mutation.attributeName === 'class') {
-          checkMode();
-        }
-      });
-    });
-    
-    observer.observe(document.documentElement, { attributes: true });
-    
-    return () => observer.disconnect();
-  }, []);
-  
   const toggleTheme = () => {
-    // Simply set the opposite of the current actual mode
-    setTheme(isDarkMode ? "light" : "dark");
+    // Log for debugging
+    console.log("Toggle button clicked!");
+    
+    // Check current theme
+    const isDark = document.documentElement.classList.contains('dark');
+    console.log("Current theme is:", isDark ? "dark" : "light");
+    
+    // Directly toggle theme classes
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      localStorage.setItem('trailer-theme', 'light');
+      console.log("Switched to light mode");
+    } else {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('trailer-theme', 'dark');
+      console.log("Switched to dark mode");
+    }
   };
+  
+  // Check if we're in dark mode 
+  const isDarkMode = document.documentElement.classList.contains('dark');
   
   return (
     <div className="flex items-center">
