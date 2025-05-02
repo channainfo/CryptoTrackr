@@ -16,19 +16,19 @@ const TransactionList = ({ limit = 3, showViewAll = true }: TransactionListProps
   const displayedTransactions = limit ? transactions.slice(0, limit) : transactions;
   
   return (
-    <Card className="shadow-sm border border-gray-100">
+    <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Recent Transactions</h3>
+          <h3 className="text-lg font-semibold dark:text-white">Recent Transactions</h3>
           {showViewAll && (
-            <button className="text-primary text-sm font-medium">View All</button>
+            <button className="text-primary text-sm font-medium dark:text-blue-400">View All</button>
           )}
         </div>
         
         <div className="space-y-4">
           {isLoading ? (
             Array(limit).fill(0).map((_, index) => (
-              <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100">
+              <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center">
                   <Skeleton className="h-8 w-8 rounded-full" />
                   <div className="ml-3">
@@ -44,9 +44,9 @@ const TransactionList = ({ limit = 3, showViewAll = true }: TransactionListProps
             ))
           ) : (
             displayedTransactions.map((tx: Transaction) => (
-              <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-100">
+              <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center">
-                  <div className={`${tx.type === 'buy' ? 'bg-green-100' : 'bg-red-100'} p-2 rounded-full`}>
+                  <div className={`${tx.type === 'buy' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'} p-2 rounded-full`}>
                     {tx.type === 'buy' ? (
                       <ArrowDown className={`h-4 w-4 text-accent-green`} />
                     ) : (
@@ -54,19 +54,19 @@ const TransactionList = ({ limit = 3, showViewAll = true }: TransactionListProps
                     )}
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium dark:text-white">
                       {tx.type === 'buy' ? 'Bought' : 'Sold'} {tx.cryptoName}
                     </p>
-                    <p className="text-xs text-neutral-mid">
+                    <p className="text-xs text-neutral-mid dark:text-gray-400">
                       {format(new Date(tx.timestamp), 'MMM d, yyyy • h:mm a')}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium font-mono">
+                  <p className="text-sm font-medium font-mono dark:text-white">
                     {tx.type === 'buy' ? '+' : '-'}{tx.quantity} {tx.cryptoSymbol}
                   </p>
-                  <p className="text-xs text-neutral-mid">
+                  <p className="text-xs text-neutral-mid dark:text-gray-400">
                     ${tx.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>

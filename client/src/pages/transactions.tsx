@@ -16,8 +16,8 @@ const Transactions = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Transactions</h2>
-            <p className="text-neutral-mid mt-1">Your cryptocurrency transaction history</p>
+            <h2 className="text-2xl font-bold dark:text-white">Transactions</h2>
+            <p className="text-neutral-mid dark:text-gray-400 mt-1">Your cryptocurrency transaction history</p>
           </div>
           <div className="mt-4 sm:mt-0 space-x-2">
             <Button onClick={() => setIsAddModalOpen(true)}>
@@ -28,7 +28,7 @@ const Transactions = () => {
         </div>
         
         {/* Transactions Tabs */}
-        <Card className="shadow-sm border border-gray-100 mb-6">
+        <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900 mb-6">
           <CardContent className="p-4 md:p-6">
             <Tabs defaultValue="all">
               <TabsList className="mb-4">
@@ -42,13 +42,13 @@ const Transactions = () => {
               </TabsContent>
               
               <TabsContent value="buy">
-                <p className="text-neutral-mid py-6 text-center">
+                <p className="text-neutral-mid dark:text-gray-400 py-6 text-center">
                   Filtering by buy transactions will be implemented in a future update.
                 </p>
               </TabsContent>
               
               <TabsContent value="sell">
-                <p className="text-neutral-mid py-6 text-center">
+                <p className="text-neutral-mid dark:text-gray-400 py-6 text-center">
                   Filtering by sell transactions will be implemented in a future update.
                 </p>
               </TabsContent>

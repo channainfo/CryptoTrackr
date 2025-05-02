@@ -101,14 +101,14 @@ const Markets = () => {
                 ))
               ) : filteredMarketData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-neutral-mid">
+                  <td colSpan={6} className="px-6 py-8 text-center text-neutral-mid dark:text-gray-400">
                     No cryptocurrencies found matching your search.
                   </td>
                 </tr>
               ) : (
                 filteredMarketData.map((crypto: CryptoAsset, index: number) => (
-                  <tr key={crypto.id} className="hover:bg-neutral-lighter transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <tr key={crypto.id} className="hover:bg-neutral-lighter dark:hover:bg-zinc-800 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-gray-300">
                       {index + 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -117,12 +117,12 @@ const Markets = () => {
                           <span className="text-xs font-mono">{crypto.symbol}</span>
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-medium">{crypto.name}</p>
-                          <p className="text-xs text-neutral-mid">{crypto.symbol}</p>
+                          <p className="text-sm font-medium dark:text-white">{crypto.name}</p>
+                          <p className="text-xs text-neutral-mid dark:text-gray-400">{crypto.symbol}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium dark:text-white">
                       ${crypto.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -130,11 +130,11 @@ const Markets = () => {
                         {crypto.priceChangePercentage24h >= 0 ? '+' : ''}{crypto.priceChangePercentage24h.toFixed(1)}%
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium dark:text-white">
                       ${(crypto.currentPrice * 1000000).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className={`h-8 w-16 ${crypto.priceChangePercentage24h >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-sm ml-auto overflow-hidden relative`}>
+                      <div className={`h-8 w-16 ${crypto.priceChangePercentage24h >= 0 ? 'bg-green-50 dark:bg-green-900' : 'bg-red-50 dark:bg-red-900'} rounded-sm ml-auto overflow-hidden relative`}>
                         <div className="absolute inset-0 opacity-60">
                           <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="w-full h-full">
                             <path 
