@@ -4,6 +4,7 @@ import MobileNav from "./MobileNav";
 import { Ticket, MenuIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Link } from "wouter";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -25,16 +26,19 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               <h1 className="ml-2 text-xl font-bold text-primary">CryptoFolio</h1>
             </div>
           </Link>
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-neutral-light">
-                <MenuIcon className="h-6 w-6" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0">
-              <Sidebar isMobile />
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center">
+            <ThemeToggle />
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="p-2 rounded-lg hover:bg-neutral-light">
+                  <MenuIcon className="h-6 w-6" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0">
+                <Sidebar isMobile />
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
         
         {/* Page Content */}

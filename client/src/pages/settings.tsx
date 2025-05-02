@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const Settings = () => {
   return (
@@ -100,7 +101,7 @@ const Settings = () => {
                     <h3 className="text-base font-medium">Dark Mode</h3>
                     <p className="text-sm text-neutral-mid">Switch between light and dark themes</p>
                   </div>
-                  <Switch />
+                  <ThemeToggle />
                 </div>
                 
                 <div className="flex items-center justify-between">

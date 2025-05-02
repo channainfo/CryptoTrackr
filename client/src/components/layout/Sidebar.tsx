@@ -8,6 +8,7 @@ import {
   Ticket 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -49,14 +50,17 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
       </nav>
       
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-            <span className="text-primary font-medium">AM</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+              <span className="text-primary font-medium">AM</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">Alex Morgan</p>
+              <p className="text-xs text-neutral-mid">alex@example.com</p>
+            </div>
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium">Alex Morgan</p>
-            <p className="text-xs text-neutral-mid">alex@example.com</p>
-          </div>
+          {!isMobile && <ThemeToggle />}
         </div>
       </div>
     </aside>
