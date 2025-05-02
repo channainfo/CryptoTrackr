@@ -38,7 +38,7 @@ const AssetTable = ({ limit, showViewAll = true }: AssetTableProps) => {
   return (
     <div className="mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Your Assets</h3>
+        <h3 className="text-lg font-semibold dark:text-white">Your Assets</h3>
         {showViewAll && (
           <button className="flex items-center text-primary text-sm font-medium">
             View All
@@ -47,19 +47,19 @@ const AssetTable = ({ limit, showViewAll = true }: AssetTableProps) => {
         )}
       </div>
       
-      <Card className="shadow-sm border border-gray-100 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      <Card className="shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto dark:bg-zinc-900">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead>
             <tr>
-              <th className="px-6 py-3 bg-neutral-light text-left text-xs font-medium text-neutral-mid uppercase tracking-wider">Asset</th>
-              <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">Price</th>
-              <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">Holdings</th>
-              <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">Value</th>
-              <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">24h</th>
-              <th className="px-6 py-3 bg-neutral-light text-right text-xs font-medium text-neutral-mid uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Asset</th>
+              <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Price</th>
+              <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Holdings</th>
+              <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Value</th>
+              <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">24h</th>
+              <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
             {isLoading ? (
               Array(4).fill(0).map((_, index) => (
                 <tr key={index}>
@@ -91,25 +91,25 @@ const AssetTable = ({ limit, showViewAll = true }: AssetTableProps) => {
               ))
             ) : (
               displayedAssets.map((asset: PortfolioAsset) => (
-                <tr key={asset.id} className="hover:bg-neutral-lighter transition-colors">
+                <tr key={asset.id} className="hover:bg-neutral-lighter dark:hover:bg-zinc-800 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full ${getBgColor(asset.symbol)}`}>
                         <span className="text-xs font-mono">{asset.symbol}</span>
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium">{asset.name}</p>
-                        <p className="text-xs text-neutral-mid">{asset.symbol}</p>
+                        <p className="text-sm font-medium dark:text-white">{asset.name}</p>
+                        <p className="text-xs text-neutral-mid dark:text-gray-400">{asset.symbol}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium dark:text-white">
                     ${asset.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm dark:text-white">
                     <p className="font-mono">{asset.quantity} {asset.symbol}</p>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium dark:text-white">
                     ${asset.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -119,7 +119,7 @@ const AssetTable = ({ limit, showViewAll = true }: AssetTableProps) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="text-primary hover:text-primary-dark">
+                      <DropdownMenuTrigger className="text-primary hover:text-primary-dark dark:text-blue-400 dark:hover:text-blue-300">
                         <MoreHorizontal className="h-5 w-5" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -137,7 +137,7 @@ const AssetTable = ({ limit, showViewAll = true }: AssetTableProps) => {
             )}
             {displayedAssets.length === 0 && !isLoading && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-neutral-mid">
+                <td colSpan={6} className="px-6 py-8 text-center text-neutral-mid dark:text-gray-400">
                   No assets in your portfolio. Add some to get started!
                 </td>
               </tr>

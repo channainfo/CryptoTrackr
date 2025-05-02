@@ -110,7 +110,7 @@ const Settings = () => {
                     <p className="text-sm text-neutral-mid">Choose your preferred currency</p>
                   </div>
                   <div className="w-32">
-                    <select className="w-full rounded-md border border-gray-300 p-2">
+                    <select className="w-full rounded-md border border-gray-300 dark:border-gray-700 p-2 bg-white dark:bg-zinc-800 text-black dark:text-white">
                       <option value="USD">USD ($)</option>
                       <option value="EUR">EUR (€)</option>
                       <option value="GBP">GBP (£)</option>
@@ -125,7 +125,7 @@ const Settings = () => {
                     <p className="text-sm text-neutral-mid">How often to update prices</p>
                   </div>
                   <div className="w-32">
-                    <select className="w-full rounded-md border border-gray-300 p-2">
+                    <select className="w-full rounded-md border border-gray-300 dark:border-gray-700 p-2 bg-white dark:bg-zinc-800 text-black dark:text-white">
                       <option value="30">30 seconds</option>
                       <option value="60">1 minute</option>
                       <option value="300">5 minutes</option>
