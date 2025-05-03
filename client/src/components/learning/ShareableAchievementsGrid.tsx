@@ -39,7 +39,7 @@ export const ShareableAchievementsGrid: React.FC<ShareableAchievementsGridProps>
   const shareText = "I'm learning about cryptocurrency on Trailer. Join me and improve your crypto knowledge!";
   
   return (
-    <Card className={cn('h-full', className)}>
+    <Card className={cn(className)}>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center">

@@ -374,7 +374,7 @@ const LearningPage = () => {
             <LearningPath 
               modules={allModules || []} 
               progress={effectiveProgress}
-              className="h-full mb-8"
+              className="mb-8"
             />
             
             {/* Split the achievements and sharing into separate rows */}
@@ -384,7 +384,6 @@ const LearningPage = () => {
                 <AchievementGrid 
                   modules={allModules || []} 
                   progress={effectiveProgress}
-                  className="h-full"
                 />
               </div>
               
@@ -393,7 +392,6 @@ const LearningPage = () => {
                 <ShareableAchievementsGrid
                   modules={allModules || []} 
                   progress={effectiveProgress}
-                  className="h-full"
                 />
               </div>
             </div>
