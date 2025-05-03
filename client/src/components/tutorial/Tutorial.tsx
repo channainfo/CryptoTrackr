@@ -4,12 +4,10 @@ import { useLocation } from 'wouter';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
 
-interface TutorialProps {
-  isFirstVisit?: boolean;
-}
+interface TutorialProps {}
 
-const Tutorial = ({ isFirstVisit = false }: TutorialProps) => {
-  const { showTutorial, endTutorial, markTutorialComplete } = useTutorial();
+const Tutorial = () => {
+  const { showTutorial, endTutorial, markTutorialComplete, isFirstVisit } = useTutorial();
   const [location] = useLocation();
   const [run, setRun] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
@@ -157,14 +155,50 @@ const Tutorial = ({ isFirstVisit = false }: TutorialProps) => {
       
       {/* Welcome overlay for first time visitors */}
       {isFirstVisit && !run && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50 tutorial-welcome">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md mx-4 text-center">
-            <h2 className="text-2xl font-bold mb-4">Welcome to Trailer</h2>
-            <p className="mb-6">
-              Track your crypto portfolio performance, manage multiple portfolios, and get detailed insights on your investments.
-            </p>
-            <div className="flex flex-col space-y-4">
-              <Button onClick={() => setRun(true)}>Start Tutorial</Button>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50 tutorial-welcome">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-lg mx-4 text-center shadow-2xl border border-blue-200 dark:border-blue-900">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Welcome to Trailer</h2>
+              <p className="text-muted-foreground">Your personal crypto portfolio management platform</p>
+            </div>
+            
+            <div className="mb-8 space-y-4">
+              <p className="text-lg leading-relaxed">
+                Track your crypto portfolio performance, manage multiple portfolios, and get detailed insights on your investments.
+              </p>
+              
+              <ul className="flex flex-col space-y-2 text-left pl-2">
+                <li className="flex items-center">
+                  <span className="bg-blue-100 dark:bg-blue-900 rounded-full p-1 mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                  Monitor your investments in real-time
+                </li>
+                <li className="flex items-center">
+                  <span className="bg-blue-100 dark:bg-blue-900 rounded-full p-1 mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                  Track performance across different time periods
+                </li>
+                <li className="flex items-center">
+                  <span className="bg-blue-100 dark:bg-blue-900 rounded-full p-1 mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                  Manage multiple portfolios with detailed analytics
+                </li>
+              </ul>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row sm:justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <Button onClick={() => setRun(true)} className="px-8 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                Start Tutorial
+              </Button>
               <Button variant="outline" onClick={() => {
                 endTutorial();
                 markTutorialComplete();

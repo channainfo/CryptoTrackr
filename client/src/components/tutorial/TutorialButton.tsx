@@ -7,6 +7,8 @@ import { useTutorial } from '@/contexts/TutorialContext';
 const TutorialButton = () => {
   const { startTutorial, tutorialCompleted } = useTutorial();
 
+  // Only show the tutorial button if the user has completed the tutorial previously
+  // This way they can access it again if needed
   if (tutorialCompleted) {
     return (
       <div className="fixed bottom-4 right-4 z-50">
