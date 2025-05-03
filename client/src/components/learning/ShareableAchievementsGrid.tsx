@@ -90,21 +90,47 @@ export const ShareableAchievementsGrid: React.FC<ShareableAchievementsGridProps>
               </div>
               
               <div className="flex justify-center gap-4">
-                <TwitterShareButton url={shareUrl} title={shareText}>
+                <TwitterShareButton 
+                  url={shareUrl} 
+                  title={shareText}
+                  onClick={() => {
+                    toast({
+                      title: "Sharing on Twitter",
+                      description: "Opening Twitter sharing dialog...",
+                    });
+                  }}
+                >
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
                     <TwitterIcon size={18} round />
                     <span>Twitter</span>
                   </Button>
                 </TwitterShareButton>
                 
-                <FacebookShareButton url={shareUrl}>
+                <FacebookShareButton 
+                  url={shareUrl}
+                  onClick={() => {
+                    toast({
+                      title: "Sharing on Facebook",
+                      description: "Opening Facebook sharing dialog...",
+                    });
+                  }}
+                >
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
                     <FacebookIcon size={18} round />
                     <span>Facebook</span>
                   </Button>
                 </FacebookShareButton>
                 
-                <LinkedinShareButton url={shareUrl} title={shareTitle}>
+                <LinkedinShareButton 
+                  url={shareUrl} 
+                  title={shareTitle}
+                  onClick={() => {
+                    toast({
+                      title: "Sharing on LinkedIn",
+                      description: "Opening LinkedIn sharing dialog...",
+                    });
+                  }}
+                >
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
                     <LinkedinIcon size={18} round />
                     <span>LinkedIn</span>
@@ -163,10 +189,18 @@ export const ShareableAchievementsGrid: React.FC<ShareableAchievementsGridProps>
                           const shareUrl = `${window.location.origin}/learning?achievement=${achievement.id}`;
                           navigator.clipboard.writeText(shareUrl)
                             .then(() => {
-                              alert('Link copied to clipboard!');
+                              toast({
+                                title: "Link copied!",
+                                description: `Shareable achievement link copied to clipboard.`
+                              });
                             })
                             .catch(err => {
                               console.error('Could not copy text: ', err);
+                              toast({
+                                title: "Error copying link",
+                                description: "Please try again",
+                                variant: "destructive"
+                              });
                             });
                         }}
                       >
