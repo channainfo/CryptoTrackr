@@ -173,9 +173,9 @@ export class DatabaseStorage implements IStorage {
         portfolioTokenId: updatedToken.id,
         tokenId: token.id,
         type: 'buy',
-        amount: assetData.quantity || 0,
-        price: currentPrice,
-        totalValue: (assetData.quantity || 0) * currentPrice,
+        amount: (assetData.quantity || 0).toString(),
+        price: currentPrice.toString(),
+        totalValue: ((assetData.quantity || 0) * currentPrice).toString(),
         transactionDate: new Date(),
       });
       
@@ -222,9 +222,9 @@ export class DatabaseStorage implements IStorage {
         portfolioTokenId: newPortfolioToken.id,
         tokenId: token.id,
         type: 'buy',
-        amount: quantity,
-        price: currentPrice,
-        totalValue: totalValue,
+        amount: quantity.toString(),
+        price: currentPrice.toString(),
+        totalValue: totalValue.toString(),
         transactionDate: new Date(),
       });
       
@@ -314,15 +314,15 @@ export class DatabaseStorage implements IStorage {
         portfolioTokenId: asset.id,
         tokenId: asset.cryptoId,
         type: 'sell',
-        amount: asset.quantity,
-        price: asset.currentPrice,
-        totalValue: asset.value,
+        amount: asset.quantity.toString(),
+        price: asset.currentPrice.toString(),
+        totalValue: asset.value.toString(),
         transactionDate: new Date(),
       });
       
       // Delete the portfolio token
-      const result = await db.delete(portfolioTokens).where(eq(portfolioTokens.id, id));
-      return result.rowCount > 0;
+      await db.delete(portfolioTokens).where(eq(portfolioTokens.id, id));
+      return true;
     } catch (error) {
       console.error('Error removing portfolio asset:', error);
       return false;
@@ -562,11 +562,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   private async addTransactionToDb(txData: Partial<typeof transactions.$inferInsert>): Promise<SchemaTransaction> {
+    // Make sure required fields are present
+    if (!txData.type) {
+      txData.type = 'buy';
+    }
+    
     const [tx] = await db.insert(transactions)
-      .values({
-        ...txData,
-        isManual: true
-      })
+      .values(txData as any)
       .returning();
     
     return tx;
@@ -575,8 +577,14 @@ export class DatabaseStorage implements IStorage {
   // This method would seed initial data if needed
   async seedInitialDataIfNeeded() {
     // Check if we already have users
-    const userCount = await db.select({ count: db.fn.count() }).from(users);
-    if (userCount[0].count === "0") {
+    try {
+      const userCount = await db.select().from(users);
+      
+      // If we have users, don't seed
+      if (userCount && userCount.length > 0) {
+        return;
+      }
+      
       // Create default user
       await this.createUser({
         username: 'demo',
@@ -655,6 +663,8 @@ export class DatabaseStorage implements IStorage {
       for (const tx of seedExtraTransactions) {
         await this.addTransaction(tx);
       }
+    } catch (error) {
+      console.error('Error seeding initial data:', error);
     }
   }
 }
