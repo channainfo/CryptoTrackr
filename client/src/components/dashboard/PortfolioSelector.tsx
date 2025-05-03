@@ -91,7 +91,11 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
   // Mutation to create a new portfolio
   const createPortfolioMutation = useMutation({
     mutationFn: async (data: { name: string, description?: string, isDefault?: boolean }) => {
-      return apiRequest('POST', '/api/portfolios', data);
+      return apiRequest({
+        url: '/api/portfolios',
+        method: 'POST',
+        data
+      });
     },
     onSuccess: (newPortfolio) => {
       queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
@@ -120,7 +124,11 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
   // Mutation to update a portfolio
   const updatePortfolioMutation = useMutation({
     mutationFn: async (data: { id: string, name: string, description?: string, isDefault?: boolean }) => {
-      return apiRequest('PATCH', `/api/portfolios/${data.id}`, data);
+      return apiRequest({
+        url: `/api/portfolios/${data.id}`,
+        method: 'PATCH',
+        data
+      });
     },
     onSuccess: (updatedPortfolio) => {
       queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
@@ -149,7 +157,10 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
   // Mutation to delete a portfolio
   const deletePortfolioMutation = useMutation({
     mutationFn: async (portfolioId: string) => {
-      return apiRequest('DELETE', `/api/portfolios/${portfolioId}`);
+      return apiRequest({
+        url: `/api/portfolios/${portfolioId}`,
+        method: 'DELETE'
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
