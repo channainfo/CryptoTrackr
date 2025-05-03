@@ -245,7 +245,7 @@ export class TokenHistoricalValueModel {
           .orderBy(asc(tokenHistoricalValues.date))
           .limit(1);
         
-        startDate.setTime(oldestRecord ? oldestRecord.date.getTime() : startDate.getTime());
+        startDate.setTime(oldestRecord ? new Date(oldestRecord.date).getTime() : startDate.getTime());
         break;
     }
     

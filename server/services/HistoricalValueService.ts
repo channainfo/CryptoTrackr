@@ -45,8 +45,8 @@ export class HistoricalValueService {
       // Process each token
       for (const token of portfolioTokens) {
         // Calculate token value and invested amount
-        const tokenValue = parseFloat(token.quantity) * parseFloat(token.currentPrice);
-        const tokenInvested = parseFloat(token.quantity) * parseFloat(token.purchasePrice);
+        const tokenValue = parseFloat(token.totalValue);
+        const tokenInvested = parseFloat(token.totalInvested);
         
         totalValue += tokenValue;
         totalInvested += tokenInvested;
@@ -57,10 +57,10 @@ export class HistoricalValueService {
           token.id,
           portfolio.userId,
           token.tokenId,
-          token.quantity,
+          token.amount,
           token.currentPrice,
-          tokenValue.toString(),
-          tokenInvested.toString(),
+          token.totalValue,
+          token.totalInvested,
           'daily'
         );
       }

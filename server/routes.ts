@@ -5,6 +5,7 @@ import axios from "axios";
 import { z } from "zod";
 import { insertPortfolioSchema, insertTransactionSchema } from "@shared/schema";
 import { services } from "./services/cryptoApi";
+import { HistoricalValueService } from "./services";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API routes
@@ -280,6 +281,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error adding transaction:', error);
       res.status(400).json({ message: 'Invalid transaction data' });
+    }
+  });
+
+  // Record historical values for all portfolios and tokens
+  app.post('/api/history/record', async (req, res) => {
+    try {
+      const result = await HistoricalValueService.recordTodayValues();
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error recording historical values:', error);
+      res.status(500).json({ message: 'Failed to record historical values' });
+    }
+  });
+  
+  // Record historical values for specific portfolio
+  app.post('/api/portfolios/:portfolioId/history/record', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      const result = await HistoricalValueService.recordPortfolioValue(portfolioId);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Error recording portfolio historical values:', error);
+      res.status(500).json({ message: 'Failed to record portfolio historical values' });
+    }
+  });
+  
+  // Get portfolio performance data
+  app.get('/api/portfolios/:portfolioId/performance', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      const period = req.query.period as '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL' || '1M';
+      const performance = await HistoricalValueService.getPortfolioPerformance(portfolioId, period);
+      
+      if (!performance) {
+        return res.status(404).json({ message: 'Portfolio performance data not found' });
+      }
+      
+      res.json(performance);
+    } catch (error) {
+      console.error('Error fetching portfolio performance:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio performance data' });
+    }
+  });
+  
+  // Get token performance data
+  app.get('/api/portfolio-tokens/:portfolioTokenId/performance', async (req, res) => {
+    try {
+      const portfolioTokenId = req.params.portfolioTokenId;
+      if (!portfolioTokenId) {
+        return res.status(400).json({ message: 'Invalid portfolio token ID' });
+      }
+      
+      const period = req.query.period as '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL' || '1M';
+      const performance = await HistoricalValueService.getTokenPerformance(portfolioTokenId, period);
+      
+      if (!performance) {
+        return res.status(404).json({ message: 'Token performance data not found' });
+      }
+      
+      res.json(performance);
+    } catch (error) {
+      console.error('Error fetching token performance:', error);
+      res.status(500).json({ message: 'Failed to fetch token performance data' });
     }
   });
 
