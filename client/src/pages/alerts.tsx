@@ -82,15 +82,14 @@ const AlertsPage = () => {
   const { data: alerts = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/alerts'],
     staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+  }) as { data: Alert[], isLoading: boolean, isError: boolean, refetch: () => void };
   
   // Check alerts manually (for testing)
   const { mutate: checkAlerts, isPending: isChecking } = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/alerts/check', {
+      return apiRequest('/api/alerts/check', {
         method: 'POST',
       });
-      return response;
     },
     onSuccess: (data) => {
       toast({
