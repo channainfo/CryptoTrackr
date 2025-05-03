@@ -48,7 +48,20 @@ const sortOptions = [
 
 const Portfolio = () => {
   const [, setLocation] = useLocation();
-  const { portfoliosWithAssets, isLoading } = usePortfolios();
+  const [activeTab, setActiveTab] = useState("all");
+  
+  // Use the hook with filtering by type based on active tab
+  const portfolioType = activeTab === "watchlist" 
+    ? "watchlist" 
+    : activeTab === "active" 
+      ? "standard" 
+      : "all";
+  
+  // Pass the portfolioType to the hook for server-side filtering
+  const { portfoliosWithAssets, isLoading } = usePortfolios(
+    activeTab === "active" ? undefined : portfolioType as any
+  );
+  
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newPortfolioName, setNewPortfolioName] = useState('');
   const [newPortfolioDescription, setNewPortfolioDescription] = useState('');
@@ -58,14 +71,13 @@ const Portfolio = () => {
   const queryClient = useQueryClient();
 
   // Filter and sort portfolios based on selected tab and sort option
-  const [activeTab, setActiveTab] = useState("all");
-  
+  // We already have server filtering, but we need to filter active portfolios with assets
   const filteredPortfolios = portfoliosWithAssets.filter(item => {
-    console.log("Filtering portfolio:", item.portfolio.name, "isWatchlist:", item.portfolio.isWatchlist);
+    console.log("Portfolio in tab:", activeTab, "- Name:", item.portfolio.name, "isWatchlist:", item.portfolio.isWatchlist);
     
     if (activeTab === "all") return true;
     if (activeTab === "active" && item.assets.length > 0) return true;
-    if (activeTab === "watchlist" && item.portfolio.isWatchlist) return true;
+    if (activeTab === "watchlist") return true; // Already filtered by server
     return false;
   });
   
@@ -101,14 +113,25 @@ const Portfolio = () => {
         data
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all portfolio queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      
+      // Also invalidate specific tabs
+      if (data.isWatchlist) {
+        console.log("Created watchlist portfolio, invalidating watchlist queries");
+        queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'watchlist'] });
+      } else {
+        console.log("Created standard portfolio, invalidating standard queries");
+        queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'standard'] });
+      }
+      
       setIsCreateOpen(false);
       resetForm();
       
       toast({
-        title: "Portfolio created",
-        description: "Your new portfolio has been created successfully.",
+        title: data.isWatchlist ? "Watchlist created" : "Portfolio created",
+        description: `Your new ${data.isWatchlist ? 'watchlist' : 'portfolio'} has been created successfully.`,
       });
     },
     onError: (error: Error) => {
@@ -198,7 +221,20 @@ const Portfolio = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+      <Tabs 
+        defaultValue="all" 
+        className="w-full" 
+        onValueChange={(value) => {
+          setActiveTab(value);
+          // Force refetch the appropriate data when tab changes
+          if (value === 'watchlist') {
+            queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'watchlist'] });
+          } else if (value === 'standard') {
+            queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'standard'] });
+          } else {
+            queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+          }
+        }}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <TabsList className="mb-4 md:mb-0">
             <TabsTrigger value="all" className="relative">

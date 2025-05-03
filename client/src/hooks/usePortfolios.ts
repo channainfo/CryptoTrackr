@@ -12,13 +12,21 @@ export interface PortfolioWithAssets {
   assetCount: number;
 }
 
-export const usePortfolios = () => {
+export const usePortfolios = (type?: 'all' | 'watchlist' | 'standard') => {
   const [portfoliosWithAssets, setPortfoliosWithAssets] = useState<PortfolioWithAssets[]>([]);
   
-  // Fetch all portfolios
+  // Fetch all portfolios or filtered by type
+  const queryParams = type && type !== 'all' ? `?type=${type}` : '';
+  const endpoint = `/api/portfolios${queryParams}`;
+  
   const portfoliosQuery = useQuery({
-    queryKey: ['/api/portfolios'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryKey: ['/api/portfolios', type],
+    queryFn: () => fetch(endpoint)
+      .then(res => {
+        if (res.status === 401) return null;
+        if (!res.ok) throw new Error('Failed to fetch portfolios');
+        return res.json();
+      })
   });
 
   // Effect to load asset data for each portfolio
