@@ -24,7 +24,7 @@ interface SellCryptoModalProps {
 }
 
 const SellCryptoModal = ({ isOpen, onClose, asset, portfolioId }: SellCryptoModalProps) => {
-  const { removeAssetFromPortfolio } = usePortfolio(portfolioId);
+  const { removeAssetFromPortfolio, sellPartialAsset } = usePortfolio(portfolioId);
   const { toast } = useToast();
   const [quantity, setQuantity] = useState("");
   
@@ -68,15 +68,8 @@ const SellCryptoModal = ({ isOpen, onClose, asset, portfolioId }: SellCryptoModa
     if (sellQuantity === asset.quantity) {
       removeAssetFromPortfolio(asset.id, portfolioId);
     } else {
-      // For partial sells, we would update the asset quantity
-      // This would require a new endpoint/mutation for partial sells
-      // For now, let's show a message about the limitation
-      toast({
-        variant: "destructive",
-        title: "Partial selling not implemented",
-        description: "Currently you can only sell your entire position",
-      });
-      return;
+      // For partial sells, use the new sellPartialAsset function
+      sellPartialAsset(asset.id, sellQuantity, portfolioId);
     }
     
     toast({

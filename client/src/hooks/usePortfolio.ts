@@ -241,6 +241,43 @@ export const usePortfolio = (portfolioId?: string | null) => {
     }));
   };
   
+  // Update asset mutation for partial sells
+  const updateAssetMutation = useMutation({
+    mutationFn: ({ 
+      assetId, 
+      portfolioId, 
+      quantity 
+    }: { 
+      assetId: string, 
+      portfolioId?: string, 
+      quantity: number 
+    }) => {
+      const endpoint = portfolioId
+        ? `/api/portfolios/${portfolioId}/assets/${assetId}`
+        : `/api/portfolios/assets/${assetId}`;
+      
+      return apiRequest({
+        url: endpoint,
+        method: 'PATCH',
+        data: { quantity }
+      });
+    },
+    onSuccess: (_, variables) => {
+      const queryKey = variables.portfolioId 
+        ? ['/api/portfolio', variables.portfolioId] 
+        : ['/api/portfolio'];
+      
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error updating asset",
+        description: error.message || "Could not update asset quantity",
+      });
+    }
+  });
+
   // Remove asset from portfolio
   const removeAssetFromPortfolio = (assetId: string, customPortfolioId?: string) => {
     // Find the asset to remove
@@ -266,6 +303,58 @@ export const usePortfolio = (portfolioId?: string | null) => {
     }
   };
   
+  // Sell a portion of an asset
+  const sellPartialAsset = (assetId: string, quantityToSell: number, customPortfolioId?: string) => {
+    // Find the asset to update
+    const assetToUpdate = assets.find(a => a.id === assetId);
+    if (!assetToUpdate) return;
+    
+    // Make sure quantity to sell is valid
+    if (quantityToSell <= 0 || quantityToSell >= assetToUpdate.quantity) {
+      toast({
+        variant: "destructive",
+        title: "Invalid quantity",
+        description: "Please enter a valid quantity less than your current holdings",
+      });
+      return;
+    }
+    
+    // Calculate new quantity
+    const newQuantity = assetToUpdate.quantity - quantityToSell;
+    
+    // Update the asset locally first for immediate UI update
+    setAssets(prevAssets => prevAssets.map(a => {
+      if (a.id === assetId) {
+        const updatedAsset = {
+          ...a,
+          quantity: newQuantity,
+          value: newQuantity * a.currentPrice
+        };
+        return updatedAsset;
+      }
+      return a;
+    }));
+    
+    // Then call the API with portfolio ID if specified
+    updateAssetMutation.mutate({
+      assetId,
+      portfolioId: customPortfolioId || (portfolioId ? portfolioId : undefined),
+      quantity: newQuantity
+    });
+    
+    // Update portfolio summary
+    const valueReduction = quantityToSell * assetToUpdate.currentPrice;
+    setPortfolioSummary(prev => ({
+      ...prev,
+      totalValue: prev.totalValue - valueReduction,
+    }));
+    
+    toast({
+      title: "Asset sold",
+      description: `Sold ${quantityToSell} ${assetToUpdate.symbol} successfully`,
+    });
+  };
+  
   return {
     assets,
     transactions,
@@ -273,6 +362,7 @@ export const usePortfolio = (portfolioId?: string | null) => {
     isLoading: isLoadingPortfolio || isLoadingTransactions,
     addAssetToPortfolio,
     removeAssetFromPortfolio,
+    sellPartialAsset,
     getPortfolioChartData
   };
 };

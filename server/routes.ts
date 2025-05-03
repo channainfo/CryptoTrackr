@@ -428,6 +428,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to remove asset' });
     }
   });
+  
+  // Update a portfolio asset (for partial sells)
+  app.patch('/api/portfolios/:portfolioId/assets/:assetId', async (req, res) => {
+    try {
+      const { portfolioId, assetId } = req.params;
+      const { quantity } = req.body;
+      
+      if (quantity === undefined || isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0) {
+        res.status(400).json({ message: 'Invalid quantity' });
+        return;
+      }
+      
+      // Get the default user
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== defaultUser.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      // Check if asset exists and belongs to the specified portfolio
+      const asset = await storage.getPortfolioAsset(assetId);
+      if (!asset) {
+        return res.status(404).json({ message: 'Asset not found' });
+      }
+      
+      const updatedAsset = await storage.updatePortfolioAsset(assetId, { quantity: parseFloat(quantity) });
+      
+      if (!updatedAsset) {
+        return res.status(404).json({ message: 'Asset not found' });
+      }
+      
+      res.status(200).json(updatedAsset);
+    } catch (error) {
+      console.error('Error updating portfolio asset:', error);
+      res.status(500).json({ message: 'Failed to update asset in portfolio' });
+    }
+  });
 
   // Get user portfolios
   app.get('/api/portfolios', async (req, res) => {
