@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,8 +7,33 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useOnboarding } from "@/hooks/use-onboarding";
+import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
+  const { toast } = useToast();
+  
+  // Dashboard tour
+  const dashboardTour = useOnboarding('dashboard');
+  // Portfolio tour
+  const portfolioTour = useOnboarding('portfolio');
+  // Learning tour
+  const learningTour = useOnboarding('learning');
+  // Transactions tour
+  const transactionsTour = useOnboarding('transactions');
+  // Markets tour
+  const marketsTour = useOnboarding('markets');
+  // Alerts tour
+  const alertsTour = useOnboarding('alerts');
+  
+  const resetAllTours = () => {
+    dashboardTour.resetAllTours();
+    toast({
+      title: "Tours Reset",
+      description: "All feature tours have been reset. You'll see them on your next visit to each page.",
+    });
+  };
+  
   return (
     <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
       {/* Page Header */}

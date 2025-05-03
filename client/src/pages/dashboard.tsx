@@ -96,7 +96,7 @@ const Dashboard = () => {
   
   return (
     <>
-      <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+      <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8 dashboard-overview">
         {/* Dashboard Header */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
@@ -114,8 +114,8 @@ const Dashboard = () => {
               )}
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="tutorial-portfolios">
+          <div className="flex items-center space-x-2 quick-actions">
+            <div className="portfolio-selector">
               <PortfolioSelector 
                 onPortfolioChange={handlePortfolioChange} 
                 currentPortfolioId={selectedPortfolioId}
@@ -123,7 +123,7 @@ const Dashboard = () => {
             </div>
             <Button 
               onClick={() => setIsAddModalOpen(true)} 
-              className="tutorial-add-crypto"
+              className="add-asset-button"
               disabled={!selectedPortfolioId}
             >
               <PlusIcon className="h-4 w-4 mr-1" />
@@ -156,7 +156,7 @@ const Dashboard = () => {
           // Portfolio content when a portfolio is selected
           <>
             {/* Portfolio Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 portfolio-summary">
               <SummaryCard 
                 title="Total Balance" 
                 value={isLoading ? "Loading..." : `$${portfolioSummary.totalValue.toLocaleString()}`}
@@ -190,35 +190,35 @@ const Dashboard = () => {
             </div>
             
             {/* Portfolio Chart Section */}
-            <div className="mb-6">
+            <div className="mb-6 portfolio-chart">
               <PortfolioChart portfolioId={selectedPortfolioId} />
             </div>
             
             {/* Asset Breakdown */}
-            <div className="tutorial-assets">
+            <div className="asset-allocation">
               <AssetTable portfolioId={selectedPortfolioId} />
             </div>
             
             {/* Portfolio Performance & Rebalance */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="tutorial-performance">
+              <div className="portfolio-performance">
                 <PortfolioPerformance portfolioId={selectedPortfolioId} />
               </div>
-              <div className="tutorial-rebalance">
+              <div className="portfolio-rebalance">
                 <PortfolioRebalance portfolioId={selectedPortfolioId} />
               </div>
             </div>
             
             {/* Recent Transactions & Market Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              <div className="tutorial-transactions lg:col-span-2">
+              <div className="transactions-list lg:col-span-2">
                 <TransactionList portfolioId={selectedPortfolioId} />
               </div>
               <div className="space-y-6">
-                <div className="tutorial-market">
+                <div className="market-trends">
                   <MarketTrends />
                 </div>
-                <div className="tutorial-sentiment">
+                <div className="market-sentiment">
                   <MarketSentiment />
                 </div>
               </div>
@@ -258,6 +258,13 @@ const Dashboard = () => {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)}
         portfolioId={selectedPortfolioId}
+      />
+      
+      {/* Onboarding wizard */}
+      <OnboardingWizard
+        tourType="dashboard"
+        isEnabled={true}
+        onComplete={handleTourComplete}
       />
     </>
   );
