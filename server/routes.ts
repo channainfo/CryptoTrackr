@@ -747,11 +747,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const defaultUser = await storage.getUserByUsername('demo') || 
         await storage.createUser({ username: 'demo', password: 'password' });
       
-      // Validate request body using Zod schema
-      const validatedData = insertAlertSchema.parse({
+      // Ensure threshold is a string
+      const requestData = {
         ...req.body,
-        userId: defaultUser.id
-      });
+        userId: defaultUser.id,
+        // Convert threshold to string if it's a number
+        threshold: typeof req.body.threshold === 'number' 
+          ? req.body.threshold.toString() 
+          : req.body.threshold
+      };
+      
+      // Validate request body using Zod schema
+      const validatedData = insertAlertSchema.parse(requestData);
       
       const alert = await AlertModel.create(validatedData);
       
@@ -763,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error creating alert:', error);
-      res.status(400).json({ message: 'Invalid alert data', error: error.message });
+      res.status(400).json({ message: 'Invalid alert data', error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -790,10 +797,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Not authorized to update this alert' });
       }
       
-      // Update data
+      // Update data, ensuring threshold is string
       const updateData = {
         alertType: req.body.alertType,
-        threshold: req.body.threshold,
+        threshold: typeof req.body.threshold === 'number' 
+          ? req.body.threshold.toString() 
+          : req.body.threshold,
         status: req.body.status,
         notificationMethod: req.body.notificationMethod,
         name: req.body.name,
@@ -801,6 +810,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const updatedAlert = await AlertModel.update(alertId, updateData);
+      
+      // Handle the case where update might fail or return undefined
+      if (!updatedAlert) {
+        return res.status(404).json({ message: 'Failed to update alert' });
+      }
       
       // Return the updated alert with formatted threshold and type label
       res.json({
@@ -810,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error updating alert:', error);
-      res.status(400).json({ message: 'Invalid alert data', error: error.message });
+      res.status(400).json({ message: 'Invalid alert data', error: error instanceof Error ? error.message : String(error) });
     }
   });
 
