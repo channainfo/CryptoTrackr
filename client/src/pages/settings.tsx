@@ -47,6 +47,7 @@ const Settings = () => {
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="tours">Feature Tours</TabsTrigger>
         </TabsList>
         
         <TabsContent value="account">
@@ -225,6 +226,118 @@ const Settings = () => {
               <div className="flex justify-end space-x-2">
                 <Button variant="outline">Cancel</Button>
                 <Button>Save Settings</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="tours">
+          <Card>
+            <CardHeader>
+              <CardTitle>Feature Tours Management</CardTitle>
+              <CardDescription>
+                Reset or restart guided tours for different sections of the application
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Individual Feature Tours</h3>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Dashboard Tour</p>
+                      <p className="text-xs text-neutral-mid">Learn the basics of your portfolio dashboard</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={dashboardTour.resetTour}
+                      disabled={!dashboardTour.hasTourBeenCompleted}
+                    >
+                      Reset Tour
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Portfolio Tour</p>
+                      <p className="text-xs text-neutral-mid">Learn about portfolio details and management</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={portfolioTour.resetTour}
+                      disabled={!portfolioTour.hasTourBeenCompleted}
+                    >
+                      Reset Tour
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Learning Center Tour</p>
+                      <p className="text-xs text-neutral-mid">Learn how to use the educational resources</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={learningTour.resetTour}
+                      disabled={!learningTour.hasTourBeenCompleted}
+                    >
+                      Reset Tour
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Transactions Tour</p>
+                      <p className="text-xs text-neutral-mid">Learn about transaction management</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={transactionsTour.resetTour}
+                      disabled={!transactionsTour.hasTourBeenCompleted}
+                    >
+                      Reset Tour
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Markets Tour</p>
+                      <p className="text-xs text-neutral-mid">Learn how to use the market data section</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={marketsTour.resetTour}
+                      disabled={!marketsTour.hasTourBeenCompleted}
+                    >
+                      Reset Tour
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Alerts Tour</p>
+                      <p className="text-xs text-neutral-mid">Learn how to set up and manage price alerts</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={alertsTour.resetTour}
+                      disabled={!alertsTour.hasTourBeenCompleted}
+                    >
+                      Reset Tour
+                    </Button>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-medium">Reset All Tours</h3>
+                    <p className="text-sm text-neutral-mid">Reset all feature tours to see them again</p>
+                  </div>
+                  <Button onClick={resetAllTours}>Reset All Tours</Button>
+                </div>
               </div>
             </CardContent>
           </Card>

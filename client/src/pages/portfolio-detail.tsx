@@ -10,6 +10,8 @@ import PortfolioChart from "@/components/dashboard/PortfolioChart";
 import TransactionList from "@/components/dashboard/TransactionList";
 import AddCryptoModal from "@/components/modals/AddCryptoModal";
 import { usePortfolio } from "@/hooks/usePortfolio";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
+import { useOnboarding } from "@/hooks/use-onboarding";
 
 const PortfolioDetail = () => {
   const [, setLocation] = useLocation();
@@ -17,6 +19,9 @@ const PortfolioDetail = () => {
   const portfolioId = params?.id;
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { portfolioSummary, isLoading } = usePortfolio(portfolioId);
+  
+  // Setup onboarding tour for portfolio page
+  const { showTour, handleTourComplete } = useOnboarding('portfolio');
   
   const handleBack = () => {
     setLocation("/portfolio");
@@ -50,7 +55,10 @@ const PortfolioDetail = () => {
               <Trash2 className="h-4 w-4 mr-1" />
               Delete
             </Button>
-            <Button onClick={() => setIsAddModalOpen(true)}>
+            <Button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="add-asset-button"
+            >
               <PlusIcon className="h-4 w-4 mr-1" />
               Add Crypto
             </Button>
@@ -100,7 +108,7 @@ const PortfolioDetail = () => {
         )}
         
         <Tabs defaultValue="overview" className="w-full">
-          <div className="tabs-wrapper">
+          <div className="tabs-wrapper portfolio-tabs">
             <div className="overflow-x-auto overflow-y-hidden pb-2 no-scrollbar">
               <TabsList className="mb-4 inline-flex min-w-max w-[500px] md:w-auto">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -113,13 +121,15 @@ const PortfolioDetail = () => {
           
           <TabsContent value="overview">
             {/* Portfolio Chart */}
-            <div className="mb-6">
+            <div className="mb-6 portfolio-chart">
               <PortfolioChart portfolioId={portfolioId} />
             </div>
             
             {/* Top Assets */}
             <h3 className="text-xl font-semibold mb-4 dark:text-white">Top Assets</h3>
-            <AssetTable limit={5} showViewAll={true} portfolioId={portfolioId} />
+            <div className="portfolio-assets">
+              <AssetTable limit={5} showViewAll={true} portfolioId={portfolioId} />
+            </div>
             
             {/* Recent Transactions */}
             <h3 className="text-xl font-semibold my-6 dark:text-white">Recent Transactions</h3>
@@ -148,6 +158,13 @@ const PortfolioDetail = () => {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)}
         portfolioId={portfolioId}
+      />
+      
+      {/* Onboarding wizard */}
+      <OnboardingWizard
+        tourType="portfolio"
+        isEnabled={true}
+        onComplete={handleTourComplete}
       />
     </>
   );
