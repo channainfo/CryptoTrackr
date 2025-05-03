@@ -5,7 +5,7 @@ import { ShareableAchievement } from './ShareableAchievement';
 import { EyeOff, Share2, Trophy } from 'lucide-react';
 import type { LearningModule, LearningProgress } from '@/types/education';
 import { cn } from '@/lib/utils';
-import { generateAchievements, Achievement } from '@/lib/achievements';
+import { generateAchievements, type Achievement } from '@/lib/achievements';
 
 interface ShareableAchievementsGridProps {
   modules: LearningModule[];
@@ -22,7 +22,7 @@ export const ShareableAchievementsGrid: React.FC<ShareableAchievementsGridProps>
 }) => {
   // Generate achievements based on modules and progress
   const achievements = generateAchievements(modules, progress);
-  const earnedAchievements = achievements.filter((a: any) => a.completed);
+  const earnedAchievements = achievements.filter((a: Achievement) => a.completed);
   const hasAchievements = earnedAchievements.length > 0;
   
   // Get module details for each achievement if needed
@@ -66,7 +66,7 @@ export const ShareableAchievementsGrid: React.FC<ShareableAchievementsGridProps>
       <CardContent>
         {hasAchievements ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {earnedAchievements.map((achievement: any) => (
+            {earnedAchievements.map((achievement: Achievement) => (
               <ShareableAchievement
                 key={achievement.id}
                 achievement={achievement}
