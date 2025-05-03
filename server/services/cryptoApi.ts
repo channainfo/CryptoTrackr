@@ -4,6 +4,7 @@ import axios from 'axios';
 export interface CryptoApiService {
   getMarketData(): Promise<any[]>;
   getCryptoDetails(id: string): Promise<any>;
+  getSentimentData(): Promise<any>;
 }
 
 // Implementation that uses CoinGecko API
@@ -165,6 +166,81 @@ class CoinGeckoApiService implements CryptoApiService {
       }
       throw new Error(`Cryptocurrency with ID ${id} not found`);
     }
+  }
+  
+  async getSentimentData(): Promise<any> {
+    try {
+      // Try to fetch the Fear & Greed index from alternative API
+      // This would normally be fetched from a proper API source
+      // For demonstration, we'll use market data to calculate sentiment
+      
+      const marketData = await this.getMarketData();
+      
+      // Calculate sentiment based on market trends
+      const result = this.calculateSentiment(marketData);
+      
+      return {
+        sentiment: {
+          score: result.score,
+          mood: result.mood,
+          change: result.change,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching sentiment data:', error);
+      throw error;
+    }
+  }
+  
+  private calculateSentiment(marketData: any[]): { score: number; mood: string; change: number } {
+    // Default sentiment if no data
+    if (!marketData || !marketData.length) {
+      return {
+        score: 50,
+        mood: 'neutral',
+        change: 0
+      };
+    }
+    
+    // Calculate sentiment based on price changes of top coins
+    const topCoins = marketData.slice(0, 10); // Top 10 coins
+    
+    // Calculate average 24h change
+    const avgChange24h = topCoins.reduce((sum, coin) => {
+      return sum + (coin.priceChangePercentage24h || 0);
+    }, 0) / topCoins.length;
+    
+    // Bitcoin dominance factor (if BTC doing better than average, market is less fearful)
+    const btcData = marketData.find(coin => coin.symbol === 'BTC');
+    const btcDominanceFactor = btcData ? 
+      ((btcData.priceChangePercentage24h || 0) - avgChange24h) * 0.1 : 
+      0;
+    
+    // Calculate base score (0-100)
+    // 50 is neutral, <30 is extreme fear, >70 is extreme greed
+    let baseScore = 50; // Start at neutral
+    
+    // Price movement impact on sentiment
+    baseScore += avgChange24h * 2.5;
+    baseScore += btcDominanceFactor;
+    
+    // Clamp score between 0 and 100
+    const score = Math.max(0, Math.min(100, Math.round(baseScore)));
+    
+    // Determine mood based on score
+    let mood;
+    if (score < 25) mood = 'extreme_fear';
+    else if (score < 40) mood = 'fear';
+    else if (score < 60) mood = 'neutral';
+    else if (score < 80) mood = 'greed';
+    else mood = 'extreme_greed';
+    
+    return {
+      score,
+      mood,
+      change: Math.round(avgChange24h * 10) / 10 // Round to 1 decimal place
+    };
   }
 }
 

@@ -15,6 +15,76 @@ import { TaxCalculationModel } from "./models/TaxCalculationModel";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
+// Utility function to calculate market sentiment based on market data
+function calculateSentimentFromMarket(marketData: any[]) {
+  // Default sentiment if no data
+  if (!marketData || !marketData.length) {
+    return {
+      sentiment: {
+        score: 50,
+        mood: 'neutral',
+        change: 0,
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+  
+  // Calculate sentiment based on price changes of top coins
+  const topCoins = marketData.slice(0, 10); // Top 10 coins
+  
+  // Calculate average 24h change
+  const avgChange24h = topCoins.reduce((sum, coin) => {
+    return sum + (parseFloat(coin.priceChange24h) || 0);
+  }, 0) / topCoins.length;
+  
+  // Calculate average 7d change  
+  const avgChange7d = topCoins.reduce((sum, coin) => {
+    return sum + (parseFloat(coin.priceChange7d) || 0);
+  }, 0) / topCoins.length;
+  
+  // Bitcoin dominance factor (if BTC doing better than average, market is less fearful)
+  const btcData = marketData.find(coin => coin.symbol === 'BTC');
+  const btcDominanceFactor = btcData ? 
+    ((parseFloat(btcData.priceChange24h) || 0) - avgChange24h) * 0.1 : 
+    0;
+  
+  // Volume change factor
+  const volumeFactor = topCoins.reduce((sum, coin) => {
+    // Higher volume usually means more market activity
+    return sum + (parseFloat(coin.volume24h) > 1000000 ? 2 : 0);
+  }, 0) / topCoins.length;
+  
+  // Calculate base score (0-100)
+  // 50 is neutral, <30 is extreme fear, >70 is extreme greed
+  let baseScore = 50; // Start at neutral
+  
+  // Price movement impact on sentiment
+  baseScore += avgChange24h * 2; // 24h change has bigger impact
+  baseScore += avgChange7d * 1; // 7d change has smaller impact
+  baseScore += btcDominanceFactor;
+  baseScore += volumeFactor;
+  
+  // Clamp score between 0 and 100
+  const score = Math.max(0, Math.min(100, Math.round(baseScore)));
+  
+  // Determine mood based on score
+  let mood;
+  if (score < 25) mood = 'extreme_fear';
+  else if (score < 40) mood = 'fear';
+  else if (score < 60) mood = 'neutral';
+  else if (score < 80) mood = 'greed';
+  else mood = 'extreme_greed';
+  
+  return {
+    sentiment: {
+      score,
+      mood,
+      change: Math.round(avgChange24h * 10) / 10, // Round to 1 decimal place
+      timestamp: new Date().toISOString()
+    }
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API routes
   app.get('/api/crypto/market', async (req, res) => {
@@ -24,6 +94,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching market data:', error);
       res.status(500).json({ message: 'Failed to fetch market data' });
+    }
+  });
+  
+  // Get market sentiment data
+  app.get('/api/crypto/sentiment', async (req, res) => {
+    try {
+      const sentimentData = await services.getSentimentData();
+      res.json(sentimentData);
+    } catch (error) {
+      console.error('Error fetching sentiment data:', error);
+      
+      // Use fallback data based on market trends if API fails
+      const marketData = await services.getMarketData();
+      const fallbackSentiment = calculateSentimentFromMarket(marketData);
+      res.json(fallbackSentiment);
     }
   });
 
