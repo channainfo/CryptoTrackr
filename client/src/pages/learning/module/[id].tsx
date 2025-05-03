@@ -90,6 +90,40 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
         section: nextSection
       });
       
+      // For demo user, also update localStorage
+      if (DEFAULT_USER_ID === 'demo') {
+        const savedProgressStr = localStorage.getItem('demo-learning-progress');
+        let savedProgress = [];
+        
+        if (savedProgressStr) {
+          try {
+            savedProgress = JSON.parse(savedProgressStr);
+          } catch (e) {
+            console.error("Error parsing progress:", e);
+          }
+        }
+        
+        const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
+        
+        if (existingProgress) {
+          existingProgress.lastCompletedSection = nextSection;
+          existingProgress.status = "in_progress";
+          existingProgress.updatedAt = new Date().toISOString();
+        } else {
+          savedProgress.push({
+            id: `demo-${id}`,
+            userId: DEFAULT_USER_ID,
+            moduleId: id,
+            status: "in_progress",
+            lastCompletedSection: nextSection,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+        
+        localStorage.setItem('demo-learning-progress', JSON.stringify(savedProgress));
+      }
+      
       setCurrentSection(nextSection);
     } else {
       // Complete the module if this is the last section
@@ -98,6 +132,42 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
         moduleId: id
       }, {
         onSuccess: () => {
+          // For demo user, also update localStorage
+          if (DEFAULT_USER_ID === 'demo') {
+            const savedProgressStr = localStorage.getItem('demo-learning-progress');
+            let savedProgress = [];
+            
+            if (savedProgressStr) {
+              try {
+                savedProgress = JSON.parse(savedProgressStr);
+              } catch (e) {
+                console.error("Error parsing progress:", e);
+              }
+            }
+            
+            const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
+            
+            if (existingProgress) {
+              existingProgress.lastCompletedSection = contentSections.length;
+              existingProgress.status = "completed";
+              existingProgress.updatedAt = new Date().toISOString();
+              existingProgress.completedAt = new Date().toISOString();
+            } else {
+              savedProgress.push({
+                id: `demo-${id}`,
+                userId: DEFAULT_USER_ID,
+                moduleId: id,
+                status: "completed",
+                lastCompletedSection: contentSections.length,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                completedAt: new Date().toISOString()
+              });
+            }
+            
+            localStorage.setItem('demo-learning-progress', JSON.stringify(savedProgress));
+          }
+          
           // If we have a quiz, go to it, otherwise go back to learning page
           if (moduleData?.quizzes?.length) {
             // Get the first quiz ID for this module

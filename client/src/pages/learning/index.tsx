@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -153,6 +153,65 @@ const LearningPage = () => {
   const modulesToDisplay = category === "all" 
     ? allModules 
     : categoryModules;
+  
+  // Create simulated progress for demo user based on completed modules
+  // This will generate progress data for our gems and achievements even though
+  // the server returns an empty array for the demo user
+  const [simulatedProgress, setSimulatedProgress] = useState<LearningProgress[]>([]);
+  
+  useEffect(() => {
+    if (allModules && (!userProgress || userProgress.length === 0)) {
+      // Check localStorage for any saved progress
+      const savedProgress = localStorage.getItem('demo-learning-progress');
+      if (savedProgress) {
+        try {
+          setSimulatedProgress(JSON.parse(savedProgress));
+        } catch (e) {
+          console.error("Failed to parse saved progress", e);
+          // Initialize with empty progress
+          setSimulatedProgress([]);
+        }
+      }
+    }
+  }, [allModules, userProgress]);
+  
+  // Update simulated progress when completing a module
+  useEffect(() => {
+    if (simulatedProgress.length > 0) {
+      localStorage.setItem('demo-learning-progress', JSON.stringify(simulatedProgress));
+    }
+  }, [simulatedProgress]);
+  
+  // Combine server progress with simulated progress
+  const effectiveProgress = userProgress?.length ? userProgress : simulatedProgress;
+  
+  // Helper to update simulated progress
+  const updateSimulatedProgress = (moduleId: string, status: "not_started" | "in_progress" | "completed", section = 0) => {
+    setSimulatedProgress(prev => {
+      const existingIndex = prev.findIndex(p => p.moduleId === moduleId);
+      if (existingIndex >= 0) {
+        // Update existing progress
+        const newProgress = [...prev];
+        newProgress[existingIndex] = {
+          ...newProgress[existingIndex],
+          status,
+          lastCompletedSection: section
+        };
+        return newProgress;
+      } else {
+        // Add new progress
+        return [...prev, {
+          id: `demo-${moduleId}`,
+          userId: DEFAULT_USER_ID,
+          moduleId,
+          status,
+          lastCompletedSection: section,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }];
+      }
+    });
+  };
   
   // Loading state
   const isLoading = isLoadingModules || 
@@ -324,7 +383,7 @@ const LearningPage = () => {
           <div className="lg:col-span-2">
             <LearningPath 
               modules={allModules || []} 
-              progress={userProgress}
+              progress={effectiveProgress}
               className="h-full"
             />
           </div>
@@ -333,7 +392,7 @@ const LearningPage = () => {
           <div>
             <AchievementGrid 
               modules={allModules || []} 
-              progress={userProgress}
+              progress={effectiveProgress}
               className="h-full"
             />
           </div>
@@ -356,7 +415,7 @@ const LearningPage = () => {
                   <ModuleCard 
                     key={module.id} 
                     module={module} 
-                    progress={userProgress}
+                    progress={effectiveProgress}
                   />
                 ))}
               </div>
