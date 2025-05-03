@@ -72,7 +72,7 @@ export class OpenAIService {
       // Fallback to a simple algorithm if AI fails
       // Just get the easiest uncompleted module
       const fallbackModule = availableModules
-        .filter(m => !moduleIdsCompleted.includes(m.id))
+        .filter(m => !completedIds.includes(m.id))
         .sort((a, b) => a.difficulty - b.difficulty)[0] || availableModules[0];
       
       return {

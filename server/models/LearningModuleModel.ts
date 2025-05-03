@@ -410,17 +410,22 @@ export class LearningModuleModel {
         
         // If not, find the first not-started module
         const allModuleIds = completedModuleIds.concat(inProgressModuleIds);
-        let query = db
-          .select()
-          .from(learningModules)
-          .orderBy(learningModules.order)
-          .limit(1);
-          
-        if (allModuleIds.length > 0) {
-          query = query.where(sql`${learningModules.id} NOT IN (${allModuleIds.join(', ')})`);
-        }
         
-        const notStartedModule = await query;
+        let notStartedModule;
+        if (allModuleIds.length > 0) {
+          notStartedModule = await db
+            .select()
+            .from(learningModules)
+            .where(sql`${learningModules.id} NOT IN (${allModuleIds.join(', ')})`)
+            .orderBy(learningModules.order)
+            .limit(1);
+        } else {
+          notStartedModule = await db
+            .select()
+            .from(learningModules)
+            .orderBy(learningModules.order)
+            .limit(1);
+        }
         
         return {
           module: notStartedModule[0],
