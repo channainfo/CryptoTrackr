@@ -52,10 +52,14 @@ export const usePortfolio = (portfolioId?: string | null) => {
   const addAssetMutation = useMutation({
     mutationFn: (asset: PortfolioAsset & { portfolioId?: string }) => {
       const endpoint = asset.portfolioId 
-        ? `/api/portfolio/${asset.portfolioId}/assets` 
+        ? `/api/portfolios/${asset.portfolioId}/assets` 
         : '/api/portfolio';
       
-      return apiRequest('POST', endpoint, asset);
+      return apiRequest({
+        url: endpoint,
+        method: 'POST',
+        data: asset
+      });
     },
     onSuccess: (_, variables) => {
       const queryKey = variables.portfolioId 
@@ -77,10 +81,13 @@ export const usePortfolio = (portfolioId?: string | null) => {
   const removeAssetMutation = useMutation({
     mutationFn: ({ assetId, portfolioId }: { assetId: string, portfolioId?: string }) => {
       const endpoint = portfolioId
-        ? `/api/portfolio/${portfolioId}/assets/${assetId}`
+        ? `/api/portfolios/${portfolioId}/assets/${assetId}`
         : `/api/portfolio/${assetId}`;
       
-      return apiRequest('DELETE', endpoint);
+      return apiRequest({
+        url: endpoint,
+        method: 'DELETE'
+      });
     },
     onSuccess: (_, variables) => {
       const queryKey = variables.portfolioId 
