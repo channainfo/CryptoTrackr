@@ -115,6 +115,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(fallbackSentiment);
     }
   });
+  
+  // Get all available tokens
+  app.get('/api/crypto/tokens', async (req, res) => {
+    try {
+      // Get tokens from database, or fetch from market data if needed
+      let tokensList = await db.select().from(tokens);
+      
+      // If no tokens in database, get them from market data
+      if (!tokensList.length) {
+        const marketData = await services.getMarketData();
+        // Use the market data as tokens list
+        tokensList = marketData.map(coin => ({
+          id: coin.id,
+          symbol: coin.symbol,
+          name: coin.name,
+          imageUrl: coin.image || null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+        
+        // Store the tokens in the database for future use
+        if (tokensList.length) {
+          await db.insert(tokens).values(tokensList);
+        }
+      }
+      
+      res.json(tokensList);
+    } catch (error) {
+      console.error('Error fetching tokens:', error);
+      res.status(500).json({ message: 'Failed to fetch tokens data' });
+    }
+  });
 
   // Get portfolio assets (all portfolios)
   app.get('/api/portfolio', async (req, res) => {
