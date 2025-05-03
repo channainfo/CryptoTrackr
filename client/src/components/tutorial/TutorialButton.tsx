@@ -1,37 +1,37 @@
 import React from 'react';
-import { useTutorial } from '@/contexts/TutorialContext';
-import { Button } from '@/components/ui/button';
 import { HelpCircle } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTutorial } from '@/contexts/TutorialContext';
 
 const TutorialButton = () => {
-  const { startTutorial } = useTutorial();
+  const { startTutorial, tutorialCompleted } = useTutorial();
 
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={startTutorial}
-            className="fixed bottom-5 right-5 z-50 bg-primary text-white hover:bg-primary/90 shadow-lg rounded-full h-12 w-12"
-          >
-            <HelpCircle className="h-6 w-6" />
-            <span className="sr-only">Start Tutorial</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Start Tutorial</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+  if (tutorialCompleted) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="secondary" 
+                size="icon" 
+                className="rounded-full shadow-md"
+                onClick={startTutorial}
+              >
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>Start app tutorial</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 export default TutorialButton;

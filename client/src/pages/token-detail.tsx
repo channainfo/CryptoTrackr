@@ -132,11 +132,13 @@ export default function TokenDetailPage() {
           </div>
 
           {/* Performance Chart */}
-          <TokenPerformance 
-            portfolioTokenId={params.portfolioTokenId} 
-            tokenName={tokenDetails.tokenInfo?.name || tokenDetails.name}
-            tokenSymbol={tokenDetails.tokenInfo?.symbol || tokenDetails.symbol}
-          />
+          <div className="tutorial-token-performance">
+            <TokenPerformance 
+              portfolioTokenId={params.portfolioTokenId} 
+              tokenName={tokenDetails.tokenInfo?.name || tokenDetails.name}
+              tokenSymbol={tokenDetails.tokenInfo?.symbol || tokenDetails.symbol}
+            />
+          </div>
         </>
       )}
     </div>
