@@ -11,6 +11,7 @@ import TokenDetail from "@/pages/token-detail";
 import Transactions from "@/pages/transactions";
 import Markets from "@/pages/markets";
 import Settings from "@/pages/settings";
+import TaxReport from "@/pages/tax-report";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
