@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Joyride, { CallBackProps, Step } from 'react-joyride';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
 
 // Props interface
 interface OnboardingWizardProps {
@@ -36,6 +37,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   steps 
 }) => {
   const { toast } = useToast();
+  const { theme } = useTheme();
   const [run, setRun] = useState(showTour);
   const [stepIndex, setStepIndex] = useState(0);
   
@@ -95,6 +97,12 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
     return null;
   }
 
+  // Determine the styles based on the current theme
+  const isDarkTheme = theme === 'dark';
+  
+  // Debug current theme
+  console.log('OnboardingWizard: Current theme is', theme);
+  
   return (
     <Joyride
       callback={handleJoyrideCallback}
@@ -112,18 +120,46 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         options: {
           zIndex: 10000,
           primaryColor: '#3b82f6', // blue-500
-          backgroundColor: 'var(--background)',
-          textColor: 'var(--foreground)',
-          arrowColor: 'var(--background)',
+          // Theme-specific colors
+          backgroundColor: isDarkTheme ? '#27272a' : '#ffffff', // Dark gray in dark mode, white in light mode
+          textColor: isDarkTheme ? '#f1f5f9' : '#333333', // Light text in dark mode, dark text in light mode
+          arrowColor: isDarkTheme ? '#27272a' : '#ffffff', // Match tooltip background
+          overlayColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent overlay
         },
         tooltipContainer: {
           textAlign: 'left',
+          boxShadow: isDarkTheme 
+            ? '0 4px 12px rgba(0, 0, 0, 0.5)' 
+            : '0 4px 12px rgba(0, 0, 0, 0.15)',
         },
         buttonNext: {
-          backgroundColor: '#3b82f6',
+          backgroundColor: '#3b82f6', // Always blue
+          color: 'white',
         },
         buttonBack: {
           marginRight: 10,
+          color: isDarkTheme ? '#f1f5f9' : '#333333',
+        },
+        buttonSkip: {
+          color: isDarkTheme ? '#f1f5f9' : '#333333',
+        },
+        tooltip: {
+          fontSize: '14px',
+          padding: '15px',
+          borderRadius: '6px',
+        },
+        tooltipContent: {
+          padding: '5px 0',
+          color: isDarkTheme ? '#f1f5f9' : '#333333',
+        },
+        tooltipTitle: {
+          fontSize: '16px',
+          fontWeight: 'bold',
+          color: isDarkTheme ? 'white' : '#111827',
+        },
+        beacon: {
+          animation: 'pulse',
+          background: '#3b82f6', // Always blue
         },
       }}
     />
