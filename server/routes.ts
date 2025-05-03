@@ -456,11 +456,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const defaultUser = await storage.getUserByUsername('demo') || 
         await storage.createUser({ username: 'demo', password: 'password' });
       
+      console.log("Creating portfolio with data:", JSON.stringify(req.body, null, 2));
+      console.log("Is watchlist flag in request:", req.body.isWatchlist);
+      
+      // Make sure isWatchlist is a boolean, not a string
+      const isWatchlist = req.body.isWatchlist === true || req.body.isWatchlist === "true";
+      console.log("Converted isWatchlist value:", isWatchlist);
+      
       const portfolioData = {
         name: req.body.name,
         description: req.body.description,
         isDefault: req.body.isDefault || false,
-        isWatchlist: req.body.isWatchlist || false,
+        isWatchlist: isWatchlist,
         userId: defaultUser.id
       };
       

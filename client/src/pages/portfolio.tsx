@@ -173,12 +173,18 @@ const Portfolio = () => {
       activeTab
     });
     
-    createPortfolioMutation.mutate({
+    // Make sure isWatchlist is explicitly set as a boolean to avoid type conversion issues
+    const requestData = {
       name: newPortfolioName,
       description: newPortfolioDescription || undefined,
       isDefault: isDefaultPortfolio,
-      isWatchlist: isWatchlist
-    });
+      // Explicitly use Boolean constructor to force true/false value
+      isWatchlist: Boolean(isWatchlist)
+    };
+    
+    console.log("Sending portfolio creation request:", requestData);
+    
+    createPortfolioMutation.mutate(requestData);
   };
 
   // Get portfolio count by type for badges

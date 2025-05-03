@@ -31,15 +31,23 @@ export const usePortfolios = (type?: 'all' | 'watchlist' | 'standard') => {
       })
       .then(data => {
         if (Array.isArray(data)) {
-          console.log(`Received ${data.length} portfolios from server`);
-          // Double-check that we're getting the right type of portfolios
+          console.log(`Received ${data.length} portfolios from server before filtering`);
+          data.forEach(p => {
+            console.log(`Portfolio ${p.name}: isWatchlist=${p.isWatchlist}`);
+          });
+          
+          // Double-check client-side to ensure we only get the correct portfolios
+          let filteredData = data;
           if (type === 'watchlist') {
-            console.log('Ensuring only watchlist portfolios are included');
-            return data.filter(p => p.isWatchlist === true);
+            console.log('Client-side filter: ensuring only watchlist portfolios are included');
+            filteredData = data.filter(p => Boolean(p.isWatchlist) === true);
           } else if (type === 'standard') {
-            console.log('Ensuring only standard portfolios are included');
-            return data.filter(p => p.isWatchlist === false);
+            console.log('Client-side filter: ensuring only standard portfolios are included');
+            filteredData = data.filter(p => Boolean(p.isWatchlist) === false);
           }
+          
+          console.log(`After filtering for ${type}: ${filteredData.length} portfolios`);
+          return filteredData;
         }
         return data;
       })
