@@ -314,7 +314,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const defaultUser = await storage.getUserByUsername('demo') || 
         await storage.createUser({ username: 'demo', password: 'password' });
       
-      const portfolios = await storage.getUserPortfolios(defaultUser.id);
+      // Get filter parameters
+      const type = req.query.type as string;
+      
+      // Get all portfolios for this user
+      let portfolios = await storage.getUserPortfolios(defaultUser.id);
+      
+      // Apply filters if specified
+      if (type === 'watchlist') {
+        portfolios = portfolios.filter(p => p.isWatchlist);
+      } else if (type === 'standard') {
+        portfolios = portfolios.filter(p => !p.isWatchlist);
+      }
+      
       res.json(portfolios);
     } catch (error) {
       console.error('Error fetching user portfolios:', error);
