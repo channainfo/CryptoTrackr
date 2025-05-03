@@ -70,9 +70,8 @@ export class OpenAIService {
       console.error("Error getting personalized recommendation:", error);
       
       // Fallback to a simple algorithm if AI fails
-      // Just get the easiest uncompleted module
+      // Just get the first module sorted by difficulty
       const fallbackModule = availableModules
-        .filter(m => !completedIds.includes(m.id))
         .sort((a, b) => a.difficulty - b.difficulty)[0] || availableModules[0];
       
       return {

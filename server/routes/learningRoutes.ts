@@ -234,75 +234,55 @@ router.get("/stats/:userId", async (req, res) => {
   }
 });
 
-// Get next recommended module
+// Get next recommended module with AI-powered personalization
 router.get("/recommended/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     
-    // Special handling for demo user - recommend first module by order
-    if (userId === 'demo') {
+    // Dynamic import to avoid circular dependencies
+    const { LearningModuleModel } = await import("../models/LearningModuleModel");
+    
+    // Use the AI-powered recommendation engine
+    const recommendation = await LearningModuleModel.getNextRecommendedModule(userId);
+    
+    // If we couldn't get a recommendation or if there's no module, handle gracefully
+    if (!recommendation || !recommendation.module) {
+      // Fallback to first module by order if AI recommendation fails
       const [firstModule] = await db
         .select()
         .from(learningModules)
         .orderBy(learningModules.order);
       
-      return res.json(firstModule || null);
+      return res.json({
+        ...firstModule,
+        explanation: "Start with the basics and build a solid foundation."
+      });
     }
     
-    // Get user progress
-    const userProgress = await db
-      .select()
-      .from(userLearningProgress)
-      .where(eq(userLearningProgress.userId, userId));
+    // Return module with explanation from AI
+    res.json({
+      ...recommendation.module,
+      explanation: recommendation.explanation
+    });
+  } catch (error) {
+    console.error("Error fetching AI-recommended module:", error);
     
-    // Extract IDs of completed modules
-    const completedModuleIds = userProgress
-      .filter(p => p.status === "completed")
-      .map(p => p.moduleId);
-    
-    // Extract IDs of in-progress modules
-    const inProgressModuleIds = userProgress
-      .filter(p => p.status === "in_progress")
-      .map(p => p.moduleId);
-    
-    // First, recommend any in-progress module
-    if (inProgressModuleIds.length > 0) {
-      const [inProgressModule] = await db
+    // Fallback to basic recommendation if AI fails
+    try {
+      // Just get first module by order as fallback
+      const [firstModule] = await db
         .select()
         .from(learningModules)
-        .where(inArray(learningModules.id, inProgressModuleIds))
         .orderBy(learningModules.order);
       
-      if (inProgressModule) {
-        return res.json(inProgressModule);
-      }
+      return res.json({
+        ...firstModule,
+        explanation: "Let's start with this beginner-friendly module."
+      });
+    } catch (fallbackError) {
+      console.error("Error in fallback recommendation:", fallbackError);
+      res.status(500).json({ message: "Failed to fetch recommended module" });
     }
-    
-    // Otherwise, recommend the next not-started module by order
-    const [nextModule] = await db
-      .select()
-      .from(learningModules)
-      .where(
-        completedModuleIds.length > 0
-          ? sql`${learningModules.id} NOT IN (${completedModuleIds.join(',')})`
-          : sql`1=1` // If no completed modules, recommend any module
-      )
-      .orderBy(learningModules.order);
-    
-    if (nextModule) {
-      return res.json(nextModule);
-    }
-    
-    // If no modules found (unlikely), return first module
-    const [firstModule] = await db
-      .select()
-      .from(learningModules)
-      .orderBy(learningModules.order);
-    
-    res.json(firstModule || null);
-  } catch (error) {
-    console.error("Error fetching recommended module:", error);
-    res.status(500).json({ message: "Failed to fetch recommended module" });
   }
 });
 
