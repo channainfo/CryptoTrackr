@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ModuleSkeleton, ModuleSkeletonList } from "@/components/learning/ModuleSkeleton";
 import LearningPath from "@/components/learning/LearningPath";
 import AchievementGrid from "@/components/learning/AchievementGrid";
+import ShareableAchievementsGrid from "@/components/learning/ShareableAchievementsGrid";
 import { 
   useLearningModules, 
   useLearningModulesByCategory,
@@ -364,44 +365,7 @@ const LearningPage = () => {
           </Card>
         )}
         
-        {recommendedModule && (
-          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <BookOpen className="mr-2 w-5 h-5" /> Recommended Next Module
-              </CardTitle>
-              <CardDescription>Continue your learning journey with this recommended module</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-grow">
-                  <h3 className="text-lg font-semibold">{recommendedModule.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">{recommendedModule.description}</p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>{recommendedModule.estimatedMinutes} minutes</span>
-                    <span className="mx-1">•</span>
-                    <Badge 
-                      variant="outline" 
-                      className={`${CategoryColors[recommendedModule.category as LearningCategory]} text-white`}
-                    >
-                      <span className="mr-1">
-                        {CategoryIcons[recommendedModule.category as LearningCategory]}
-                      </span> 
-                      {recommendedModule.category.charAt(0).toUpperCase() + recommendedModule.category.slice(1)}
-                    </Badge>
-                  </div>
-                </div>
-                <Button asChild>
-                  <Link to={`/learning/module/${recommendedModule.id}`}>
-                    Start Learning
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+{/* Recommended module is now in the sidebar */}
         
         {/* Two-column layout for larger screens */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -410,17 +374,106 @@ const LearningPage = () => {
             <LearningPath 
               modules={allModules || []} 
               progress={effectiveProgress}
-              className="h-full"
+              className="h-full mb-8"
             />
+            
+            {/* ShareableAchievements (tabs version) */}
+            <Tabs defaultValue="achievements" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="achievements">My Achievements</TabsTrigger>
+                <TabsTrigger value="shareable">Shareable Cards</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="achievements">
+                <AchievementGrid 
+                  modules={allModules || []} 
+                  progress={effectiveProgress}
+                  className="h-full"
+                />
+              </TabsContent>
+              
+              <TabsContent value="shareable">
+                <ShareableAchievementsGrid
+                  modules={allModules || []} 
+                  progress={effectiveProgress}
+                  className="h-full"
+                />
+              </TabsContent>
+            </Tabs>
           </div>
           
-          {/* Right column with Achievement Grid - takes 1/3 of space */}
+          {/* Right column with next recommended module */}
           <div>
-            <AchievementGrid 
-              modules={allModules || []} 
-              progress={effectiveProgress}
-              className="h-full"
-            />
+            <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <BookOpen className="mr-2 w-5 h-5" /> Your Learning Journey
+                </CardTitle>
+                <CardDescription>Track your progress and achievements</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Overall Completion</span>
+                      <span>{effectiveStats?.completionPercentage || 0}%</span>
+                    </div>
+                    <Progress value={effectiveStats?.completionPercentage || 0} className="h-2" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 border rounded-lg text-center">
+                      <div className="text-xl font-bold">{effectiveStats?.completedModules || 0}</div>
+                      <div className="text-xs text-muted-foreground">Completed</div>
+                    </div>
+                    <div className="p-3 border rounded-lg text-center">
+                      <div className="text-xl font-bold">{effectiveStats?.inProgressModules || 0}</div>
+                      <div className="text-xs text-muted-foreground">In Progress</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {recommendedModule && (
+              <Card className="mb-8 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 border-indigo-200 dark:border-indigo-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center text-lg">
+                    <ArrowRight className="mr-2 w-5 h-5" /> Next Up
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-medium">{recommendedModule.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">{recommendedModule.description}</p>
+                      
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                        <Clock className="w-4 h-4" />
+                        <span>{recommendedModule.estimatedMinutes} minutes</span>
+                        <span className="mx-1">•</span>
+                        <Badge 
+                          variant="outline" 
+                          className={`${CategoryColors[recommendedModule.category as LearningCategory]} text-white`}
+                        >
+                          <span className="mr-1">
+                            {CategoryIcons[recommendedModule.category as LearningCategory]}
+                          </span> 
+                          {recommendedModule.category.charAt(0).toUpperCase() + recommendedModule.category.slice(1)}
+                        </Badge>
+                      </div>
+                      
+                      <Button asChild className="w-full">
+                        <Link to={`/learning/module/${recommendedModule.id}`}>
+                          Start Learning
+                          <ArrowRight className="ml-2 w-4 h-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
         

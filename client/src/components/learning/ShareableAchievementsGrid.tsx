@@ -13,8 +13,7 @@ interface ShareableAchievementsGridProps {
   className?: string;
 }
 
-// Import our achievement definitions
-import { generateAchievements } from '@/lib/achievements';
+// Use our achievement definitions
 
 export const ShareableAchievementsGrid: React.FC<ShareableAchievementsGridProps> = ({
   modules,
