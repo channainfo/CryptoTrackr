@@ -9,18 +9,38 @@ interface TransactionListProps {
   limit?: number;
   showViewAll?: boolean;
   portfolioId?: string;
+  transactionType?: 'buy' | 'sell' | 'all';
 }
 
-const TransactionList = ({ limit = 3, showViewAll = true, portfolioId }: TransactionListProps) => {
+const TransactionList = ({ 
+  limit = 3, 
+  showViewAll = true, 
+  portfolioId,
+  transactionType = 'all'
+}: TransactionListProps) => {
   const { transactions, isLoading } = usePortfolio(portfolioId);
   
-  const displayedTransactions = limit ? transactions.slice(0, limit) : transactions;
+  // Filter transactions by type if specified
+  const filteredTransactions = transactionType === 'all' 
+    ? transactions 
+    : transactions.filter(tx => tx.type === transactionType);
+  
+  // Apply limit if specified
+  const displayedTransactions = limit 
+    ? filteredTransactions.slice(0, limit) 
+    : filteredTransactions;
   
   return (
     <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold dark:text-white">Recent Transactions</h3>
+          <h3 className="text-lg font-semibold dark:text-white">
+            {transactionType === 'buy' 
+              ? 'Buy Transactions' 
+              : transactionType === 'sell' 
+                ? 'Sell Transactions' 
+                : 'Recent Transactions'}
+          </h3>
           {showViewAll && (
             <button className="text-primary text-sm font-medium dark:text-blue-400">View All</button>
           )}

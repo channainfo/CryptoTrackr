@@ -38,19 +38,15 @@ const Transactions = () => {
               </TabsList>
               
               <TabsContent value="all">
-                <TransactionList limit={20} showViewAll={false} />
+                <TransactionList limit={20} showViewAll={false} transactionType="all" />
               </TabsContent>
               
               <TabsContent value="buy">
-                <p className="text-neutral-mid dark:text-gray-400 py-6 text-center">
-                  Filtering by buy transactions will be implemented in a future update.
-                </p>
+                <TransactionList limit={20} showViewAll={false} transactionType="buy" />
               </TabsContent>
               
               <TabsContent value="sell">
-                <p className="text-neutral-mid dark:text-gray-400 py-6 text-center">
-                  Filtering by sell transactions will be implemented in a future update.
-                </p>
+                <TransactionList limit={20} showViewAll={false} transactionType="sell" />
               </TabsContent>
             </Tabs>
           </CardContent>
