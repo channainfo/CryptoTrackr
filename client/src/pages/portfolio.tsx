@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { PlusIcon, FolderPlus } from "lucide-react";
+import { PlusIcon, FolderPlus, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import PortfolioCard from "@/components/portfolio/PortfolioCard";
 import { usePortfolios } from "@/hooks/usePortfolios";
+import { CryptoTerm } from "@/components/education/CryptoTerm";
+import { Link } from "wouter";
 
 const Portfolio = () => {
   const [, setLocation] = useLocation();
@@ -17,12 +19,20 @@ const Portfolio = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold dark:text-white">My Portfolios</h2>
-          <p className="text-neutral-mid dark:text-gray-400 mt-1">View and manage your cryptocurrency portfolios</p>
+          <p className="text-neutral-mid dark:text-gray-400 mt-1">
+            View and manage your <CryptoTerm termKey="portfolio-diversification">diversified</CryptoTerm> cryptocurrency portfolios
+          </p>
         </div>
         <div className="mt-4 sm:mt-0 space-x-2">
           <Button onClick={() => setLocation("/portfolio/create")}>
             <FolderPlus className="h-4 w-4 mr-1" />
             Create Portfolio
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/learning/glossary">
+              <BookOpen className="h-4 w-4 mr-1" />
+              Crypto Glossary
+            </Link>
           </Button>
         </div>
       </div>
@@ -67,7 +77,7 @@ const Portfolio = () => {
                 <FolderPlus className="h-12 w-12 text-neutral-mid mx-auto mb-4" />
                 <h3 className="text-xl font-medium mb-2 dark:text-white">No Portfolios Found</h3>
                 <p className="text-neutral-mid dark:text-gray-400 mb-6">
-                  Create your first portfolio to start tracking your crypto assets.
+                  Create your first portfolio to start <CryptoTerm termKey="hodl">holding</CryptoTerm> and <CryptoTerm termKey="dca">investing</CryptoTerm> in crypto assets.
                 </p>
                 <Button onClick={() => setLocation("/portfolio/create")}>
                   <FolderPlus className="h-4 w-4 mr-2" />
