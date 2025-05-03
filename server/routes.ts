@@ -6,12 +6,16 @@ import { z } from "zod";
 import { 
   insertPortfolioSchema, 
   insertTransactionSchema, 
+  insertAlertSchema,
   portfolioTokens, 
-  tokens 
+  tokens,
+  alerts
 } from "@shared/schema";
 import { services } from "./services/cryptoApi";
 import { HistoricalValueService } from "./services";
 import { TaxCalculationModel } from "./models/TaxCalculationModel";
+import { AlertModel } from "./models/AlertModel";
+import { AlertService } from "./services/AlertService";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -649,6 +653,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error calculating tax data:', error);
       res.status(500).json({ message: 'Failed to calculate tax data' });
+    }
+  });
+
+  // Alert endpoints
+  // Get all alerts for a user
+  app.get('/api/alerts', async (req, res) => {
+    try {
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      const alerts = await AlertModel.findWithTokenDetailsByUserId(defaultUser.id);
+      res.json(alerts);
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      res.status(500).json({ message: 'Failed to fetch alerts' });
+    }
+  });
+
+  // Get alert by ID
+  app.get('/api/alerts/:alertId', async (req, res) => {
+    try {
+      const alertId = req.params.alertId;
+      if (!alertId) {
+        return res.status(400).json({ message: 'Invalid alert ID' });
+      }
+      
+      const alert = await AlertModel.findById(alertId);
+      if (!alert) {
+        return res.status(404).json({ message: 'Alert not found' });
+      }
+      
+      res.json(alert);
+    } catch (error) {
+      console.error('Error fetching alert:', error);
+      res.status(500).json({ message: 'Failed to fetch alert' });
+    }
+  });
+
+  // Create new alert
+  app.post('/api/alerts', async (req, res) => {
+    try {
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Validate request body using Zod schema
+      const validatedData = insertAlertSchema.parse({
+        ...req.body,
+        userId: defaultUser.id
+      });
+      
+      const alert = await AlertModel.create(validatedData);
+      
+      // Return the created alert with formatted threshold and type label
+      res.status(201).json({
+        ...alert,
+        formattedThreshold: AlertService.formatThreshold(alert.alertType, Number(alert.threshold)),
+        typeLabel: AlertService.getAlertTypeLabel(alert.alertType)
+      });
+    } catch (error) {
+      console.error('Error creating alert:', error);
+      res.status(400).json({ message: 'Invalid alert data', error: error.message });
+    }
+  });
+
+  // Update alert
+  app.patch('/api/alerts/:alertId', async (req, res) => {
+    try {
+      const alertId = req.params.alertId;
+      if (!alertId) {
+        return res.status(400).json({ message: 'Invalid alert ID' });
+      }
+      
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if alert exists
+      const alert = await AlertModel.findById(alertId);
+      if (!alert) {
+        return res.status(404).json({ message: 'Alert not found' });
+      }
+      
+      // Make sure this alert belongs to the current user
+      if (alert.userId !== defaultUser.id) {
+        return res.status(403).json({ message: 'Not authorized to update this alert' });
+      }
+      
+      // Update data
+      const updateData = {
+        alertType: req.body.alertType,
+        threshold: req.body.threshold,
+        status: req.body.status,
+        notificationMethod: req.body.notificationMethod,
+        name: req.body.name,
+        description: req.body.description
+      };
+      
+      const updatedAlert = await AlertModel.update(alertId, updateData);
+      
+      // Return the updated alert with formatted threshold and type label
+      res.json({
+        ...updatedAlert,
+        formattedThreshold: AlertService.formatThreshold(updatedAlert.alertType, Number(updatedAlert.threshold)),
+        typeLabel: AlertService.getAlertTypeLabel(updatedAlert.alertType)
+      });
+    } catch (error) {
+      console.error('Error updating alert:', error);
+      res.status(400).json({ message: 'Invalid alert data', error: error.message });
+    }
+  });
+
+  // Delete alert
+  app.delete('/api/alerts/:alertId', async (req, res) => {
+    try {
+      const alertId = req.params.alertId;
+      if (!alertId) {
+        return res.status(400).json({ message: 'Invalid alert ID' });
+      }
+      
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if alert exists
+      const alert = await AlertModel.findById(alertId);
+      if (!alert) {
+        return res.status(404).json({ message: 'Alert not found' });
+      }
+      
+      // Make sure this alert belongs to the current user
+      if (alert.userId !== defaultUser.id) {
+        return res.status(403).json({ message: 'Not authorized to delete this alert' });
+      }
+      
+      await AlertModel.delete(alertId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting alert:', error);
+      res.status(500).json({ message: 'Failed to delete alert' });
+    }
+  });
+
+  // Check alerts (manual trigger for testing)
+  app.post('/api/alerts/check', async (req, res) => {
+    try {
+      const results = await AlertService.checkAllAlerts();
+      const triggeredAlerts = results.filter(result => result.triggered);
+      
+      res.json({
+        totalChecked: results.length,
+        triggered: triggeredAlerts.length,
+        results
+      });
+    } catch (error) {
+      console.error('Error checking alerts:', error);
+      res.status(500).json({ message: 'Failed to check alerts' });
     }
   });
 
