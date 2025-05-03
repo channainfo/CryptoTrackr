@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import SummaryCard from "@/components/dashboard/SummaryCard";
 import PortfolioChart from "@/components/dashboard/PortfolioChart";
 import PortfolioPerformance from "@/components/dashboard/PortfolioPerformance";
+import PortfolioRebalance from "@/components/dashboard/PortfolioRebalance";
 import AssetTable from "@/components/dashboard/AssetTable";
 import TransactionList from "@/components/dashboard/TransactionList";
 import MarketTrends from "@/components/dashboard/MarketTrends";
@@ -193,9 +194,14 @@ const Dashboard = () => {
               <AssetTable portfolioId={selectedPortfolioId} />
             </div>
             
-            {/* Portfolio Performance */}
-            <div className="mb-6 tutorial-performance">
-              <PortfolioPerformance portfolioId={selectedPortfolioId} />
+            {/* Portfolio Performance & Rebalance */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="tutorial-performance">
+                <PortfolioPerformance portfolioId={selectedPortfolioId} />
+              </div>
+              <div className="tutorial-rebalance">
+                <PortfolioRebalance portfolioId={selectedPortfolioId} />
+              </div>
             </div>
             
             {/* Recent Transactions & Market Insights */}
