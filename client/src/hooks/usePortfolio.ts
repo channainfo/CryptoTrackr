@@ -66,7 +66,10 @@ export const usePortfolio = (portfolioId?: string | null) => {
         ? ['/api/portfolio', variables.portfolioId] 
         : ['/api/portfolio'];
       
+      // Invalidate both portfolio and transactions queries since new assets
+      // should create new transaction records
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
     },
     onError: (error) => {
       toast({
@@ -94,7 +97,10 @@ export const usePortfolio = (portfolioId?: string | null) => {
         ? ['/api/portfolio', variables.portfolioId] 
         : ['/api/portfolio'];
       
+      // Invalidate both portfolio and transactions queries since removing an asset 
+      // should create a new sell transaction record
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
     },
     onError: (error) => {
       toast({
@@ -267,7 +273,10 @@ export const usePortfolio = (portfolioId?: string | null) => {
         ? ['/api/portfolio', variables.portfolioId] 
         : ['/api/portfolio'];
       
+      // Invalidate both portfolio and transactions queries since partial sells 
+      // should create new transaction records
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
     },
     onError: (error) => {
       toast({
