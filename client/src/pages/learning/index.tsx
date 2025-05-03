@@ -13,6 +13,8 @@ import { ModuleSkeleton, ModuleSkeletonList } from "@/components/learning/Module
 import LearningPath from "@/components/learning/LearningPath";
 import AchievementGrid from "@/components/learning/AchievementGrid";
 import ShareableAchievementsGrid from "@/components/learning/ShareableAchievementsGrid";
+import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
+import { useOnboarding } from "@/hooks/use-onboarding";
 import { 
   useLearningModules, 
   useLearningModulesByCategory,
