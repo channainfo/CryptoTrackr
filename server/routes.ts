@@ -91,6 +91,9 @@ function calculateSentimentFromMarket(marketData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register learning routes
+  app.use('/api/learning', learningRoutes);
+  
   // Set up API routes
   app.get('/api/crypto/market', async (req, res) => {
     try {

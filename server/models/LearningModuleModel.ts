@@ -65,7 +65,7 @@ export class LearningModuleModel {
     return db
       .select()
       .from(learningModules)
-      .where(eq(learningModules.category, category))
+      .where(eq(learningModules.category as any, category))
       .orderBy(learningModules.order);
   }
 
