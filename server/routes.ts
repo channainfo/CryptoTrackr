@@ -18,6 +18,7 @@ import { AlertModel } from "./models/AlertModel";
 import { AlertService } from "./services/AlertService";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import learningRoutes from "./routes/learningRoutes";
 
 // Utility function to calculate market sentiment based on market data
 function calculateSentimentFromMarket(marketData: any[]) {
