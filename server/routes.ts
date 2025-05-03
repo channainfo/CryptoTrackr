@@ -126,18 +126,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!tokensList.length) {
         const marketData = await services.getMarketData();
         // Use the market data as tokens list
-        tokensList = marketData.map(coin => ({
+        const tokensToInsert = marketData.map(coin => ({
           id: coin.id,
           symbol: coin.symbol,
           name: coin.name,
+          description: null,
+          tokenRank: coin.market_cap_rank || null,
           imageUrl: coin.image || null,
+          chain: 'default', // Default chain
+          contractAddress: null,
+          decimals: 18, // Default for most tokens
+          totalSupply: null,
+          maxSupply: null,
+          isVerified: true,
+          launchedAt: null,
           createdAt: new Date(),
           updatedAt: new Date()
         }));
         
         // Store the tokens in the database for future use
-        if (tokensList.length) {
-          await db.insert(tokens).values(tokensList);
+        if (tokensToInsert.length) {
+          try {
+            await db.insert(tokens).values(tokensToInsert);
+            tokensList = await db.select().from(tokens);
+          } catch (insertError) {
+            console.error('Error inserting tokens:', insertError);
+            // If there's an error inserting, still return the market data
+            tokensList = tokensToInsert;
+          }
         }
       }
       

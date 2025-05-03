@@ -14,8 +14,21 @@ interface ApiRequestOptions {
   data?: unknown;
 }
 
-export async function apiRequest(options: ApiRequestOptions): Promise<any> {
-  const { url, method, data } = options;
+export async function apiRequest(urlOrOptions: string | ApiRequestOptions, config?: Omit<ApiRequestOptions, 'url'>): Promise<any> {
+  let url: string;
+  let method: string = 'GET';
+  let data: unknown;
+  
+  // Handle both formats of the function call
+  if (typeof urlOrOptions === 'string') {
+    url = urlOrOptions;
+    method = config?.method || 'GET';
+    data = config?.data;
+  } else {
+    url = urlOrOptions.url;
+    method = urlOrOptions.method;
+    data = urlOrOptions.data;
+  }
   
   const res = await fetch(url, {
     method: method,
@@ -25,6 +38,12 @@ export async function apiRequest(options: ApiRequestOptions): Promise<any> {
   });
 
   await throwIfResNotOk(res);
+  
+  // Only try to parse JSON for non-empty responses and non-DELETE methods
+  if (method === 'DELETE' || res.headers.get('Content-Length') === '0') {
+    return null;
+  }
+  
   return await res.json();
 }
 
