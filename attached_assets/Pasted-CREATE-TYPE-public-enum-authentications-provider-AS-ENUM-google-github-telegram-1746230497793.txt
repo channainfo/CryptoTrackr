@@ -1,0 +1,470 @@
+CREATE TYPE public.enum_authentications_provider AS ENUM (
+    'google',
+    'github',
+    'telegram',
+    'telegram-hash',
+    'sui',
+    'sol',
+    'base'
+);
+
+
+ALTER TYPE public.enum_authentications_provider OWNER TO postgres;
+
+--
+-- TOC entry 723 (class 1247 OID 2434854)
+-- Name: enum_transactions_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.enum_transactions_type AS ENUM (
+    'buy',
+    'sell'
+);
+
+
+ALTER TYPE public.enum_transactions_type OWNER TO postgres;
+
+--
+-- TOC entry 732 (class 1247 OID 9013851)
+-- Name: enum_user_jobs_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.enum_user_jobs_status AS ENUM (
+    'pending',
+    'in_progress',
+    'completed',
+    'failed'
+);
+
+
+ALTER TYPE public.enum_user_jobs_status OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 219 (class 1259 OID 2173349)
+-- Name: SequelizeMeta; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SequelizeMeta" (
+    name character varying(255) NOT NULL
+);
+
+
+ALTER TABLE public."SequelizeMeta" OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 2203444)
+-- Name: authentications; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.authentications (
+    id uuid NOT NULL,
+    "userId" uuid NOT NULL,
+    provider public.enum_authentications_provider NOT NULL,
+    "providerId" character varying(255) NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.authentications OWNER TO postgres;
+
+--
+-- TOC entry 236 (class 1259 OID 2544714)
+-- Name: portfolio_token_summaries; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.portfolio_token_summaries (
+    id uuid NOT NULL,
+    "userId" uuid NOT NULL,
+    "totalAmount" numeric(18,8) DEFAULT 0.00000000 NOT NULL,
+    "totalInvested" numeric(18,8) DEFAULT 0.00000000 NOT NULL,
+    "totalProfitLoss" numeric(18,8) DEFAULT 0.00000000 NOT NULL,
+    "totalBuyCount" integer DEFAULT 0 NOT NULL,
+    "totalSellCount" integer DEFAULT 0 NOT NULL,
+    "lastUpdated" timestamp with time zone NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.portfolio_token_summaries OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 2273462)
+-- Name: portfolio_tokens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.portfolio_tokens (
+    id uuid NOT NULL,
+    "userId" uuid NOT NULL,
+    "portfolioId" uuid NOT NULL,
+    "tokenId" uuid NOT NULL,
+    amount numeric(18,8) DEFAULT 0 NOT NULL,
+    "averageBuyPrice" numeric(18,8) DEFAULT 0 NOT NULL,
+    "totalInvested" numeric(18,8) DEFAULT 0 NOT NULL,
+    "currentPrice" numeric(18,8) DEFAULT 0 NOT NULL,
+    "totalValue" numeric(18,8) DEFAULT 0 NOT NULL,
+    "profitLoss" numeric(18,8) DEFAULT 0 NOT NULL,
+    "buyCount" integer DEFAULT 0 NOT NULL,
+    "sellCount" integer DEFAULT 0 NOT NULL,
+    "lastTradeDate" timestamp with time zone,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.portfolio_tokens OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 2272884)
+-- Name: portfolios; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.portfolios (
+    id uuid NOT NULL,
+    "userId" uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.portfolios OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1259 OID 2273542)
+-- Name: taxon_tokens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.taxon_tokens (
+    id uuid NOT NULL,
+    "tokenId" uuid NOT NULL,
+    "taxonId" uuid NOT NULL,
+    "createdAt" timestamp with time zone,
+    "updatedAt" timestamp with time zone
+);
+
+
+ALTER TABLE public.taxon_tokens OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1259 OID 2273510)
+-- Name: taxonomies; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.taxonomies (
+    id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    slug character varying(255) NOT NULL,
+    "createdAt" timestamp with time zone,
+    "updatedAt" timestamp with time zone
+);
+
+
+ALTER TABLE public.taxonomies OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 2273519)
+-- Name: taxons; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.taxons (
+    id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    slug character varying(255) NOT NULL,
+    "taxonomyId" uuid NOT NULL,
+    "parentId" uuid,
+    "left" integer NOT NULL,
+    "right" integer NOT NULL,
+    depth integer NOT NULL,
+    "createdAt" timestamp with time zone,
+    "updatedAt" timestamp with time zone
+);
+
+
+ALTER TABLE public.taxons OWNER TO postgres;
+
+--
+-- TOC entry 234 (class 1259 OID 2434828)
+-- Name: token_exchanges; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.token_exchanges (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    "tokenId" uuid NOT NULL,
+    "pairTokenId" uuid NOT NULL,
+    pair character varying(255) NOT NULL,
+    "exchangeName" character varying(255) NOT NULL,
+    "marketStatus" boolean DEFAULT true NOT NULL,
+    "lastUpdated" timestamp with time zone NOT NULL,
+    "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+    "updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.token_exchanges OWNER TO postgres;
+
+--
+-- TOC entry 231 (class 1259 OID 2324041)
+-- Name: token_historical_datas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.token_historical_datas (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    "tokenId" uuid NOT NULL,
+    date timestamp with time zone NOT NULL,
+    "openPrice" numeric(18,8) NOT NULL,
+    "highPrice" numeric(18,8) NOT NULL,
+    "lowPrice" numeric(18,8) NOT NULL,
+    "closePrice" numeric(18,8) NOT NULL,
+    volume numeric(28,8) DEFAULT 0 NOT NULL,
+    "adjustedClose" numeric(18,8),
+    "numberOfTransactions" bigint DEFAULT 0,
+    "marketCap" numeric(28,2),
+    "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+    "updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.token_historical_datas OWNER TO postgres;
+
+--
+-- TOC entry 229 (class 1259 OID 2315048)
+-- Name: token_holder_distributiions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.token_holder_distributiions (
+    id uuid NOT NULL,
+    "tokenId" uuid NOT NULL,
+    address character varying(255) NOT NULL,
+    balance numeric(36,18) NOT NULL,
+    "percentageOfTotalSupply" double precision NOT NULL,
+    "lastUpdated" timestamp with time zone NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.token_holder_distributiions OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 2295262)
+-- Name: token_market_datas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.token_market_datas (
+    id uuid NOT NULL,
+    "tokenId" uuid NOT NULL,
+    "marketCap" bigint NOT NULL,
+    fdv bigint NOT NULL,
+    "circulatingSupply" bigint NOT NULL,
+    "totalSupply" bigint NOT NULL,
+    "maxSupply" bigint NOT NULL,
+    "watchlistCount" bigint NOT NULL,
+    "holderCount" bigint NOT NULL,
+    liquidity numeric(18,8) NOT NULL,
+    "liquidityScore" numeric(18,8) NOT NULL,
+    volume24h bigint NOT NULL,
+    price numeric(18,8) NOT NULL,
+    "priceChange24h" numeric(10,2) NOT NULL,
+    "priceChange7d" numeric(10,2) NOT NULL,
+    "priceChange30d" numeric(10,2) NOT NULL,
+    ath numeric(18,8) NOT NULL,
+    "athDate" timestamp with time zone NOT NULL,
+    atl numeric(18,8) NOT NULL,
+    "atlDate" timestamp with time zone NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.token_market_datas OWNER TO postgres;
+
+--
+-- TOC entry 232 (class 1259 OID 2334357)
+-- Name: token_sentiment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.token_sentiment (
+    id uuid NOT NULL,
+    "tokenId" uuid NOT NULL,
+    date timestamp with time zone NOT NULL,
+    "tweetCount" integer DEFAULT 0 NOT NULL,
+    "sentimentScore" numeric(5,2) DEFAULT 0 NOT NULL,
+    "newsCount" integer DEFAULT 0 NOT NULL,
+    "positiveMentions" integer DEFAULT 0 NOT NULL,
+    "negativeMentions" integer DEFAULT 0 NOT NULL,
+    "redditMentions" integer DEFAULT 0 NOT NULL,
+    "sentimentChange" numeric(5,2) DEFAULT 0 NOT NULL,
+    "trendingScore" numeric(5,2) DEFAULT 0 NOT NULL,
+    "dominantEmotion" character varying(255),
+    "socialVolume" integer DEFAULT 0 NOT NULL,
+    "priceCorrelation" numeric(5,2) DEFAULT 0 NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.token_sentiment OWNER TO postgres;
+
+--
+-- TOC entry 233 (class 1259 OID 2334378)
+-- Name: token_sentiments; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.token_sentiments (
+    id uuid NOT NULL,
+    "tokenId" uuid NOT NULL,
+    date timestamp with time zone NOT NULL,
+    "tweetCount" integer DEFAULT 0 NOT NULL,
+    "sentimentScore" numeric(5,2) DEFAULT 0 NOT NULL,
+    "newsCount" integer DEFAULT 0 NOT NULL,
+    "positiveMentions" integer DEFAULT 0 NOT NULL,
+    "negativeMentions" integer DEFAULT 0 NOT NULL,
+    "redditMentions" integer DEFAULT 0 NOT NULL,
+    "sentimentChange" numeric(5,2) DEFAULT 0 NOT NULL,
+    "trendingScore" numeric(5,2) DEFAULT 0 NOT NULL,
+    "dominantEmotion" character varying(255),
+    "socialVolume" integer DEFAULT 0 NOT NULL,
+    "priceCorrelation" numeric(5,2) DEFAULT 0 NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.token_sentiments OWNER TO postgres;
+
+--
+-- TOC entry 230 (class 1259 OID 2319441)
+-- Name: token_technical_indicators; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.token_technical_indicators (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    "tokenId" uuid NOT NULL,
+    date timestamp with time zone NOT NULL,
+    sma20 numeric(12,6),
+    ema50 numeric(12,6),
+    rsi numeric(8,4),
+    macd numeric(10,6),
+    "bollingerBands" json,
+    "stochasticOscillator" numeric(8,4),
+    adx numeric(8,4),
+    atr numeric(10,6),
+    "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+    "updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.token_technical_indicators OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 2273446)
+-- Name: tokens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tokens (
+    id uuid NOT NULL,
+    symbol character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    "tokenRank" integer,
+    warning text,
+    "imageUrl" character varying(255),
+    chain character varying(255) NOT NULL,
+    "contractAddress" character varying(255),
+    decimals integer DEFAULT 18 NOT NULL,
+    "totalSupply" bigint,
+    "maxSupply" bigint,
+    "isVerified" boolean DEFAULT false NOT NULL,
+    "launchedAt" timestamp with time zone,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.tokens OWNER TO postgres;
+
+--
+-- TOC entry 235 (class 1259 OID 2434890)
+-- Name: transactions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.transactions (
+    id uuid NOT NULL,
+    "userId" uuid NOT NULL,
+    "portfolioId" uuid NOT NULL,
+    "portfolioTokenId" uuid NOT NULL,
+    "tokenId" uuid NOT NULL,
+    type public.enum_transactions_type NOT NULL,
+    amount numeric(18,8) NOT NULL,
+    price numeric(18,8) NOT NULL,
+    "totalValue" numeric(18,8) NOT NULL,
+    "isManual" boolean DEFAULT true NOT NULL,
+    "transactionDate" timestamp with time zone NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.transactions OWNER TO postgres;
+
+--
+-- TOC entry 237 (class 1259 OID 9013859)
+-- Name: user_jobs; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_jobs (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    "userId" uuid NOT NULL,
+    "jobId" character varying(255) NOT NULL,
+    "jobName" character varying(255) NOT NULL,
+    status public.enum_user_jobs_status DEFAULT 'pending'::public.enum_user_jobs_status NOT NULL,
+    key character varying(255),
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.user_jobs OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 2203436)
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    id uuid NOT NULL,
+    "displayName" character varying(255) NOT NULL,
+    emojicon character varying(255) NOT NULL,
+    "createdAt" timestamp with time zone NOT NULL,
+    "updatedAt" timestamp with time zone NOT NULL,
+    "portfolioCount" integer DEFAULT 0 NOT NULL,
+    "tokensCount" integer DEFAULT 0 NOT NULL,
+    "chainsCount" integer DEFAULT 0 NOT NULL,
+    "tradesCount" integer DEFAULT 0 NOT NULL,
+    "totalInvested" numeric(18,8) DEFAULT 0 NOT NULL,
+    "profitLoss" numeric(18,8) DEFAULT 0 NOT NULL,
+    "preferredChains" jsonb DEFAULT '[]'::jsonb,
+    "isProUser" boolean DEFAULT false NOT NULL,
+    "preferredCurrency" character varying(255) DEFAULT 'USD'::character varying NOT NULL,
+    "notificationPreferences" jsonb DEFAULT '{}'::jsonb,
+    "darkModeEnabled" boolean DEFAULT false NOT NULL,
+    "authTokenVersion" integer DEFAULT 0 NOT NULL,
+    "isAdmin" boolean DEFAULT false NOT NULL,
+    "tfaEnabled" boolean DEFAULT false NOT NULL,
+    "mfaEmailEnabled" boolean DEFAULT false NOT NULL,
+    "mfaEmailPin" character varying(255),
+    "mfaEmailPinExpiresAt" timestamp with time zone,
+    "mfaTotpEnabled" boolean DEFAULT false NOT NULL,
+    "mfaTotpSecret" character varying(255),
+    "mfaTelegramEnabled" boolean DEFAULT false NOT NULL,
+    "mfaTelegramChatId" character varying(255),
+    "mfaTelegramPin" character varying(255),
+    "mfaTelegramPinExpiresAt" timestamp with time zone,
+    "mfaTelegramInviteToken" character varying(255)
+);
