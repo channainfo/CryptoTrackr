@@ -61,6 +61,8 @@ const Portfolio = () => {
   const [activeTab, setActiveTab] = useState("all");
   
   const filteredPortfolios = portfoliosWithAssets.filter(item => {
+    console.log("Filtering portfolio:", item.portfolio.name, "isWatchlist:", item.portfolio.isWatchlist);
+    
     if (activeTab === "all") return true;
     if (activeTab === "active" && item.assets.length > 0) return true;
     if (activeTab === "watchlist" && item.portfolio.isWatchlist) return true;
@@ -129,11 +131,19 @@ const Portfolio = () => {
   const handleCreatePortfolio = () => {
     if (!newPortfolioName.trim()) return;
     
+    // Set isWatchlist to true when creating from watchlist tab
+    const isWatchlist = activeTab === "watchlist";
+    console.log("Creating portfolio:", {
+      name: newPortfolioName, 
+      isWatchlist, 
+      activeTab
+    });
+    
     createPortfolioMutation.mutate({
       name: newPortfolioName,
       description: newPortfolioDescription || undefined,
       isDefault: isDefaultPortfolio,
-      isWatchlist: activeTab === "watchlist"
+      isWatchlist: isWatchlist
     });
   };
 
@@ -251,19 +261,25 @@ const Portfolio = () => {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Portfolio</DialogTitle>
+            <DialogTitle>
+              {activeTab === "watchlist" ? "Create New Watchlist" : "Create New Portfolio"}
+            </DialogTitle>
             <DialogDescription>
-              Add a new portfolio to track different sets of cryptocurrency assets.
+              {activeTab === "watchlist" 
+                ? "Create a watchlist to monitor cryptocurrencies you're interested in without owning them."
+                : "Add a new portfolio to track different sets of cryptocurrency assets you own."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="portfolio-name">Portfolio Name</Label>
+              <Label htmlFor="portfolio-name">
+                {activeTab === "watchlist" ? "Watchlist Name" : "Portfolio Name"}
+              </Label>
               <Input 
                 id="portfolio-name" 
                 value={newPortfolioName}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPortfolioName(e.target.value)}
-                placeholder="My Investment Portfolio"
+                placeholder={activeTab === "watchlist" ? "My Bitcoin Watchlist" : "My Investment Portfolio"}
               />
             </div>
             <div className="grid gap-2">
@@ -272,7 +288,11 @@ const Portfolio = () => {
                 id="portfolio-description" 
                 value={newPortfolioDescription}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewPortfolioDescription(e.target.value)}
-                placeholder="Long-term investments focused on large-cap tokens"
+                placeholder={
+                  activeTab === "watchlist" 
+                    ? "Tokens I'm interested in for future investment" 
+                    : "Long-term investments focused on large-cap tokens"
+                }
                 className="resize-none h-20"
               />
             </div>
@@ -307,7 +327,11 @@ const Portfolio = () => {
               onClick={handleCreatePortfolio}
               disabled={!newPortfolioName.trim() || createPortfolioMutation.isPending}
             >
-              {createPortfolioMutation.isPending ? 'Creating...' : 'Create Portfolio'}
+              {createPortfolioMutation.isPending 
+                ? 'Creating...' 
+                : activeTab === "watchlist" 
+                  ? 'Create Watchlist' 
+                  : 'Create Portfolio'}
             </Button>
           </DialogFooter>
         </DialogContent>
