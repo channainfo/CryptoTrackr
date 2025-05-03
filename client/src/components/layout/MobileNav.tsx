@@ -4,7 +4,8 @@ import {
   PieChart, 
   ActivitySquare, 
   LineChart,
-  FileText
+  FileText,
+  Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +17,7 @@ const MobileNav = () => {
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
     { href: '/transactions', label: 'Transactions', icon: ActivitySquare },
     { href: '/markets', label: 'Markets', icon: LineChart },
-    { href: '/tax-report', label: 'Tax Report', icon: FileText },
+    { href: '/budget-planner', label: 'Budget', icon: Calculator },
   ];
   
   return (
