@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,27 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   const [, setLocation] = useLocation();
   const [currentSection, setCurrentSection] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [windowSize, setWindowSize] = useState({width: 0, height: 0});
   const { toast } = useToast();
+  
+  // Initialize window size
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
+    // Set initial size
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Fetch module details including quizzes and progress
   const { data: moduleData, isLoading } = useLearningModuleDetails(id);
@@ -62,10 +82,12 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   const updateSectionMutation = useUpdateSectionProgress();
   const completeModuleMutation = useCompleteModule();
   
-  // Parse content sections from the module data
-  const contentSections = moduleData?.module?.content 
-    ? parseModuleContent(moduleData.module.content) 
-    : [];
+  // Memoized content sections to avoid recalculations
+  const contentSections = useMemo(() => {
+    return moduleData?.module?.content 
+      ? parseModuleContent(moduleData.module.content) 
+      : [];
+  }, [moduleData?.module?.content]);
   
   // Initialize module when first loaded
   useEffect(() => {
@@ -78,7 +100,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
       // If module was already started, go to last section
       setCurrentSection(moduleData.progress.lastCompletedSection);
     }
-  }, [moduleData, id]);
+  }, [moduleData, id, startModuleMutation]);
   
   // Update section progress when moving to next section
   const handleNextSection = () => {
@@ -254,10 +276,10 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
 
   return (
     <Container>
-      {showConfetti && (
+      {showConfetti && windowSize.width > 0 && (
         <ReactConfetti
-          width={window.innerWidth}
-          height={window.innerHeight}
+          width={windowSize.width}
+          height={windowSize.height}
           recycle={false}
           numberOfPieces={500}
           gravity={0.15}
