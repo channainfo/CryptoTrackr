@@ -174,6 +174,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         tooltipContainer: {
           textAlign: 'left',
           boxShadow: 'none', // Remove the box-shadow entirely
+          position: 'relative',
         },
         buttonNext: {
           backgroundColor: '#3b82f6', // Always blue
@@ -188,20 +189,28 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         },
         tooltip: {
           fontSize: '14px',
-          padding: '15px',
+          padding: '20px 15px 15px', // Increased top padding for more space with close button
           borderRadius: '6px',
           boxShadow: 'none', // Explicitly remove any box shadow
           filter: 'none', // Remove any filter that might create shadows
           border: isDarkTheme ? '1px solid #3f3f46' : '1px solid #e5e7eb', // Add a subtle border instead of shadow
         },
         tooltipContent: {
-          padding: '5px 0',
+          padding: '10px 0 5px', // Add more top padding
           color: isDarkTheme ? '#f1f5f9' : '#333333',
         },
         tooltipTitle: {
           fontSize: '16px',
           fontWeight: 'bold',
           color: isDarkTheme ? 'white' : '#111827',
+          paddingTop: '5px', // Add more space at top
+        },
+        buttonClose: {
+          // Fix close button position
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          color: isDarkTheme ? '#a1a1aa' : '#71717a',
         },
         beacon: {
           animation: 'pulse',
