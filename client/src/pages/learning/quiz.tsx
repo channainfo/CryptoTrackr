@@ -1,99 +1,195 @@
-import React, { useState, useEffect } from 'react';
-import { useRoute, useLocation } from 'wouter';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { getQuizById } from '@/data/quizData';
-import QuizQuestion from '@/components/learning/QuizQuestion';
-import QuizResult from '@/components/learning/QuizResult';
-import NotFound from '@/pages/not-found';
+import React, { useState } from "react";
+import { useLocation, Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Container } from "@/components/ui/container";
+import { useQuizDetails, useSubmitQuiz } from "@/hooks/use-learning";
+import { ArrowLeft, CheckCircle2, XCircle, Award } from "lucide-react";
 
-const QuizPage: React.FC = () => {
-  const [match, params] = useRoute('/learning/quiz/:id');
-  const [, navigate] = useLocation();
-  const [loading, setLoading] = useState(true);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [quizCompleted, setQuizCompleted] = useState(false);
+// Default user ID for demo purposes
+const DEFAULT_USER_ID = "demo";
+
+const QuizPage = ({ params }: { params: { id: string } }) => {
+  const id = params.id;
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
   
-  // Get quiz data
-  const quizId = params?.id;
-  const quiz = quizId ? getQuizById(quizId) : undefined;
+  // Fetch quiz details
+  const { data: quizData, isLoading } = useQuizDetails(id);
   
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  // Submit quiz answer mutation
+  const submitQuizMutation = useSubmitQuiz();
   
-  // If quiz not found, show 404
-  if (!quiz && !loading) {
-    return <NotFound />;
-  }
-  
-  const handleNextQuestion = (isCorrect: boolean) => {
-    if (isCorrect) {
-      setScore(score + 1);
+  const handleSubmit = () => {
+    if (selectedOption === null) {
+      toast({
+        title: "Please select an answer",
+        description: "You need to select an option before submitting.",
+        variant: "destructive"
+      });
+      return;
     }
     
-    if (currentQuestionIndex < quiz!.questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      setQuizCompleted(true);
+    // Check if the answer is correct
+    const isAnswerCorrect = selectedOption === quizData?.quiz?.correctOption;
+    setIsCorrect(isAnswerCorrect);
+    setIsSubmitted(true);
+    
+    // Submit answer to the server
+    submitQuizMutation.mutate({
+      userId: DEFAULT_USER_ID,
+      quizId: id,
+      isCorrect: isAnswerCorrect
+    });
+  };
+  
+  const handleContinue = () => {
+    if (quizData?.module) {
+      setLocation(`/learning`);
     }
   };
   
-  const handleRetry = () => {
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setQuizCompleted(false);
-  };
-  
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Loading quiz...</p>
-      </div>
+      <Container>
+        <div className="py-8">
+          <div className="flex items-center justify-center p-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </Container>
     );
   }
   
+  if (!quizData?.quiz || !quizData?.module) {
+    return (
+      <Container>
+        <div className="py-8">
+          <Alert variant="destructive">
+            <AlertTitle>Quiz Not Found</AlertTitle>
+            <AlertDescription>
+              The quiz you're looking for couldn't be found.
+              <Button asChild variant="link" className="p-0 ml-2">
+                <Link to="/learning">Return to Learning Center</Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </Container>
+    );
+  }
+  
+  const { quiz, module } = quizData;
+  const options = quiz.options as string[];
+  
   return (
-    <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-10">
-      {!quizCompleted ? (
-        <>
-          <div className="mb-6 flex items-center">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/learning')}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold">{quiz!.title}</h1>
-              <p className="text-sm text-muted-foreground">{quiz!.description}</p>
-            </div>
-          </div>
+    <Container>
+      <div className="py-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          asChild 
+          className="mb-2"
+        >
+          <Link to={`/learning/module/${module.id}`}>
+            <ArrowLeft className="mr-1 w-4 h-4" /> Back to Module
+          </Link>
+        </Button>
+        
+        <h1 className="text-3xl font-bold mb-2">{module.title} Quiz</h1>
+        <p className="text-muted-foreground mb-6">
+          Test your knowledge about what you've learned
+        </p>
+        
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-xl">Question {quiz.order}</CardTitle>
+            <CardDescription className="text-lg font-medium text-foreground mt-2">
+              {quiz.question}
+            </CardDescription>
+          </CardHeader>
           
-          <QuizQuestion
-            question={quiz!.questions[currentQuestionIndex]}
-            questionNumber={currentQuestionIndex + 1}
-            totalQuestions={quiz!.questions.length}
-            onNextQuestion={handleNextQuestion}
-          />
-        </>
-      ) : (
-        <QuizResult
-          quiz={quiz!}
-          score={score}
-          onRetry={handleRetry}
-        />
-      )}
-    </div>
+          <CardContent>
+            <RadioGroup 
+              value={selectedOption?.toString()} 
+              onValueChange={(value) => setSelectedOption(parseInt(value))}
+              disabled={isSubmitted}
+              className="space-y-3"
+            >
+              {options.map((option, index) => (
+                <div key={index} className={`
+                  flex items-center space-x-2 rounded-md border p-3
+                  ${isSubmitted && index === quiz.correctOption ? 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' : ''}
+                  ${isSubmitted && selectedOption === index && index !== quiz.correctOption ? 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800' : ''}
+                `}>
+                  <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+                  <Label 
+                    htmlFor={`option-${index}`}
+                    className="flex-grow cursor-pointer py-1"
+                  >
+                    {option}
+                  </Label>
+                  {isSubmitted && index === quiz.correctOption && (
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  )}
+                  {isSubmitted && selectedOption === index && index !== quiz.correctOption && (
+                    <XCircle className="w-5 h-5 text-red-500" />
+                  )}
+                </div>
+              ))}
+            </RadioGroup>
+            
+            {isSubmitted && (
+              <Alert className={`mt-4 ${isCorrect ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'}`}>
+                <div className="flex items-start gap-3">
+                  {isCorrect ? (
+                    <Award className="h-5 w-5 text-green-500 mt-0.5" />
+                  ) : (
+                    <AlertTitle className="text-amber-500">Incorrect Answer</AlertTitle>
+                  )}
+                  <div>
+                    {isCorrect ? (
+                      <AlertTitle className="text-green-500">Correct!</AlertTitle>
+                    ) : (
+                      <AlertTitle className="text-amber-500">Incorrect Answer</AlertTitle>
+                    )}
+                    <AlertDescription className="mt-1">
+                      {quiz.explanation}
+                    </AlertDescription>
+                  </div>
+                </div>
+              </Alert>
+            )}
+          </CardContent>
+          
+          <CardFooter className="flex justify-between">
+            {!isSubmitted ? (
+              <Button 
+                onClick={handleSubmit}
+                disabled={selectedOption === null}
+                className="w-full"
+              >
+                Submit Answer
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleContinue}
+                className="w-full"
+              >
+                Continue
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    </Container>
   );
 };
 

@@ -1,212 +1,203 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import type { 
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { 
   LearningModule, 
-  LearningQuiz, 
   LearningProgress, 
-  LearningStats,
-  LearningModuleWithQuizzes 
+  LearningQuiz 
 } from "@/types/education";
 
-// Get all learning modules
+// Remove type parameters from apiRequest calls since we have compatibility issues
+
+// Fetch all learning modules
 export function useLearningModules() {
   return useQuery({
     queryKey: ['/api/learning/modules'],
-    refetchOnWindowFocus: false
+    queryFn: async () => {
+      const data = await apiRequest('/api/learning/modules');
+      return data as LearningModule[];
+    }
   });
 }
 
-// Get learning modules by category
+// Fetch learning modules by category
 export function useLearningModulesByCategory(category: string) {
   return useQuery({
     queryKey: ['/api/learning/modules/category', category],
-    queryFn: () => apiRequest(`/api/learning/modules/category/${category}`),
-    refetchOnWindowFocus: false,
-    enabled: !!category
+    queryFn: async () => {
+      if (!category) return [];
+      const data = await apiRequest(`/api/learning/modules/category/${category}`);
+      return data as LearningModule[];
+    },
+    enabled: Boolean(category)
   });
 }
 
-// Get a specific learning module
-export function useLearningModule(moduleId: string) {
-  return useQuery<LearningModule>({
+// Fetch learning modules by difficulty
+export function useLearningModulesByDifficulty(difficulty: number) {
+  return useQuery({
+    queryKey: ['/api/learning/modules/difficulty', difficulty],
+    queryFn: async () => {
+      const data = await apiRequest<LearningModule[]>(`/api/learning/modules/difficulty/${difficulty}`);
+      return data;
+    },
+    enabled: difficulty !== undefined
+  });
+}
+
+// Fetch a single learning module with its quizzes and user progress
+export function useLearningModuleDetails(moduleId: string) {
+  return useQuery({
     queryKey: ['/api/learning/modules', moduleId],
-    queryFn: () => apiRequest(`/api/learning/modules/${moduleId}`),
-    refetchOnWindowFocus: false,
-    enabled: !!moduleId
+    queryFn: async () => {
+      const data = await apiRequest<{
+        module: LearningModule;
+        quizzes: LearningQuiz[];
+        progress?: LearningProgress;
+      }>(`/api/learning/modules/${moduleId}/details`);
+      return data;
+    },
+    enabled: Boolean(moduleId)
   });
 }
 
-// Get a learning module with quizzes
-export function useLearningModuleWithQuizzes(moduleId: string) {
-  return useQuery<LearningModuleWithQuizzes>({
-    queryKey: ['/api/learning/modules', moduleId, 'with-quizzes'],
-    queryFn: () => apiRequest(`/api/learning/modules/${moduleId}/with-quizzes`),
-    refetchOnWindowFocus: false,
-    enabled: !!moduleId
+// Fetch quiz details (includes associated module)
+export function useQuizDetails(quizId: string) {
+  return useQuery({
+    queryKey: ['/api/learning/quizzes', quizId],
+    queryFn: async () => {
+      const data = await apiRequest<{
+        quiz: LearningQuiz;
+        module: LearningModule;
+      }>(`/api/learning/quizzes/${quizId}`);
+      return data;
+    },
+    enabled: Boolean(quizId)
   });
 }
 
-// Get user progress for all modules
+// Fetch user's learning progress for all modules
 export function useUserLearningProgress(userId: string) {
-  return useQuery<LearningProgress[]>({
+  return useQuery({
     queryKey: ['/api/learning/progress', userId],
-    queryFn: () => apiRequest(`/api/learning/progress/${userId}`),
-    refetchOnWindowFocus: false,
-    enabled: !!userId
+    queryFn: async () => {
+      const data = await apiRequest<LearningProgress[]>(`/api/learning/progress/${userId}`);
+      return data;
+    },
+    enabled: Boolean(userId)
   });
 }
 
-// Get user progress for a specific module
-export function useUserModuleProgress(userId: string, moduleId: string) {
-  return useQuery<LearningProgress>({
-    queryKey: ['/api/learning/progress', userId, moduleId],
-    queryFn: () => apiRequest(`/api/learning/progress/${userId}/${moduleId}`),
-    refetchOnWindowFocus: false,
-    enabled: !!userId && !!moduleId
-  });
-}
-
-// Get user learning stats
+// Fetch user's learning statistics
 export function useUserLearningStats(userId: string) {
-  return useQuery<LearningStats>({
+  return useQuery({
     queryKey: ['/api/learning/stats', userId],
-    queryFn: () => apiRequest(`/api/learning/stats/${userId}`),
-    refetchOnWindowFocus: false,
-    enabled: !!userId
+    queryFn: async () => {
+      const data = await apiRequest<{
+        completedModules: number;
+        inProgressModules: number;
+        notStartedModules: number;
+        totalModules: number;
+        completionPercentage: number;
+      }>(`/api/learning/stats/${userId}`);
+      return data;
+    },
+    enabled: Boolean(userId)
   });
 }
 
-// Get next recommended module
+// Fetch next recommended module for the user
 export function useNextRecommendedModule(userId: string) {
-  return useQuery<LearningModule>({
-    queryKey: ['/api/learning/recommend', userId],
-    queryFn: () => apiRequest(`/api/learning/recommend/${userId}`),
-    refetchOnWindowFocus: false,
-    enabled: !!userId
+  return useQuery({
+    queryKey: ['/api/learning/recommended', userId],
+    queryFn: async () => {
+      const data = await apiRequest<LearningModule>(`/api/learning/recommended/${userId}`);
+      return data;
+    },
+    enabled: Boolean(userId)
   });
 }
 
-// Start a module
+// Start a learning module
 export function useStartModule() {
-  const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: ({ userId, moduleId }: { userId: string; moduleId: string }) => 
-      apiRequest(`/api/learning/progress/${userId}/${moduleId}/start`, { 
-        method: 'POST' 
-      }),
-    onSuccess: (_, variables) => {
-      const { userId, moduleId } = variables;
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', userId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', userId, moduleId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/stats', userId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/recommend', userId] });
-    }
-  });
-}
-
-// Complete a module
-export function useCompleteModule() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ userId, moduleId, quizScore }: { userId: string; moduleId: string; quizScore?: number }) => 
-      apiRequest(`/api/learning/progress/${userId}/${moduleId}/complete`, { 
+    mutationFn: async ({ userId, moduleId }: { userId: string; moduleId: string }) => {
+      return apiRequest('/api/learning/modules/start', {
         method: 'POST',
-        body: JSON.stringify({ quizScore })
-      }),
+        data: { userId, moduleId }
+      });
+    },
     onSuccess: (_, variables) => {
-      const { userId, moduleId } = variables;
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', userId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', userId, moduleId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/stats', userId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/recommend', userId] });
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/stats', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules', variables.moduleId] });
     }
   });
 }
 
-// Update section progress
+// Update section progress in a module
 export function useUpdateSectionProgress() {
-  const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: ({ userId, moduleId, sectionNumber }: { userId: string; moduleId: string; sectionNumber: number }) => 
-      apiRequest(`/api/learning/progress/${userId}/${moduleId}/section/${sectionNumber}`, { 
-        method: 'POST' 
-      }),
+    mutationFn: async ({ 
+      userId, 
+      moduleId, 
+      section 
+    }: { 
+      userId: string; 
+      moduleId: string; 
+      section: number 
+    }) => {
+      return apiRequest('/api/learning/modules/progress', {
+        method: 'POST',
+        data: { userId, moduleId, section }
+      });
+    },
     onSuccess: (_, variables) => {
-      const { userId, moduleId } = variables;
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', userId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', userId, moduleId] });
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules', variables.moduleId] });
     }
   });
 }
 
-// Create a learning module (admin functionality)
-export function useCreateLearningModule() {
-  const queryClient = useQueryClient();
-  
+// Complete a learning module
+export function useCompleteModule() {
   return useMutation({
-    mutationFn: (moduleData: Partial<LearningModule>) => 
-      apiRequest('/api/learning/modules', { 
+    mutationFn: async ({ userId, moduleId }: { userId: string; moduleId: string }) => {
+      return apiRequest('/api/learning/modules/complete', {
         method: 'POST',
-        body: JSON.stringify(moduleData)
-      }),
+        data: { userId, moduleId }
+      });
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/progress', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/stats', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules', variables.moduleId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/learning/recommended', variables.userId] });
+    }
+  });
+}
+
+// Submit a quiz answer
+export function useSubmitQuiz() {
+  return useMutation({
+    mutationFn: async ({ 
+      userId, 
+      quizId, 
+      isCorrect 
+    }: { 
+      userId: string; 
+      quizId: string; 
+      isCorrect: boolean 
+    }) => {
+      return apiRequest('/api/learning/quizzes/submit', {
+        method: 'POST',
+        data: { userId, quizId, isCorrect }
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules'] });
-    }
-  });
-}
-
-// Update a learning module (admin functionality)
-export function useUpdateLearningModule() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ moduleId, data }: { moduleId: string; data: Partial<LearningModule> }) => 
-      apiRequest(`/api/learning/modules/${moduleId}`, { 
-        method: 'PATCH',
-        body: JSON.stringify(data)
-      }),
-    onSuccess: (_, variables) => {
-      const { moduleId } = variables;
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules', moduleId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules', moduleId, 'with-quizzes'] });
-    }
-  });
-}
-
-// Create a quiz (admin functionality)
-export function useCreateQuiz() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ moduleId, quizData }: { moduleId: string; quizData: Partial<LearningQuiz> }) => 
-      apiRequest(`/api/learning/modules/${moduleId}/quizzes`, { 
-        method: 'POST',
-        body: JSON.stringify(quizData)
-      }),
-    onSuccess: (_, variables) => {
-      const { moduleId } = variables;
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules', moduleId, 'with-quizzes'] });
-    }
-  });
-}
-
-// Update a quiz (admin functionality)
-export function useUpdateQuiz() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ quizId, moduleId, data }: { quizId: string; moduleId: string; data: Partial<LearningQuiz> }) => 
-      apiRequest(`/api/learning/quizzes/${quizId}`, { 
-        method: 'PATCH',
-        body: JSON.stringify(data)
-      }),
-    onSuccess: (_, variables) => {
-      const { moduleId } = variables;
-      queryClient.invalidateQueries({ queryKey: ['/api/learning/modules', moduleId, 'with-quizzes'] });
+      // No need to invalidate any queries as quiz submissions don't affect other data
     }
   });
 }

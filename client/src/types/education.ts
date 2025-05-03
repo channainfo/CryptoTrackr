@@ -1,20 +1,12 @@
-// General education types
-export interface CryptoDefinition {
-  term: string;
-  definition: string;
-  category: string;
-  related?: string[];
-}
-
 // Learning module types
-export type LearningModuleStatus = 'not_started' | 'in_progress' | 'completed';
 export type LearningCategory = 'basics' | 'trading' | 'defi' | 'security' | 'advanced';
+export type LearningStatus = 'not_started' | 'in_progress' | 'completed';
 
 export interface LearningModule {
   id: string;
   title: string;
   description: string;
-  content: string;
+  content: string; // JSON string of content sections
   category: LearningCategory;
   difficulty: number;
   order: number;
@@ -24,13 +16,20 @@ export interface LearningModule {
   updatedAt: string;
 }
 
+export interface ContentSection {
+  title: string;
+  content: string;
+  type: 'text' | 'video' | 'image' | 'interactive';
+  // Additional properties can be added for different content types
+}
+
 export interface LearningQuiz {
   id: string;
   moduleId: string;
   question: string;
-  options: string[];
-  correctOption: number;
-  explanation?: string;
+  options: string[]; // Array of option texts
+  correctOption: number; // Index of the correct option
+  explanation: string;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -40,52 +39,22 @@ export interface LearningProgress {
   id: string;
   userId: string;
   moduleId: string;
-  status: LearningModuleStatus;
-  lastCompletedSection?: number;
-  quizScore?: number;
-  startedAt?: string;
+  status: LearningStatus;
+  lastCompletedSection: number;
   completedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface LearningModuleWithQuizzes extends LearningModule {
-  quizzes: LearningQuiz[];
+// Crypto definition types for the glossary and tooltips
+export interface CryptoDefinition {
+  term: string;
+  definition: string;
+  category: string;
+  shortDefinition?: string;
+  learnMoreUrl?: string;
 }
 
-export interface LearningStats {
-  totalModules: number;
-  completedModules: number;
-  inProgressModules: number;
-  notStartedModules: number;
-  completionPercentage: number;
-  averageQuizScore: number;
-}
-
-// Quiz attempt tracking
-export interface QuizAttempt {
-  moduleId: string;
-  answers: number[];
-  score: number;
-  completed: boolean;
-  timestamp: string;
-}
-
-// Section types for modular content
-export interface ContentSection {
-  title: string;
-  content: string;
-  type: 'text' | 'image' | 'video' | 'code' | 'chart';
-  mediaUrl?: string;
-}
-
-// Learning path
-export interface LearningPath {
-  id: string;
-  title: string;
-  description: string;
-  modules: string[]; // Module IDs in sequence
-  difficulty: number;
-  estimatedHours: number;
-  imageUrl?: string;
+export interface CryptoDefinitionDictionary {
+  [key: string]: CryptoDefinition;
 }

@@ -12,6 +12,7 @@ interface ApiRequestOptions {
   url: string;
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   data?: unknown;
+  body?: unknown; // Alternative name for data for compatibility
 }
 
 export async function apiRequest(urlOrOptions: string | ApiRequestOptions, config?: Omit<ApiRequestOptions, 'url'>): Promise<any> {
@@ -23,11 +24,11 @@ export async function apiRequest(urlOrOptions: string | ApiRequestOptions, confi
   if (typeof urlOrOptions === 'string') {
     url = urlOrOptions;
     method = config?.method || 'GET';
-    data = config?.data;
+    data = config?.data || config?.body;
   } else {
     url = urlOrOptions.url;
     method = urlOrOptions.method;
-    data = urlOrOptions.data;
+    data = urlOrOptions.data || urlOrOptions.body;
   }
   
   const res = await fetch(url, {

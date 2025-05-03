@@ -42,7 +42,9 @@ function Router() {
           return <ModuleDetailPage id={params.id} />;
         }}
       </Route>
-      <Route path="/learning/quiz/:id" component={QuizPage} />
+      <Route path="/learning/quiz/:id">
+        {params => <QuizPage params={params} />}
+      </Route>
       <Route path="/learning/glossary" component={GlossaryPage} />
       <Route path="/alerts" component={Alerts} />
       <Route component={NotFound} />
