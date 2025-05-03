@@ -5,13 +5,20 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 
-export const usePortfolio = () => {
+export const usePortfolio = (portfolioId?: string | null) => {
   const { toast } = useToast();
   
   // Query portfolio assets
   const { data: portfolioData, isLoading: isLoadingPortfolio } = useQuery({
-    queryKey: ['/api/portfolio'],
-    // Default queryFn is already set up in @/lib/queryClient.ts
+    queryKey: portfolioId ? ['/api/portfolio', portfolioId] : ['/api/portfolio'],
+    queryFn: async () => {
+      const endpoint = portfolioId ? `/api/portfolio/${portfolioId}` : '/api/portfolio';
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error('Failed to fetch portfolio data');
+      }
+      return response.json();
+    }
   });
   
   // Query transactions

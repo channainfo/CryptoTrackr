@@ -6,12 +6,18 @@ import PortfolioChart from "@/components/dashboard/PortfolioChart";
 import AssetTable from "@/components/dashboard/AssetTable";
 import TransactionList from "@/components/dashboard/TransactionList";
 import MarketTrends from "@/components/dashboard/MarketTrends";
+import PortfolioSelector from "@/components/dashboard/PortfolioSelector";
 import AddCryptoModal from "@/components/modals/AddCryptoModal";
 import { usePortfolio } from "@/hooks/usePortfolio";
 
 const Dashboard = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { portfolioSummary, isLoading } = usePortfolio();
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
+  const { portfolioSummary, isLoading } = usePortfolio(selectedPortfolioId);
+  
+  const handlePortfolioChange = (portfolioId: string) => {
+    setSelectedPortfolioId(portfolioId);
+  };
   
   return (
     <>
