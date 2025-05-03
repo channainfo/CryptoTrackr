@@ -1,10 +1,11 @@
-import { pgTable, text, varchar, uuid, numeric, timestamp, boolean, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, uuid, numeric, timestamp, boolean, integer, pgEnum, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Define enums based on the database structure
 export const transactionTypeEnum = pgEnum('enum_transactions_type', ['buy', 'sell']);
+export const timeframeEnum = pgEnum('enum_timeframe', ['daily', 'weekly', 'monthly']);
 
 // User table
 export const users = pgTable("users", {
@@ -138,17 +139,80 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   transactionDate: true,
 });
 
+// Portfolio historical performance table
+export const portfolioHistoricalValues = pgTable("portfolio_historical_values", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  portfolioId: uuid("portfolio_id").notNull().references(() => portfolios.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  date: date("date").notNull(),
+  totalValue: numeric("total_value", { precision: 18, scale: 2 }).notNull(),
+  totalInvested: numeric("total_invested", { precision: 18, scale: 2 }).notNull(),
+  profitLoss: numeric("profit_loss", { precision: 18, scale: 2 }).notNull(),
+  profitLossPercentage: numeric("profit_loss_percentage", { precision: 10, scale: 2 }).notNull(),
+  timeframe: timeframeEnum("timeframe").notNull().default('daily'),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+export const insertPortfolioHistoricalValueSchema = createInsertSchema(portfolioHistoricalValues).pick({
+  portfolioId: true,
+  userId: true,
+  date: true,
+  totalValue: true,
+  totalInvested: true,
+  profitLoss: true,
+  profitLossPercentage: true,
+  timeframe: true,
+});
+
+// Token historical performance within portfolio
+export const tokenHistoricalValues = pgTable("token_historical_values", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  portfolioId: uuid("portfolio_id").notNull().references(() => portfolios.id),
+  portfolioTokenId: uuid("portfolio_token_id").notNull().references(() => portfolioTokens.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  tokenId: uuid("token_id").notNull().references(() => tokens.id),
+  date: date("date").notNull(),
+  quantity: numeric("quantity", { precision: 18, scale: 8 }).notNull(),
+  price: numeric("price", { precision: 18, scale: 8 }).notNull(),
+  totalValue: numeric("total_value", { precision: 18, scale: 2 }).notNull(),
+  totalInvested: numeric("total_invested", { precision: 18, scale: 2 }).notNull(),
+  profitLoss: numeric("profit_loss", { precision: 18, scale: 2 }).notNull(),
+  profitLossPercentage: numeric("profit_loss_percentage", { precision: 10, scale: 2 }).notNull(),
+  timeframe: timeframeEnum("timeframe").notNull().default('daily'),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+export const insertTokenHistoricalValueSchema = createInsertSchema(tokenHistoricalValues).pick({
+  portfolioId: true,
+  portfolioTokenId: true,
+  userId: true,
+  tokenId: true,
+  date: true,
+  quantity: true,
+  price: true,
+  totalValue: true,
+  totalInvested: true,
+  profitLoss: true,
+  profitLossPercentage: true,
+  timeframe: true,
+});
+
 // Set up relations
 export const usersRelations = relations(users, ({ many }) => ({
   portfolios: many(portfolios),
   portfolioTokens: many(portfolioTokens),
   transactions: many(transactions),
+  portfolioHistoricalValues: many(portfolioHistoricalValues),
+  tokenHistoricalValues: many(tokenHistoricalValues),
 }));
 
 export const tokensRelations = relations(tokens, ({ one, many }) => ({
   marketData: one(tokenMarketDatas),
   portfolioTokens: many(portfolioTokens),
   transactions: many(transactions),
+  historicalValues: many(tokenHistoricalValues),
 }));
 
 export const portfoliosRelations = relations(portfolios, ({ one, many }) => ({
@@ -158,6 +222,7 @@ export const portfoliosRelations = relations(portfolios, ({ one, many }) => ({
   }),
   portfolioTokens: many(portfolioTokens),
   transactions: many(transactions),
+  historicalValues: many(portfolioHistoricalValues),
 }));
 
 export const portfolioTokensRelations = relations(portfolioTokens, ({ one, many }) => ({
@@ -174,6 +239,7 @@ export const portfolioTokensRelations = relations(portfolioTokens, ({ one, many 
     references: [tokens.id],
   }),
   transactions: many(transactions),
+  historicalValues: many(tokenHistoricalValues),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
@@ -195,6 +261,36 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   }),
 }));
 
+export const portfolioHistoricalValuesRelations = relations(portfolioHistoricalValues, ({ one }) => ({
+  user: one(users, {
+    fields: [portfolioHistoricalValues.userId],
+    references: [users.id],
+  }),
+  portfolio: one(portfolios, {
+    fields: [portfolioHistoricalValues.portfolioId],
+    references: [portfolios.id],
+  }),
+}));
+
+export const tokenHistoricalValuesRelations = relations(tokenHistoricalValues, ({ one }) => ({
+  user: one(users, {
+    fields: [tokenHistoricalValues.userId],
+    references: [users.id],
+  }),
+  portfolio: one(portfolios, {
+    fields: [tokenHistoricalValues.portfolioId],
+    references: [portfolios.id],
+  }),
+  portfolioToken: one(portfolioTokens, {
+    fields: [tokenHistoricalValues.portfolioTokenId],
+    references: [portfolioTokens.id],
+  }),
+  token: one(tokens, {
+    fields: [tokenHistoricalValues.tokenId],
+    references: [tokens.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -212,3 +308,9 @@ export type InsertPortfolioToken = z.infer<typeof insertPortfolioTokenSchema>;
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
+export type PortfolioHistoricalValue = typeof portfolioHistoricalValues.$inferSelect;
+export type InsertPortfolioHistoricalValue = z.infer<typeof insertPortfolioHistoricalValueSchema>;
+
+export type TokenHistoricalValue = typeof tokenHistoricalValues.$inferSelect;
+export type InsertTokenHistoricalValue = z.infer<typeof insertTokenHistoricalValueSchema>;
