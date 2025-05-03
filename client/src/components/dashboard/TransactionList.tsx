@@ -104,8 +104,17 @@ const TransactionList = ({
             <button 
               className="text-primary text-sm font-medium dark:text-blue-400"
               onClick={() => {
-                // Find and click the transactions tab
-                const transactionsTab = document.querySelector('[data-value="transactions"]');
+                // For portfolio detail page, find the transactions tab and click it
+                const transactionsTabs = document.querySelectorAll('[role="tab"]');
+                
+                // Find the tab with text content "Transactions"
+                let transactionsTab = null;
+                transactionsTabs.forEach((tab) => {
+                  if (tab.textContent?.includes("Transactions")) {
+                    transactionsTab = tab;
+                  }
+                });
+                
                 if (transactionsTab) {
                   (transactionsTab as HTMLElement).click();
                 }

@@ -135,7 +135,7 @@ const PortfolioDetail = () => {
             
             {/* Recent Transactions */}
             <h3 className="text-xl font-semibold my-6 dark:text-white">Recent Transactions</h3>
-            <TransactionList limit={5} showViewAll={true} portfolioId={portfolioId} transactionType="all" showTypeTabs={true} />
+            <TransactionList limit={10} showViewAll={true} portfolioId={portfolioId} transactionType="all" showTypeTabs={true} />
           </TabsContent>
           
           <TabsContent value="assets">
