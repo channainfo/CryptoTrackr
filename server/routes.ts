@@ -335,7 +335,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Filtering for standard portfolios only');
         portfolios = portfolios.filter(p => Boolean(p.isWatchlist) === false);
       } else {
-        console.log('No filtering applied, returning all portfolios');
+        // When no filter specified (i.e., "all portfolios"), still exclude watchlists
+        console.log('No specific filtering applied, but excluding watchlists from the default view');
+        portfolios = portfolios.filter(p => Boolean(p.isWatchlist) === false);
       }
       
       console.log(`After filtering for ${type || 'all'}, found ${portfolios.length} portfolios`);
