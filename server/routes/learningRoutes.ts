@@ -1,18 +1,24 @@
 import { Router } from "express";
-import { LearningModuleModel } from "../models/LearningModuleModel";
-import { insertLearningModuleSchema, insertLearningQuizSchema, insertUserLearningProgressSchema } from "@shared/schema";
-import { z } from "zod";
+import { db } from "../db";
+import { 
+  learningModules, 
+  learningQuizzes, 
+  userLearningProgress,
+  learningModuleStatusEnum
+} from "@shared/schema";
+import { eq, and, inArray, desc, count, sql } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
 
 // Get all learning modules
 router.get("/modules", async (req, res) => {
   try {
-    const modules = await LearningModuleModel.findAll();
+    const modules = await db.select().from(learningModules).orderBy(learningModules.order);
     res.json(modules);
   } catch (error) {
     console.error("Error fetching learning modules:", error);
-    res.status(500).json({ error: "Failed to fetch learning modules" });
+    res.status(500).json({ message: "Failed to fetch learning modules" });
   }
 });
 
@@ -20,11 +26,16 @@ router.get("/modules", async (req, res) => {
 router.get("/modules/category/:category", async (req, res) => {
   try {
     const { category } = req.params;
-    const modules = await LearningModuleModel.findByCategory(category);
+    const modules = await db
+      .select()
+      .from(learningModules)
+      .where(eq(learningModules.category, category))
+      .orderBy(learningModules.order);
+    
     res.json(modules);
   } catch (error) {
     console.error("Error fetching learning modules by category:", error);
-    res.status(500).json({ error: "Failed to fetch learning modules" });
+    res.status(500).json({ message: "Failed to fetch learning modules" });
   }
 });
 
@@ -32,249 +43,109 @@ router.get("/modules/category/:category", async (req, res) => {
 router.get("/modules/difficulty/:difficulty", async (req, res) => {
   try {
     const difficulty = parseInt(req.params.difficulty);
-    if (isNaN(difficulty)) {
-      return res.status(400).json({ error: "Invalid difficulty level" });
-    }
+    const modules = await db
+      .select()
+      .from(learningModules)
+      .where(eq(learningModules.difficulty, difficulty))
+      .orderBy(learningModules.order);
     
-    const modules = await LearningModuleModel.findByDifficulty(difficulty);
     res.json(modules);
   } catch (error) {
     console.error("Error fetching learning modules by difficulty:", error);
-    res.status(500).json({ error: "Failed to fetch learning modules" });
+    res.status(500).json({ message: "Failed to fetch learning modules" });
   }
 });
 
-// Get a specific learning module
-router.get("/modules/:id", async (req, res) => {
+// Get a single learning module with quizzes and user progress
+router.get("/modules/:id/details", async (req, res) => {
   try {
     const { id } = req.params;
-    const module = await LearningModuleModel.findById(id);
+    const userId = req.query.userId as string || "demo";
+    
+    // Get the module
+    const [module] = await db
+      .select()
+      .from(learningModules)
+      .where(eq(learningModules.id, id));
     
     if (!module) {
-      return res.status(404).json({ error: "Learning module not found" });
+      return res.status(404).json({ message: "Learning module not found" });
     }
     
-    res.json(module);
-  } catch (error) {
-    console.error("Error fetching learning module:", error);
-    res.status(500).json({ error: "Failed to fetch learning module" });
-  }
-});
-
-// Get a specific learning module with quizzes
-router.get("/modules/:id/with-quizzes", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const moduleWithQuizzes = await LearningModuleModel.findByIdWithQuizzes(id);
+    // Get the quizzes
+    const quizzes = await db
+      .select()
+      .from(learningQuizzes)
+      .where(eq(learningQuizzes.moduleId, id))
+      .orderBy(learningQuizzes.order);
     
-    if (!moduleWithQuizzes) {
-      return res.status(404).json({ error: "Learning module not found" });
-    }
+    // Get user progress
+    const [progress] = await db
+      .select()
+      .from(userLearningProgress)
+      .where(
+        and(
+          eq(userLearningProgress.userId, userId),
+          eq(userLearningProgress.moduleId, id)
+        )
+      );
     
-    res.json(moduleWithQuizzes);
-  } catch (error) {
-    console.error("Error fetching learning module with quizzes:", error);
-    res.status(500).json({ error: "Failed to fetch learning module with quizzes" });
-  }
-});
-
-// Create a new learning module
-router.post("/modules", async (req, res) => {
-  try {
-    const moduleData = insertLearningModuleSchema.parse(req.body);
-    const newModule = await LearningModuleModel.create(moduleData);
-    res.status(201).json(newModule);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
-    console.error("Error creating learning module:", error);
-    res.status(500).json({ error: "Failed to create learning module" });
-  }
-});
-
-// Update a learning module
-router.patch("/modules/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedModule = await LearningModuleModel.update(id, req.body);
-    
-    if (!updatedModule) {
-      return res.status(404).json({ error: "Learning module not found" });
-    }
-    
-    res.json(updatedModule);
-  } catch (error) {
-    console.error("Error updating learning module:", error);
-    res.status(500).json({ error: "Failed to update learning module" });
-  }
-});
-
-// Delete a learning module
-router.delete("/modules/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await LearningModuleModel.delete(id);
-    
-    if (!deleted) {
-      return res.status(404).json({ error: "Learning module not found" });
-    }
-    
-    res.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting learning module:", error);
-    res.status(500).json({ error: "Failed to delete learning module" });
-  }
-});
-
-// Create a quiz for a module
-router.post("/modules/:moduleId/quizzes", async (req, res) => {
-  try {
-    const { moduleId } = req.params;
-    const module = await LearningModuleModel.findById(moduleId);
-    
-    if (!module) {
-      return res.status(404).json({ error: "Learning module not found" });
-    }
-    
-    const quizData = insertLearningQuizSchema.parse({
-      ...req.body,
-      moduleId
+    res.json({
+      module,
+      quizzes,
+      progress
     });
-    
-    const newQuiz = await LearningModuleModel.createQuiz(quizData);
-    res.status(201).json(newQuiz);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
-    console.error("Error creating quiz:", error);
-    res.status(500).json({ error: "Failed to create quiz" });
+    console.error("Error fetching learning module details:", error);
+    res.status(500).json({ message: "Failed to fetch learning module details" });
   }
 });
 
-// Update a quiz
-router.patch("/quizzes/:id", async (req, res) => {
+// Get a quiz with associated module
+router.get("/quizzes/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedQuiz = await LearningModuleModel.updateQuiz(id, req.body);
     
-    if (!updatedQuiz) {
-      return res.status(404).json({ error: "Quiz not found" });
+    // Get the quiz
+    const [quiz] = await db
+      .select()
+      .from(learningQuizzes)
+      .where(eq(learningQuizzes.id, id));
+    
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
     }
     
-    res.json(updatedQuiz);
+    // Get the associated module
+    const [module] = await db
+      .select()
+      .from(learningModules)
+      .where(eq(learningModules.id, quiz.moduleId));
+    
+    res.json({
+      quiz,
+      module
+    });
   } catch (error) {
-    console.error("Error updating quiz:", error);
-    res.status(500).json({ error: "Failed to update quiz" });
+    console.error("Error fetching quiz details:", error);
+    res.status(500).json({ message: "Failed to fetch quiz details" });
   }
 });
 
-// Delete a quiz
-router.delete("/quizzes/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await LearningModuleModel.deleteQuiz(id);
-    
-    if (!deleted) {
-      return res.status(404).json({ error: "Quiz not found" });
-    }
-    
-    res.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting quiz:", error);
-    res.status(500).json({ error: "Failed to delete quiz" });
-  }
-});
-
-// Get user progress
+// Get user learning progress
 router.get("/progress/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const progress = await LearningModuleModel.getAllUserProgress(userId);
-    res.json(progress);
-  } catch (error) {
-    console.error("Error fetching user progress:", error);
-    res.status(500).json({ error: "Failed to fetch user progress" });
-  }
-});
-
-// Get user progress for a specific module
-router.get("/progress/:userId/:moduleId", async (req, res) => {
-  try {
-    const { userId, moduleId } = req.params;
-    const progress = await LearningModuleModel.getUserProgress(userId, moduleId);
     
-    if (!progress) {
-      return res.json({ status: "not_started" });
-    }
+    const progress = await db
+      .select()
+      .from(userLearningProgress)
+      .where(eq(userLearningProgress.userId, userId));
     
     res.json(progress);
   } catch (error) {
-    console.error("Error fetching module progress:", error);
-    res.status(500).json({ error: "Failed to fetch module progress" });
-  }
-});
-
-// Start a module
-router.post("/progress/:userId/:moduleId/start", async (req, res) => {
-  try {
-    const { userId, moduleId } = req.params;
-    const module = await LearningModuleModel.findById(moduleId);
-    
-    if (!module) {
-      return res.status(404).json({ error: "Learning module not found" });
-    }
-    
-    const progress = await LearningModuleModel.startModule(userId, moduleId);
-    res.json(progress);
-  } catch (error) {
-    console.error("Error starting module:", error);
-    res.status(500).json({ error: "Failed to start module" });
-  }
-});
-
-// Complete a module
-router.post("/progress/:userId/:moduleId/complete", async (req, res) => {
-  try {
-    const { userId, moduleId } = req.params;
-    const { quizScore } = req.body;
-    
-    const module = await LearningModuleModel.findById(moduleId);
-    
-    if (!module) {
-      return res.status(404).json({ error: "Learning module not found" });
-    }
-    
-    const progress = await LearningModuleModel.completeModule(userId, moduleId, quizScore);
-    res.json(progress);
-  } catch (error) {
-    console.error("Error completing module:", error);
-    res.status(500).json({ error: "Failed to complete module" });
-  }
-});
-
-// Update section progress
-router.post("/progress/:userId/:moduleId/section/:sectionNumber", async (req, res) => {
-  try {
-    const { userId, moduleId, sectionNumber } = req.params;
-    const sectionNum = parseInt(sectionNumber);
-    
-    if (isNaN(sectionNum)) {
-      return res.status(400).json({ error: "Invalid section number" });
-    }
-    
-    const module = await LearningModuleModel.findById(moduleId);
-    
-    if (!module) {
-      return res.status(404).json({ error: "Learning module not found" });
-    }
-    
-    const progress = await LearningModuleModel.updateSectionProgress(userId, moduleId, sectionNum);
-    res.json(progress);
-  } catch (error) {
-    console.error("Error updating section progress:", error);
-    res.status(500).json({ error: "Failed to update section progress" });
+    console.error("Error fetching user learning progress:", error);
+    res.status(500).json({ message: "Failed to fetch user learning progress" });
   }
 });
 
@@ -282,28 +153,252 @@ router.post("/progress/:userId/:moduleId/section/:sectionNumber", async (req, re
 router.get("/stats/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const stats = await LearningModuleModel.getUserLearningStats(userId);
-    res.json(stats);
+    
+    // Get counts of each status type
+    const completedModulesResult = await db
+      .select({ count: count() })
+      .from(userLearningProgress)
+      .where(
+        and(
+          eq(userLearningProgress.userId, userId),
+          eq(userLearningProgress.status, "completed")
+        )
+      );
+    
+    const inProgressModulesResult = await db
+      .select({ count: count() })
+      .from(userLearningProgress)
+      .where(
+        and(
+          eq(userLearningProgress.userId, userId),
+          eq(userLearningProgress.status, "in_progress")
+        )
+      );
+    
+    // Count all modules
+    const totalModulesResult = await db
+      .select({ count: count() })
+      .from(learningModules);
+    
+    const completedModules = completedModulesResult[0]?.count || 0;
+    const inProgressModules = inProgressModulesResult[0]?.count || 0;
+    const totalModules = totalModulesResult[0]?.count || 0;
+    const notStartedModules = totalModules - (completedModules + inProgressModules);
+    
+    const completionPercentage = totalModules > 0 
+      ? Math.round((completedModules / totalModules) * 100) 
+      : 0;
+    
+    res.json({
+      completedModules,
+      inProgressModules,
+      notStartedModules,
+      totalModules,
+      completionPercentage
+    });
   } catch (error) {
     console.error("Error fetching user learning stats:", error);
-    res.status(500).json({ error: "Failed to fetch user learning stats" });
+    res.status(500).json({ message: "Failed to fetch user learning stats" });
   }
 });
 
-// Get next recommended module for user
-router.get("/recommend/:userId", async (req, res) => {
+// Get next recommended module
+router.get("/recommended/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const module = await LearningModuleModel.getNextRecommendedModule(userId);
     
-    if (!module) {
-      return res.json({ message: "No modules available or all modules completed" });
+    // Get user progress
+    const userProgress = await db
+      .select()
+      .from(userLearningProgress)
+      .where(eq(userLearningProgress.userId, userId));
+    
+    // Extract IDs of completed modules
+    const completedModuleIds = userProgress
+      .filter(p => p.status === "completed")
+      .map(p => p.moduleId);
+    
+    // Extract IDs of in-progress modules
+    const inProgressModuleIds = userProgress
+      .filter(p => p.status === "in_progress")
+      .map(p => p.moduleId);
+    
+    // First, recommend any in-progress module
+    if (inProgressModuleIds.length > 0) {
+      const [inProgressModule] = await db
+        .select()
+        .from(learningModules)
+        .where(inArray(learningModules.id, inProgressModuleIds))
+        .orderBy(learningModules.order);
+      
+      if (inProgressModule) {
+        return res.json(inProgressModule);
+      }
     }
     
-    res.json(module);
+    // Otherwise, recommend the next not-started module by order
+    const [nextModule] = await db
+      .select()
+      .from(learningModules)
+      .where(
+        completedModuleIds.length > 0
+          ? sql`${learningModules.id} NOT IN (${completedModuleIds.join(',')})`
+          : sql`1=1` // If no completed modules, recommend any module
+      )
+      .orderBy(learningModules.order);
+    
+    if (nextModule) {
+      return res.json(nextModule);
+    }
+    
+    // If no modules found (unlikely), return first module
+    const [firstModule] = await db
+      .select()
+      .from(learningModules)
+      .orderBy(learningModules.order);
+    
+    res.json(firstModule || null);
   } catch (error) {
     console.error("Error fetching recommended module:", error);
-    res.status(500).json({ error: "Failed to fetch recommended module" });
+    res.status(500).json({ message: "Failed to fetch recommended module" });
+  }
+});
+
+// Start a module
+router.post("/modules/start", async (req, res) => {
+  try {
+    const { userId, moduleId } = req.body;
+    
+    if (!userId || !moduleId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    
+    // Check if progress already exists
+    const [existingProgress] = await db
+      .select()
+      .from(userLearningProgress)
+      .where(
+        and(
+          eq(userLearningProgress.userId, userId),
+          eq(userLearningProgress.moduleId, moduleId)
+        )
+      );
+    
+    if (existingProgress) {
+      return res.json(existingProgress);
+    }
+    
+    // Create new progress record
+    const [progress] = await db
+      .insert(userLearningProgress)
+      .values({
+        id: uuidv4(),
+        userId,
+        moduleId,
+        status: "in_progress",
+        lastCompletedSection: 0,
+      })
+      .returning();
+    
+    res.json(progress);
+  } catch (error) {
+    console.error("Error starting module:", error);
+    res.status(500).json({ message: "Failed to start module" });
+  }
+});
+
+// Update section progress
+router.post("/modules/progress", async (req, res) => {
+  try {
+    const { userId, moduleId, section } = req.body;
+    
+    if (!userId || !moduleId || section === undefined) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    
+    // Update progress
+    const [progress] = await db
+      .update(userLearningProgress)
+      .set({
+        lastCompletedSection: section,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(userLearningProgress.userId, userId),
+          eq(userLearningProgress.moduleId, moduleId)
+        )
+      )
+      .returning();
+    
+    if (!progress) {
+      return res.status(404).json({ message: "Progress record not found" });
+    }
+    
+    res.json(progress);
+  } catch (error) {
+    console.error("Error updating section progress:", error);
+    res.status(500).json({ message: "Failed to update progress" });
+  }
+});
+
+// Complete a module
+router.post("/modules/complete", async (req, res) => {
+  try {
+    const { userId, moduleId } = req.body;
+    
+    if (!userId || !moduleId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    
+    // Update progress
+    const [progress] = await db
+      .update(userLearningProgress)
+      .set({
+        status: "completed",
+        completedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(userLearningProgress.userId, userId),
+          eq(userLearningProgress.moduleId, moduleId)
+        )
+      )
+      .returning();
+    
+    if (!progress) {
+      return res.status(404).json({ message: "Progress record not found" });
+    }
+    
+    res.json(progress);
+  } catch (error) {
+    console.error("Error completing module:", error);
+    res.status(500).json({ message: "Failed to complete module" });
+  }
+});
+
+// Submit quiz answer
+router.post("/quizzes/submit", async (req, res) => {
+  try {
+    const { userId, quizId, isCorrect } = req.body;
+    
+    if (!userId || !quizId || isCorrect === undefined) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    
+    // This endpoint could be expanded to store quiz results in the database
+    // For now, we just acknowledge the submission
+    
+    res.json({
+      success: true,
+      userId,
+      quizId,
+      isCorrect
+    });
+  } catch (error) {
+    console.error("Error submitting quiz answer:", error);
+    res.status(500).json({ message: "Failed to submit quiz answer" });
   }
 });
 

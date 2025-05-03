@@ -37,8 +37,8 @@ export function useLearningModulesByDifficulty(difficulty: number) {
   return useQuery({
     queryKey: ['/api/learning/modules/difficulty', difficulty],
     queryFn: async () => {
-      const data = await apiRequest<LearningModule[]>(`/api/learning/modules/difficulty/${difficulty}`);
-      return data;
+      const data = await apiRequest(`/api/learning/modules/difficulty/${difficulty}`);
+      return data as LearningModule[];
     },
     enabled: difficulty !== undefined
   });
@@ -49,12 +49,12 @@ export function useLearningModuleDetails(moduleId: string) {
   return useQuery({
     queryKey: ['/api/learning/modules', moduleId],
     queryFn: async () => {
-      const data = await apiRequest<{
+      const data = await apiRequest(`/api/learning/modules/${moduleId}/details`);
+      return data as {
         module: LearningModule;
         quizzes: LearningQuiz[];
         progress?: LearningProgress;
-      }>(`/api/learning/modules/${moduleId}/details`);
-      return data;
+      };
     },
     enabled: Boolean(moduleId)
   });
@@ -65,11 +65,11 @@ export function useQuizDetails(quizId: string) {
   return useQuery({
     queryKey: ['/api/learning/quizzes', quizId],
     queryFn: async () => {
-      const data = await apiRequest<{
+      const data = await apiRequest(`/api/learning/quizzes/${quizId}`);
+      return data as {
         quiz: LearningQuiz;
         module: LearningModule;
-      }>(`/api/learning/quizzes/${quizId}`);
-      return data;
+      };
     },
     enabled: Boolean(quizId)
   });
@@ -80,8 +80,8 @@ export function useUserLearningProgress(userId: string) {
   return useQuery({
     queryKey: ['/api/learning/progress', userId],
     queryFn: async () => {
-      const data = await apiRequest<LearningProgress[]>(`/api/learning/progress/${userId}`);
-      return data;
+      const data = await apiRequest(`/api/learning/progress/${userId}`);
+      return data as LearningProgress[];
     },
     enabled: Boolean(userId)
   });
@@ -92,14 +92,14 @@ export function useUserLearningStats(userId: string) {
   return useQuery({
     queryKey: ['/api/learning/stats', userId],
     queryFn: async () => {
-      const data = await apiRequest<{
+      const data = await apiRequest(`/api/learning/stats/${userId}`);
+      return data as {
         completedModules: number;
         inProgressModules: number;
         notStartedModules: number;
         totalModules: number;
         completionPercentage: number;
-      }>(`/api/learning/stats/${userId}`);
-      return data;
+      };
     },
     enabled: Boolean(userId)
   });
@@ -110,8 +110,8 @@ export function useNextRecommendedModule(userId: string) {
   return useQuery({
     queryKey: ['/api/learning/recommended', userId],
     queryFn: async () => {
-      const data = await apiRequest<LearningModule>(`/api/learning/recommended/${userId}`);
-      return data;
+      const data = await apiRequest(`/api/learning/recommended/${userId}`);
+      return data as LearningModule;
     },
     enabled: Boolean(userId)
   });
