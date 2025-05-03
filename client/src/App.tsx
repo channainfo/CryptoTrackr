@@ -15,6 +15,7 @@ import TaxReport from "@/pages/tax-report";
 import BudgetPlanner from "@/pages/budget-planner";
 import LearningPage from "@/pages/learning";
 import QuizPage from "@/pages/learning/quiz";
+import Alerts from "@/pages/alerts";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/budget-planner" component={BudgetPlanner} />
       <Route path="/learning" component={LearningPage} />
       <Route path="/learning/quiz/:id" component={QuizPage} />
+      <Route path="/alerts" component={Alerts} />
       <Route component={NotFound} />
     </Switch>
   );
