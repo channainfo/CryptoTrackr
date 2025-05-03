@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Joyride, { CallBackProps, Step } from 'react-joyride';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
@@ -37,14 +37,58 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   steps 
 }) => {
   const { toast } = useToast();
-  const { theme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
   const [run, setRun] = useState(showTour);
   const [stepIndex, setStepIndex] = useState(0);
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
   
   // Update run state when showTour prop changes
   useEffect(() => {
     setRun(showTour);
   }, [showTour]);
+  
+  // Function to check if dark mode is enabled
+  const checkDarkMode = useCallback(() => {
+    // Multiple ways to detect dark mode
+    const isDark = resolvedTheme === 'dark' || 
+                  theme === 'dark' || 
+                  document.documentElement.classList.contains('dark') ||
+                  window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    setCurrentTheme(isDark ? 'dark' : 'light');
+    console.log('OnboardingWizard: Theme detection -', { 
+      theme, 
+      resolvedTheme, 
+      isDark,
+      systemPrefersDark: window.matchMedia('(prefers-color-scheme: dark)').matches,
+      hasDocDarkClass: document.documentElement.classList.contains('dark')
+    });
+    
+    return isDark;
+  }, [theme, resolvedTheme]);
+
+  // Track theme changes from next-themes
+  useEffect(() => {
+    checkDarkMode();
+  }, [theme, resolvedTheme, checkDarkMode]);
+  
+  // Also observe DOM changes to catch other theme changes
+  useEffect(() => {
+    // Set up a mutation observer to detect class changes on html element
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(mutation => {
+        if (mutation.attributeName === 'class') {
+          checkDarkMode();
+        }
+      });
+    });
+    
+    // Start observing
+    observer.observe(document.documentElement, { attributes: true });
+    
+    // Clean up
+    return () => observer.disconnect();
+  }, [checkDarkMode]);
 
   // For debugging
   useEffect(() => {
@@ -97,14 +141,15 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
     return null;
   }
 
-  // Determine the styles based on the current theme
-  const isDarkTheme = theme === 'dark';
+  // Use our tracked theme state for styling
+  const isDarkTheme = currentTheme === 'dark';
   
   // Debug current theme
-  console.log('OnboardingWizard: Current theme is', theme);
+  console.log('OnboardingWizard: Using theme for rendering:', currentTheme);
   
   return (
     <Joyride
+      key={`joyride-${currentTheme}-${tourId}`} // Force re-render on theme change
       callback={handleJoyrideCallback}
       continuous={true}
       hideCloseButton={false}
@@ -121,9 +166,9 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           zIndex: 99999, // Ensure extremely high z-index to appear above all elements
           primaryColor: '#3b82f6', // blue-500
           // Theme-specific colors
-          backgroundColor: isDarkTheme ? '#27272a' : '#ffffff', // Dark gray in dark mode, white in light mode
+          backgroundColor: isDarkTheme ? '#1e1e1e' : '#ffffff', // Dark gray in dark mode, white in light mode
           textColor: isDarkTheme ? '#f1f5f9' : '#333333', // Light text in dark mode, dark text in light mode
-          arrowColor: isDarkTheme ? '#27272a' : '#ffffff', // Match tooltip background
+          arrowColor: isDarkTheme ? '#1e1e1e' : '#ffffff', // Match tooltip background
           overlayColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent overlay
         },
         tooltipContainer: {
