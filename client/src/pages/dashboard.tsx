@@ -262,9 +262,42 @@ const Dashboard = () => {
       
       {/* Onboarding wizard */}
       <OnboardingWizard
-        tourType="dashboard"
-        isEnabled={true}
+        tourId="dashboard"
+        showTour={showTour}
         onComplete={handleTourComplete}
+        steps={[
+          {
+            target: '.dashboard-overview',
+            content: 'This is your main dashboard where you can see an overview of your cryptocurrency portfolio performance.',
+            disableBeacon: true,
+            placement: 'bottom',
+          },
+          {
+            target: '.portfolio-selector',
+            content: 'Switch between your different portfolios using this selector.',
+            placement: 'bottom',
+          },
+          {
+            target: '.portfolio-summary',
+            content: 'View your portfolio summary including total value and 24-hour performance.',
+            placement: 'left',
+          },
+          {
+            target: '.asset-allocation',
+            content: 'This chart shows your asset allocation across different cryptocurrencies.',
+            placement: 'top',
+          },
+          {
+            target: '.market-sentiment',
+            content: 'The market sentiment indicator shows the overall market mood to help with your investment decisions.',
+            placement: 'left',
+          },
+          {
+            target: '.quick-actions',
+            content: 'Use these quick actions to add crypto, record values, and manage your portfolio.',
+            placement: 'top',
+          }
+        ]}
       />
     </>
   );
