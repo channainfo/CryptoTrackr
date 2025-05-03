@@ -4,13 +4,33 @@
 
 /* Custom scrollbar utilities */
 @layer utilities {
-  .scrollbar-none {
+  .scrollbar-none,
+  .no-scrollbar {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
   }
   
-  .scrollbar-none::-webkit-scrollbar {
+  .scrollbar-none::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
+  }
+}
+
+/* Custom scrollable tab indicators for mobile */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    position: relative;
+  }
+  
+  .overflow-x-auto::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(to right, transparent, hsl(var(--background) / 0.8));
+    pointer-events: none;
   }
 }
 

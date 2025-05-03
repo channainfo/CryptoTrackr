@@ -100,12 +100,14 @@ const PortfolioDetail = () => {
         )}
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="assets">Assets</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto overflow-y-hidden pb-2 no-scrollbar">
+            <TabsList className="mb-4 inline-flex min-w-max w-[500px] md:w-auto">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="assets">Assets</TabsTrigger>
+              <TabsTrigger value="transactions">Transactions</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="overview">
             {/* Portfolio Chart */}
