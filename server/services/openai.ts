@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { LearningModule, UserLearningProgress, PortfolioToken } from "@shared/schema";
+import { LearningModule, UserLearningProgress } from "@shared/schema";
 import axios from "axios";
 
 // Create OpenAI client with API key from environment variables
