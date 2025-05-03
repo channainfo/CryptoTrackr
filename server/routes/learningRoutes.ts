@@ -79,16 +79,21 @@ router.get("/modules/:id/details", async (req, res) => {
       .where(eq(learningQuizzes.moduleId, id))
       .orderBy(learningQuizzes.order);
     
-    // Get user progress
-    const [progress] = await db
-      .select()
-      .from(userLearningProgress)
-      .where(
-        and(
-          eq(userLearningProgress.userId, userId),
-          eq(userLearningProgress.moduleId, id)
-        )
-      );
+    // Special handling for demo user - return null progress
+    let progress = null;
+    if (userId !== 'demo') {
+      // Get user progress for non-demo users
+      const [userProgress] = await db
+        .select()
+        .from(userLearningProgress)
+        .where(
+          and(
+            eq(userLearningProgress.userId, userId),
+            eq(userLearningProgress.moduleId, id)
+          )
+        );
+      progress = userProgress;
+    }
     
     res.json({
       module,
@@ -137,6 +142,11 @@ router.get("/progress/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     
+    // Special handling for demo user - return empty array to prevent UUID errors
+    if (userId === 'demo') {
+      return res.json([]);
+    }
+    
     const progress = await db
       .select()
       .from(userLearningProgress)
@@ -153,6 +163,24 @@ router.get("/progress/:userId", async (req, res) => {
 router.get("/stats/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
+    
+    // Special handling for demo user - return default stats
+    if (userId === 'demo') {
+      // Count all modules
+      const totalModulesResult = await db
+        .select({ count: count() })
+        .from(learningModules);
+      
+      const totalModules = totalModulesResult[0]?.count || 0;
+      
+      return res.json({
+        completedModules: 0,
+        inProgressModules: 0,
+        notStartedModules: totalModules,
+        totalModules,
+        completionPercentage: 0
+      });
+    }
     
     // Get counts of each status type
     const completedModulesResult = await db
@@ -206,6 +234,16 @@ router.get("/stats/:userId", async (req, res) => {
 router.get("/recommended/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
+    
+    // Special handling for demo user - recommend first module by order
+    if (userId === 'demo') {
+      const [firstModule] = await db
+        .select()
+        .from(learningModules)
+        .orderBy(learningModules.order);
+      
+      return res.json(firstModule || null);
+    }
     
     // Get user progress
     const userProgress = await db
@@ -273,6 +311,19 @@ router.post("/modules/start", async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
     
+    // Special handling for demo user - return mock progress
+    if (userId === 'demo') {
+      return res.json({
+        id: 'demo-progress',
+        userId: 'demo',
+        moduleId,
+        status: 'in_progress',
+        lastCompletedSection: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    
     // Check if progress already exists
     const [existingProgress] = await db
       .select()
@@ -316,6 +367,19 @@ router.post("/modules/progress", async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
     
+    // Special handling for demo user - return mock progress
+    if (userId === 'demo') {
+      return res.json({
+        id: 'demo-progress',
+        userId: 'demo',
+        moduleId,
+        status: 'in_progress',
+        lastCompletedSection: section,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    
     // Update progress
     const [progress] = await db
       .update(userLearningProgress)
@@ -349,6 +413,21 @@ router.post("/modules/complete", async (req, res) => {
     
     if (!userId || !moduleId) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+    
+    // Special handling for demo user - return mock completed progress
+    if (userId === 'demo') {
+      const now = new Date().toISOString();
+      return res.json({
+        id: 'demo-progress',
+        userId: 'demo',
+        moduleId,
+        status: 'completed',
+        lastCompletedSection: 10, // High number to indicate completion
+        completedAt: now,
+        createdAt: now,
+        updatedAt: now
+      });
     }
     
     // Update progress
