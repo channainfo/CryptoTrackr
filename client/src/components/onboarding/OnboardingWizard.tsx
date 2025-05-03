@@ -118,7 +118,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
       spotlightClicks={false}
       styles={{
         options: {
-          zIndex: 10000,
+          zIndex: 99999, // Ensure extremely high z-index to appear above all elements
           primaryColor: '#3b82f6', // blue-500
           // Theme-specific colors
           backgroundColor: isDarkTheme ? '#27272a' : '#ffffff', // Dark gray in dark mode, white in light mode
@@ -128,9 +128,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         },
         tooltipContainer: {
           textAlign: 'left',
-          boxShadow: isDarkTheme 
-            ? '0 4px 12px rgba(0, 0, 0, 0.5)' 
-            : '0 4px 12px rgba(0, 0, 0, 0.15)',
+          boxShadow: 'none', // Remove the box-shadow entirely
         },
         buttonNext: {
           backgroundColor: '#3b82f6', // Always blue
@@ -147,6 +145,9 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           fontSize: '14px',
           padding: '15px',
           borderRadius: '6px',
+          boxShadow: 'none', // Explicitly remove any box shadow
+          filter: 'none', // Remove any filter that might create shadows
+          border: isDarkTheme ? '1px solid #3f3f46' : '1px solid #e5e7eb', // Add a subtle border instead of shadow
         },
         tooltipContent: {
           padding: '5px 0',

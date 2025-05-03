@@ -66,7 +66,7 @@ const OnboardingDebug: React.FC<OnboardingDebugProps> = ({
   };
   
   return (
-    <Card className="fixed bottom-4 right-4 w-80 z-50 shadow-lg opacity-70 hover:opacity-100 transition-opacity">
+    <Card className="fixed bottom-4 right-4 w-80 z-40 shadow-lg opacity-70 hover:opacity-100 transition-opacity">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm">Onboarding Debug</CardTitle>
         <CardDescription className="text-xs">
