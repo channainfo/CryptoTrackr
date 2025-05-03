@@ -6,6 +6,8 @@ import { relations } from "drizzle-orm";
 // Define enums based on the database structure
 export const transactionTypeEnum = pgEnum('enum_transactions_type', ['buy', 'sell']);
 export const timeframeEnum = pgEnum('enum_timeframe', ['daily', 'weekly', 'monthly']);
+export const alertTypeEnum = pgEnum('enum_alert_type', ['price_above', 'price_below', 'percent_change', 'volume_above', 'market_cap_above']);
+export const alertStatusEnum = pgEnum('enum_alert_status', ['active', 'triggered', 'disabled']);
 
 // User table
 export const users = pgTable("users", {
@@ -206,6 +208,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   transactions: many(transactions),
   portfolioHistoricalValues: many(portfolioHistoricalValues),
   tokenHistoricalValues: many(tokenHistoricalValues),
+  alerts: many(alerts),
 }));
 
 export const tokensRelations = relations(tokens, ({ one, many }) => ({
@@ -213,6 +216,7 @@ export const tokensRelations = relations(tokens, ({ one, many }) => ({
   portfolioTokens: many(portfolioTokens),
   transactions: many(transactions),
   historicalValues: many(tokenHistoricalValues),
+  alerts: many(alerts),
 }));
 
 export const portfoliosRelations = relations(portfolios, ({ one, many }) => ({
@@ -291,6 +295,44 @@ export const tokenHistoricalValuesRelations = relations(tokenHistoricalValues, (
   }),
 }));
 
+// Alerts table
+export const alerts = pgTable("alerts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  tokenId: uuid("token_id").notNull().references(() => tokens.id),
+  alertType: alertTypeEnum("alert_type").notNull(),
+  threshold: numeric("threshold", { precision: 18, scale: 8 }).notNull(),
+  status: alertStatusEnum("status").notNull().default('active'),
+  notificationSent: boolean("notification_sent").notNull().default(false),
+  notificationMethod: varchar("notification_method", { length: 50 }).notNull().default('app'),
+  lastTriggeredAt: timestamp("last_triggered_at"),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+export const insertAlertSchema = createInsertSchema(alerts).pick({
+  userId: true,
+  tokenId: true,
+  alertType: true,
+  threshold: true,
+  notificationMethod: true,
+  name: true,
+  description: true,
+});
+
+export const alertsRelations = relations(alerts, ({ one }) => ({
+  user: one(users, {
+    fields: [alerts.userId],
+    references: [users.id],
+  }),
+  token: one(tokens, {
+    fields: [alerts.tokenId],
+    references: [tokens.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -314,3 +356,6 @@ export type InsertPortfolioHistoricalValue = z.infer<typeof insertPortfolioHisto
 
 export type TokenHistoricalValue = typeof tokenHistoricalValues.$inferSelect;
 export type InsertTokenHistoricalValue = z.infer<typeof insertTokenHistoricalValueSchema>;
+
+export type Alert = typeof alerts.$inferSelect;
+export type InsertAlert = z.infer<typeof insertAlertSchema>;
