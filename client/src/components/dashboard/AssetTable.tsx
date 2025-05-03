@@ -1,6 +1,6 @@
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { Card } from "@/components/ui/card";
-import { MoreHorizontal, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { MoreHorizontal, ArrowUpRight, ExternalLink } from "lucide-react";
 import { PortfolioAsset } from "@/types/crypto";
 import { 
   DropdownMenu,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocation } from "wouter";
 
 interface AssetTableProps {
   limit?: number;
@@ -18,6 +19,7 @@ interface AssetTableProps {
 
 const AssetTable = ({ limit, showViewAll = true, portfolioId }: AssetTableProps) => {
   const { assets, isLoading, removeAssetFromPortfolio } = usePortfolio(portfolioId);
+  const [, navigate] = useLocation();
   
   const displayedAssets = limit ? (assets || []).slice(0, limit) : (assets || []);
   
@@ -92,7 +94,11 @@ const AssetTable = ({ limit, showViewAll = true, portfolioId }: AssetTableProps)
               ))
             ) : (
               displayedAssets.map((asset: PortfolioAsset) => (
-                <tr key={asset.id} className="hover:bg-neutral-lighter dark:hover:bg-zinc-800 transition-colors">
+                <tr 
+                  key={asset.id} 
+                  className="hover:bg-neutral-lighter dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/token/${asset.id}`)}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full ${getBgColor(asset.symbol)}`}>
@@ -118,13 +124,16 @@ const AssetTable = ({ limit, showViewAll = true, portfolioId }: AssetTableProps)
                       {asset.priceChangePercentage24h >= 0 ? '+' : ''}{asset.priceChangePercentage24h.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger className="text-primary hover:text-primary-dark dark:text-blue-400 dark:hover:text-blue-300">
                         <MoreHorizontal className="h-5 w-5" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/token/${asset.id}`)}>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Buy More</DropdownMenuItem>
                         <DropdownMenuItem>Sell</DropdownMenuItem>
                         <DropdownMenuItem className="text-red-500" onClick={() => removeAssetFromPortfolio(asset.id)}>

@@ -3,9 +3,16 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import axios from "axios";
 import { z } from "zod";
-import { insertPortfolioSchema, insertTransactionSchema } from "@shared/schema";
+import { 
+  insertPortfolioSchema, 
+  insertTransactionSchema, 
+  portfolioTokens, 
+  tokens 
+} from "@shared/schema";
 import { services } from "./services/cryptoApi";
 import { HistoricalValueService } from "./services";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up API routes
@@ -333,6 +340,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get portfolio token details
+  app.get('/api/portfolio-tokens/:portfolioTokenId', async (req, res) => {
+    try {
+      const portfolioTokenId = req.params.portfolioTokenId;
+      if (!portfolioTokenId) {
+        return res.status(400).json({ message: 'Invalid portfolio token ID' });
+      }
+      
+      // Get token details
+      const token = await db
+        .select({
+          id: portfolioTokens.id,
+          portfolioId: portfolioTokens.portfolioId,
+          userId: portfolioTokens.userId,
+          tokenId: portfolioTokens.tokenId,
+          amount: portfolioTokens.amount,
+          averageBuyPrice: portfolioTokens.averageBuyPrice,
+          totalInvested: portfolioTokens.totalInvested,
+          currentPrice: portfolioTokens.currentPrice,
+          totalValue: portfolioTokens.totalValue,
+          profitLoss: portfolioTokens.profitLoss,
+          tokenSymbol: tokens.symbol,
+          tokenName: tokens.name,
+          tokenImageUrl: tokens.imageUrl
+        })
+        .from(portfolioTokens)
+        .leftJoin(tokens, eq(portfolioTokens.tokenId, tokens.id))
+        .where(eq(portfolioTokens.id, portfolioTokenId))
+        .limit(1);
+      
+      if (!token[0]) {
+        return res.status(404).json({ message: 'Portfolio token not found' });
+      }
+      
+      res.json(token[0]);
+    } catch (error) {
+      console.error('Error fetching portfolio token:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio token' });
+    }
+  });
+
   // Get token performance data
   app.get('/api/portfolio-tokens/:portfolioTokenId/performance', async (req, res) => {
     try {
