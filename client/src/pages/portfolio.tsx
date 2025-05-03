@@ -63,16 +63,16 @@ const Portfolio = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Apply additional client-side filtering for active portfolios with assets
-  const filteredPortfolios = portfoliosWithAssets.filter(item => {
+  // Apply client-side filtering based on the active tab
+  const filteredPortfolios = allPortfoliosWithAssets?.filter((item: PortfolioWithAssets) => {
     // Convert isWatchlist to a boolean to handle any possible type issues
     const isWatchlist = Boolean(item.portfolio.isWatchlist);
     
     console.log(`Filtering portfolio "${item.portfolio.name}" in "${activeTab}" tab (isWatchlist: ${isWatchlist})`);
     
     if (activeTab === "all") {
-      // For "all" tab, show all portfolios
-      return true;
+      // For "all" tab, show all portfolios EXCEPT watchlists
+      return !isWatchlist;
     } 
     else if (activeTab === "active") {
       // For "active" tab, only show portfolios with assets and NOT watchlists
@@ -87,7 +87,7 @@ const Portfolio = () => {
       return isWatchlist === true;
     }
     return false;
-  });
+  }) || [];
   
   const sortedPortfolios = [...filteredPortfolios].sort((a, b) => {
     switch (sortBy) {
@@ -179,11 +179,11 @@ const Portfolio = () => {
     createPortfolioMutation.mutate(requestData);
   };
 
-  // Get portfolio count by type for badges
+  // Get portfolio count by type for badges using allPortfoliosWithAssets
   const portfolioCounts = {
-    all: portfoliosWithAssets.length,
-    active: portfoliosWithAssets.filter(p => p.assets.length > 0).length,
-    watchlist: portfoliosWithAssets.filter(p => p.portfolio.isWatchlist).length
+    all: allPortfoliosWithAssets?.filter((p: PortfolioWithAssets) => !Boolean(p.portfolio.isWatchlist)).length || 0,
+    active: allPortfoliosWithAssets?.filter((p: PortfolioWithAssets) => p.assets.length > 0 && !Boolean(p.portfolio.isWatchlist)).length || 0,
+    watchlist: allPortfoliosWithAssets?.filter((p: PortfolioWithAssets) => Boolean(p.portfolio.isWatchlist)).length || 0
   };
 
   // Select the appropriate icon for sort option
