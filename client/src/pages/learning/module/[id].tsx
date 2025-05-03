@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Container } from "@/components/ui/container";
 import { ChevronLeft, ChevronRight, CheckCircle, BookOpen, Clock, Award } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ModuleDetailSkeleton } from "@/components/learning/ModuleDetailSkeleton";
 import { useLearningModuleDetails, useStartModule, useUpdateSectionProgress, useCompleteModule } from "@/hooks/use-learning";
 import type { LearningModule, ContentSection } from "@/types/education";
 
@@ -124,9 +125,15 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
     return (
       <Container>
         <div className="py-8">
-          <div className="flex items-center justify-center p-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          {/* Back button skeleton */}
+          <div className="mb-2">
+            <Button variant="ghost" size="sm" disabled>
+              <ChevronLeft className="mr-1 w-4 h-4" /> Back to Learning Center
+            </Button>
           </div>
+          
+          {/* Module content skeleton */}
+          <ModuleDetailSkeleton />
         </div>
       </Container>
     );

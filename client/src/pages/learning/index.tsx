@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Container } from "@/components/ui/container";
 import { useToast } from "@/hooks/use-toast";
 import { Book, BookOpen, Award, TrendingUp, Shield, Zap, ArrowRight, CheckCircle, Clock, User } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ModuleSkeleton, ModuleSkeletonList } from "@/components/learning/ModuleSkeleton";
 import { 
   useLearningModules, 
   useLearningModulesByCategory,
@@ -146,10 +148,68 @@ const LearningPage = () => {
     return (
       <Container>
         <div className="py-8">
-          <h1 className="text-3xl font-bold mb-6">Learning Center</h1>
-          <div className="flex items-center justify-center p-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">Learning Center</h1>
+            <Skeleton className="h-10 w-32 rounded-md" />
           </div>
+          
+          {/* Stats Skeleton */}
+          <Card className="mb-8">
+            <CardHeader className="pb-2">
+              <Skeleton className="h-6 w-48 mb-2" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="p-4 border rounded-lg">
+                    <Skeleton className="h-8 w-12 mb-2" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-4">
+                <div className="flex justify-between mb-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-8" />
+                </div>
+                <Skeleton className="h-2 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Recommended Module Skeleton */}
+          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+            <CardHeader>
+              <Skeleton className="h-6 w-60 mb-2" />
+              <Skeleton className="h-4 w-full" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex-grow">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-full mb-4" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-5 w-24 rounded-full" />
+                  </div>
+                </div>
+                <Skeleton className="h-10 w-32 rounded-md" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Tabs Skeleton */}
+          <div className="mb-6">
+            <div className="flex space-x-1 border-b">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-24 rounded-md" />
+              ))}
+            </div>
+          </div>
+          
+          {/* Module Cards Skeleton */}
+          <ModuleSkeletonList />
         </div>
       </Container>
     );
