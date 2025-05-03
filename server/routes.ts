@@ -32,17 +32,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add asset to portfolio
   app.post('/api/portfolio', async (req, res) => {
     try {
-      const validatedData = insertPortfolioSchema
-        .extend({
-          symbol: z.string(),
-          name: z.string(),
-          currentPrice: z.number(),
-          value: z.number(),
-          priceChangePercentage24h: z.number().optional(),
-        })
-        .parse(req.body);
+      // Get the default user and portfolio first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
       
-      const asset = await storage.addPortfolioAsset(validatedData);
+      // We'll automatically handle the userId so user doesn't have to provide it
+      const assetData = {
+        symbol: req.body.symbol,
+        name: req.body.name,
+        quantity: req.body.quantity,
+        currentPrice: req.body.currentPrice,
+        priceChangePercentage24h: req.body.priceChangePercentage24h || 0,
+        userId: defaultUser.id,
+        value: req.body.quantity * req.body.currentPrice
+      };
+      
+      const asset = await storage.addPortfolioAsset(assetData);
       res.status(201).json(asset);
     } catch (error) {
       console.error('Error adding portfolio asset:', error);
@@ -53,8 +58,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Remove asset from portfolio
   app.delete('/api/portfolio/:id', async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: 'Invalid asset ID' });
       }
       
@@ -80,15 +85,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add transaction
   app.post('/api/transactions', async (req, res) => {
     try {
-      const validatedData = insertTransactionSchema
-        .extend({
-          cryptoName: z.string(),
-          cryptoSymbol: z.string(),
-          value: z.number(),
-        })
-        .parse(req.body);
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
       
-      const transaction = await storage.addTransaction(validatedData);
+      const txData = {
+        cryptoName: req.body.cryptoName,
+        cryptoSymbol: req.body.cryptoSymbol,
+        type: req.body.type || 'buy',
+        quantity: req.body.quantity,
+        price: req.body.price,
+        value: req.body.value || (req.body.quantity * req.body.price),
+        userId: defaultUser.id,
+        timestamp: req.body.timestamp || new Date().toISOString()
+      };
+      
+      const transaction = await storage.addTransaction(txData);
       res.status(201).json(transaction);
     } catch (error) {
       console.error('Error adding transaction:', error);
