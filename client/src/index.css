@@ -18,11 +18,11 @@
 
 /* Custom scrollable tab indicators for mobile */
 @media (max-width: 768px) {
-  .overflow-x-auto {
+  .tabs-wrapper {
     position: relative;
   }
   
-  .overflow-x-auto::after {
+  .tabs-wrapper::after {
     content: "";
     position: absolute;
     top: 0;
@@ -31,6 +31,7 @@
     height: 100%;
     background: linear-gradient(to right, transparent, hsl(var(--background) / 0.8));
     pointer-events: none;
+    z-index: 10;
   }
 }
 

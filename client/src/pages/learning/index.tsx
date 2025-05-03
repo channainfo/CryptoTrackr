@@ -475,15 +475,17 @@ const LearningPage = () => {
         <div className="border-t border-gray-200 dark:border-gray-800 my-12 pt-4">
           <h2 className="text-2xl font-bold mb-6">Explore Learning Modules</h2>
           <Tabs defaultValue="all" className="w-full" onValueChange={setCategory}>
-            <div className="overflow-x-auto overflow-y-hidden pb-2 no-scrollbar">
-              <TabsList className="mb-4 inline-flex min-w-max w-[650px] md:w-auto">
-                <TabsTrigger value="all">All Modules</TabsTrigger>
-                <TabsTrigger value="basics">Basics</TabsTrigger>
-                <TabsTrigger value="trading">Trading</TabsTrigger>
-                <TabsTrigger value="defi">DeFi</TabsTrigger>
-                <TabsTrigger value="security">Security</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              </TabsList>
+            <div className="tabs-wrapper">
+              <div className="overflow-x-auto overflow-y-hidden pb-2 no-scrollbar">
+                <TabsList className="mb-4 inline-flex min-w-max w-[650px] md:w-auto">
+                  <TabsTrigger value="all">All Modules</TabsTrigger>
+                  <TabsTrigger value="basics">Basics</TabsTrigger>
+                  <TabsTrigger value="trading">Trading</TabsTrigger>
+                  <TabsTrigger value="defi">DeFi</TabsTrigger>
+                  <TabsTrigger value="security">Security</TabsTrigger>
+                  <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                </TabsList>
+              </div>
             </div>
           
             <TabsContent value={category} className="mt-0">
