@@ -205,6 +205,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get portfolio summary
+  app.get('/api/portfolios/:portfolioId/summary', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== defaultUser.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      // Get portfolio assets
+      const assets = await storage.getPortfolioAssetsById(portfolioId);
+      
+      // Calculate summary data
+      const totalValue = assets.reduce((sum, asset) => sum + asset.value, 0);
+      const assetCount = assets.length;
+      
+      res.json({
+        id: portfolioId,
+        totalValue,
+        assetCount
+      });
+    } catch (error) {
+      console.error('Error fetching portfolio summary:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio summary' });
+    }
+  });
+  
   // Get assets for a specific portfolio
   app.get('/api/portfolios/:portfolioId/assets', async (req, res) => {
     try {
@@ -251,6 +287,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error creating portfolio:', error);
       res.status(400).json({ message: 'Invalid portfolio data' });
+    }
+  });
+  
+  // Update portfolio
+  app.patch('/api/portfolios/:portfolioId', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== defaultUser.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      const updateData = {
+        name: req.body.name,
+        description: req.body.description,
+        isDefault: req.body.isDefault
+      };
+      
+      // If this portfolio is set as default, update any existing default portfolios
+      if (updateData.isDefault) {
+        const userPortfolios = await storage.getUserPortfolios(defaultUser.id);
+        for (const p of userPortfolios) {
+          if (p.id !== portfolioId && p.isDefault) {
+            // Update this portfolio to not be the default
+            await storage.updatePortfolio(p.id, { isDefault: false });
+          }
+        }
+      }
+      
+      const updatedPortfolio = await storage.updatePortfolio(portfolioId, updateData);
+      res.json(updatedPortfolio);
+    } catch (error) {
+      console.error('Error updating portfolio:', error);
+      res.status(400).json({ message: 'Invalid portfolio data' });
+    }
+  });
+  
+  // Delete portfolio
+  app.delete('/api/portfolios/:portfolioId', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== defaultUser.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      // Make sure we don't delete the only portfolio
+      const userPortfolios = await storage.getUserPortfolios(defaultUser.id);
+      if (userPortfolios.length <= 1) {
+        return res.status(400).json({ message: 'Cannot delete the only portfolio' });
+      }
+      
+      // Make sure another portfolio is set as default if this one is default
+      if (portfolio.isDefault) {
+        const otherPortfolio = userPortfolios.find(p => p.id !== portfolioId);
+        if (otherPortfolio) {
+          await storage.updatePortfolio(otherPortfolio.id, { isDefault: true });
+        }
+      }
+      
+      // Delete all assets in portfolio first
+      const assets = await storage.getPortfolioAssetsById(portfolioId);
+      for (const asset of assets) {
+        await storage.removePortfolioAsset(asset.id);
+      }
+      
+      // Delete the portfolio itself
+      await storage.deletePortfolio(portfolioId);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting portfolio:', error);
+      res.status(500).json({ message: 'Failed to delete portfolio' });
     }
   });
   
