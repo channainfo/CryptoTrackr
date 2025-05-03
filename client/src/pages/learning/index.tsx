@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Book, BookOpen, Award, TrendingUp, Shield, Zap, ArrowRight, CheckCircle, Clock, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModuleSkeleton, ModuleSkeletonList } from "@/components/learning/ModuleSkeleton";
+import LearningPath from "@/components/learning/LearningPath";
+import AchievementGrid from "@/components/learning/AchievementGrid";
 import { 
   useLearningModules, 
   useLearningModulesByCategory,
@@ -45,6 +47,9 @@ function getModuleStatus(progress: LearningProgress[] | undefined, moduleId: str
   return moduleProgress?.status || "not_started";
 }
 
+// Import the GemBadge component
+import { GemBadge, ProgressGems } from "@/components/learning/GemBadge";
+
 // Helper component for module cards
 const ModuleCard = ({ 
   module, 
@@ -54,18 +59,18 @@ const ModuleCard = ({
   progress: LearningProgress[] | undefined;
 }) => {
   const status = getModuleStatus(progress, module.id);
-  const statusText = {
-    not_started: "Not Started",
-    in_progress: "In Progress",
-    completed: "Completed"
-  }[status];
   
   const progressValue = status === "completed" ? 100 : 
                         status === "in_progress" ? 
                           (progress?.find(p => p.moduleId === module.id)?.lastCompletedSection || 0) * 20 : 0;
   
+  // Calculate sections completed
+  const moduleProgress = progress?.find(p => p.moduleId === module.id);
+  const sectionsCompleted = moduleProgress?.lastCompletedSection || 0;
+  const totalSections = 5; // Assuming 5 sections per module
+  
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col transition-all hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800">
       <CardHeader>
         <div className="flex justify-between items-start">
           <Badge 
@@ -75,10 +80,10 @@ const ModuleCard = ({
             <span className="mr-1">{CategoryIcons[module.category]}</span> 
             {module.category.charAt(0).toUpperCase() + module.category.slice(1)}
           </Badge>
-          <Badge variant={status === "completed" ? "default" : "outline"}>
-            {status === "completed" && <CheckCircle className="w-3 h-3 mr-1" />}
-            {statusText}
-          </Badge>
+          <GemBadge 
+            tier={status === "completed" ? "completed" : status === "in_progress" ? "in_progress" : "not_started"} 
+            animate 
+          />
         </div>
         <CardTitle className="mt-2">{module.title}</CardTitle>
         <CardDescription>{module.description}</CardDescription>
@@ -93,7 +98,18 @@ const ModuleCard = ({
             <span>Progress</span>
             <span>{progressValue}%</span>
           </div>
-          <Progress value={progressValue} className="h-2" />
+          <Progress value={progressValue} className="h-2 mb-1" />
+          
+          {/* Progress detail with gem badge */}
+          {status !== "not_started" && (
+            <div className="mt-2">
+              <ProgressGems
+                progress={sectionsCompleted}
+                total={totalSections}
+                size="sm"
+              />
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter>
@@ -301,6 +317,27 @@ const LearningPage = () => {
             </CardContent>
           </Card>
         )}
+        
+        {/* Two-column layout for larger screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Left column with Learning Path - takes 2/3 of space */}
+          <div className="lg:col-span-2">
+            <LearningPath 
+              modules={allModules || []} 
+              progress={userProgress}
+              className="h-full"
+            />
+          </div>
+          
+          {/* Right column with Achievement Grid - takes 1/3 of space */}
+          <div>
+            <AchievementGrid 
+              modules={allModules || []} 
+              progress={userProgress}
+              className="h-full"
+            />
+          </div>
+        </div>
         
         <Tabs defaultValue="all" className="w-full" onValueChange={setCategory}>
           <TabsList className="mb-6">
