@@ -69,12 +69,16 @@ export class TokenHistoricalValueModel {
     startDate: Date,
     endDate: Date
   ): Promise<TokenHistoricalValue[]> {
+    // Convert dates to ISO strings for PostgreSQL compatibility
+    const startDateStr = startDate.toISOString();
+    const endDateStr = endDate.toISOString();
+    
     return await db
       .select()
       .from(tokenHistoricalValues)
       .where(and(
         eq(tokenHistoricalValues.portfolioTokenId, portfolioTokenId),
-        between(tokenHistoricalValues.date, startDate, endDate)
+        sql`${tokenHistoricalValues.date}::date BETWEEN ${startDateStr}::date AND ${endDateStr}::date`
       ))
       .orderBy(asc(tokenHistoricalValues.date));
   }
@@ -148,12 +152,14 @@ export class TokenHistoricalValueModel {
     const profitLossPercentage = investedNum > 0 ? (profitLoss / investedNum) * 100 : 0;
     
     // Check if record already exists for today
+    const todayStr = today.toISOString();
+    
     const [existingRecord] = await db
       .select()
       .from(tokenHistoricalValues)
       .where(and(
         eq(tokenHistoricalValues.portfolioTokenId, portfolioTokenId),
-        eq(tokenHistoricalValues.date, today),
+        sql`${tokenHistoricalValues.date}::date = ${todayStr}::date`,
         eq(tokenHistoricalValues.timeframe, timeframe)
       ));
     
@@ -181,7 +187,7 @@ export class TokenHistoricalValueModel {
         portfolioTokenId,
         userId,
         tokenId,
-        date: today,
+        date: todayStr,
         quantity: quantity.toString(),
         price: price.toString(),
         totalValue: totalValue.toString(),
@@ -244,12 +250,14 @@ export class TokenHistoricalValueModel {
     }
     
     // Get historical value at start date
+    const startDateStr = startDate.toISOString();
+    
     const [startValue] = await db
       .select()
       .from(tokenHistoricalValues)
       .where(and(
         eq(tokenHistoricalValues.portfolioTokenId, portfolioTokenId),
-        eq(tokenHistoricalValues.date, startDate)
+        sql`${tokenHistoricalValues.date}::date = ${startDateStr}::date`
       ))
       .limit(1);
     
@@ -260,7 +268,7 @@ export class TokenHistoricalValueModel {
         .from(tokenHistoricalValues)
         .where(and(
           eq(tokenHistoricalValues.portfolioTokenId, portfolioTokenId),
-          sql`${tokenHistoricalValues.date} <= ${startDate}`
+          sql`${tokenHistoricalValues.date}::date <= ${startDateStr}::date`
         ))
         .orderBy(desc(tokenHistoricalValues.date))
         .limit(1);
@@ -283,7 +291,7 @@ export class TokenHistoricalValueModel {
           parseFloat(nearestValue.price.toString()),
           parseFloat(latestValue.price.toString())
         ),
-        historical: await this.findByDateRange(portfolioTokenId, nearestValue.date, endDate)
+        historical: await this.findByDateRange(portfolioTokenId, new Date(nearestValue.date), new Date(endDate))
       };
     }
     
@@ -303,7 +311,7 @@ export class TokenHistoricalValueModel {
         parseFloat(startValue.price.toString()),
         parseFloat(latestValue.price.toString())
       ),
-      historical: await this.findByDateRange(portfolioTokenId, startDate, endDate)
+      historical: await this.findByDateRange(portfolioTokenId, new Date(startValue.date), new Date(endDate))
     };
   }
 }

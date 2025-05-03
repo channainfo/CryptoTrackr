@@ -1,0 +1,1 @@
+export { HistoricalValueService } from './HistoricalValueService';
