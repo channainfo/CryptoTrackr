@@ -45,6 +45,7 @@ export interface IStorage {
   createPortfolio(data: Partial<Portfolio>): Promise<Portfolio>;
   getPortfolioById(id: string): Promise<Portfolio | undefined>;
   updatePortfolio(id: string, data: Partial<Portfolio>): Promise<Portfolio | undefined>;
+  deletePortfolio(id: string): Promise<boolean>;
   
   // Portfolio assets methods
   getPortfolioAssets(): Promise<PortfolioAsset[]>;
@@ -132,6 +133,41 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedPortfolio;
+  }
+  
+  async deletePortfolio(id: string): Promise<boolean> {
+    try {
+      const portfolio = await this.getPortfolioById(id);
+      if (!portfolio) return false;
+      
+      // Delete portfolio tokens first (cascading deletion)
+      const portfolioTokensInPortfolio = await db
+        .select()
+        .from(portfolioTokens)
+        .where(eq(portfolioTokens.portfolioId, id));
+        
+      // Delete each token's related transactions
+      for (const token of portfolioTokensInPortfolio) {
+        await db
+          .delete(transactions)
+          .where(eq(transactions.portfolioTokenId, token.id));
+      }
+      
+      // Delete portfolio tokens
+      await db
+        .delete(portfolioTokens)
+        .where(eq(portfolioTokens.portfolioId, id));
+      
+      // Delete the portfolio itself
+      await db
+        .delete(portfolios)
+        .where(eq(portfolios.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting portfolio:', error);
+      return false;
+    }
   }
 
   async getPortfolioAssetsById(portfolioId: string): Promise<PortfolioAsset[]> {
