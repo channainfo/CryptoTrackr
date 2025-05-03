@@ -12,6 +12,7 @@ export interface LearningModule {
   order: number;
   estimatedMinutes: number;
   imageUrl?: string;
+  explanation?: string; // AI-generated explanation of why this module is recommended
   createdAt: string;
   updatedAt: string;
 }

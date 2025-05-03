@@ -421,6 +421,15 @@ const LearningPage = () => {
                     <Progress value={effectiveStats?.completionPercentage || 0} className="h-2" />
                   </div>
                   
+                  {recommendedModule?.explanation && (
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                      <h4 className="text-sm font-medium mb-1 text-blue-800 dark:text-blue-300">AI Recommendation</h4>
+                      <p className="text-xs italic text-blue-600 dark:text-blue-400">
+                        "{recommendedModule.explanation}"
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 border rounded-lg text-center">
                       <div className="text-xl font-bold">{effectiveStats?.completedModules || 0}</div>
@@ -441,6 +450,11 @@ const LearningPage = () => {
                   <CardTitle className="flex items-center text-lg">
                     <ArrowRight className="mr-2 w-5 h-5" /> Next Up
                   </CardTitle>
+                  {recommendedModule.explanation && (
+                    <CardDescription className="italic text-indigo-600 dark:text-indigo-400 mt-1">
+                      "{recommendedModule.explanation}"
+                    </CardDescription>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
