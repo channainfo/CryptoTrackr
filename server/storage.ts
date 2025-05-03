@@ -393,6 +393,10 @@ export class DatabaseStorage implements IStorage {
     
     const updateData: Partial<typeof portfolioTokens.$inferInsert> = {};
     
+    // Check if this is a partial sell (quantity is reduced)
+    const isPartialSell = data.quantity !== undefined && data.quantity < portfolioToken.quantity;
+    const sellQuantity = isPartialSell ? portfolioToken.quantity - data.quantity : 0;
+    
     if (data.quantity !== undefined) {
       updateData.amount = data.quantity.toString();
       updateData.totalValue = (data.quantity * (data.currentPrice || portfolioToken.currentPrice)).toString();
@@ -417,6 +421,17 @@ export class DatabaseStorage implements IStorage {
     if (Object.keys(updateData).length > 0) {
       updateData.updatedAt = new Date();
       
+      // If this is a partial sell, increment the sell count
+      if (isPartialSell) {
+        const portfolioTokenData = await db.query.portfolioTokens.findFirst({
+          where: eq(portfolioTokens.id, id)
+        });
+        
+        if (portfolioTokenData) {
+          updateData.sellCount = (Number(portfolioTokenData.sellCount) || 0) + 1;
+        }
+      }
+      
       const [updated] = await db.update(portfolioTokens)
         .set(updateData)
         .where(eq(portfolioTokens.id, id))
@@ -426,6 +441,29 @@ export class DatabaseStorage implements IStorage {
       
       // Get the associated token for returning complete info
       const [token] = await db.select().from(tokens).where(eq(tokens.id, updated.tokenId));
+      
+      // If this was a partial sell, record a sell transaction
+      if (isPartialSell && sellQuantity > 0) {
+        // Get portfolio (may be needed for transaction)
+        const portfolio = await db.query.portfolios.findFirst({
+          where: eq(portfolios.id, updated.portfolioId)
+        });
+        
+        if (portfolio) {
+          // Add a sell transaction for the portion that was sold
+          await this.addTransactionToDb({
+            userId: updated.userId,
+            portfolioId: updated.portfolioId,
+            portfolioTokenId: updated.id,
+            tokenId: updated.tokenId,
+            type: 'sell',
+            amount: sellQuantity.toString(),
+            price: portfolioToken.currentPrice.toString(),
+            totalValue: (sellQuantity * portfolioToken.currentPrice).toString(),
+            transactionDate: new Date(),
+          });
+        }
+      }
       
       return {
         id: updated.id,
