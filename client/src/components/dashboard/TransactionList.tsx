@@ -25,73 +25,77 @@ const TransactionList = ({
   const { transactions, isLoading } = usePortfolio(portfolioId);
   const [activeType, setActiveType] = useState<'all' | 'buy' | 'sell'>(transactionType);
   
-  // Filter transactions by type if specified
-  const filteredTransactions = activeType === 'all' 
-    ? transactions 
-    : transactions.filter(tx => tx.type === activeType);
+  // Get filtered transactions based on type
+  const getFilteredTransactions = (type: 'all' | 'buy' | 'sell') => {
+    const filtered = type === 'all' 
+      ? transactions 
+      : transactions.filter(tx => tx.type === type);
+    
+    // Apply limit if specified
+    return limit ? filtered.slice(0, limit) : filtered;
+  };
   
-  // Apply limit if specified
-  const displayedTransactions = limit 
-    ? filteredTransactions.slice(0, limit) 
-    : filteredTransactions;
-  
-  const renderTransactionList = () => (
-    <div className="space-y-4">
-      {isLoading ? (
-        Array(limit).fill(0).map((_, index) => (
-          <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center">
-              <Skeleton className="h-8 w-8 rounded-full" />
-              <div className="ml-3">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32 mt-1" />
+  const renderTransactionList = (type: 'all' | 'buy' | 'sell') => {
+    const txList = getFilteredTransactions(type);
+    
+    return (
+      <div className="space-y-4">
+        {isLoading ? (
+          Array(limit).fill(0).map((_, index) => (
+            <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-center">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="ml-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32 mt-1" />
+                </div>
+              </div>
+              <div className="text-right">
+                <Skeleton className="h-4 w-16 ml-auto" />
+                <Skeleton className="h-3 w-20 ml-auto mt-1" />
               </div>
             </div>
-            <div className="text-right">
-              <Skeleton className="h-4 w-16 ml-auto" />
-              <Skeleton className="h-3 w-20 ml-auto mt-1" />
-            </div>
-          </div>
-        ))
-      ) : (
-        displayedTransactions.map((tx: Transaction) => (
-          <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center">
-              <div className={`${tx.type === 'buy' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'} p-2 rounded-full`}>
-                {tx.type === 'buy' ? (
-                  <ArrowDown className={`h-4 w-4 text-accent-green`} />
-                ) : (
-                  <ArrowUp className={`h-4 w-4 text-accent-red`} />
-                )}
+          ))
+        ) : (
+          txList.map((tx: Transaction) => (
+            <div key={tx.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-center">
+                <div className={`${tx.type === 'buy' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'} p-2 rounded-full`}>
+                  {tx.type === 'buy' ? (
+                    <ArrowDown className={`h-4 w-4 text-accent-green`} />
+                  ) : (
+                    <ArrowUp className={`h-4 w-4 text-accent-red`} />
+                  )}
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium dark:text-white">
+                    {tx.type === 'buy' ? 'Bought' : 'Sold'} {tx.cryptoName}
+                  </p>
+                  <p className="text-xs text-neutral-mid dark:text-gray-400">
+                    {format(new Date(tx.timestamp), 'MMM d, yyyy • h:mm a')}
+                  </p>
+                </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium dark:text-white">
-                  {tx.type === 'buy' ? 'Bought' : 'Sold'} {tx.cryptoName}
+              <div className="text-right">
+                <p className="text-sm font-medium font-mono dark:text-white">
+                  {tx.type === 'buy' ? '+' : '-'}{tx.quantity} {tx.cryptoSymbol}
                 </p>
                 <p className="text-xs text-neutral-mid dark:text-gray-400">
-                  {format(new Date(tx.timestamp), 'MMM d, yyyy • h:mm a')}
+                  ${tx.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-medium font-mono dark:text-white">
-                {tx.type === 'buy' ? '+' : '-'}{tx.quantity} {tx.cryptoSymbol}
-              </p>
-              <p className="text-xs text-neutral-mid dark:text-gray-400">
-                ${tx.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            </div>
+          ))
+        )}
+        
+        {txList.length === 0 && !isLoading && (
+          <div className="py-6 text-center text-neutral-mid dark:text-gray-400">
+            No transactions yet.
           </div>
-        ))
-      )}
-      
-      {displayedTransactions.length === 0 && !isLoading && (
-        <div className="py-6 text-center text-neutral-mid dark:text-gray-400">
-          No transactions yet.
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 
   return (
     <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
@@ -133,17 +137,17 @@ const TransactionList = ({
               <TabsTrigger value="sell">Sell</TabsTrigger>
             </TabsList>
             <TabsContent value="all" className="m-0">
-              {renderTransactionList()}
+              {renderTransactionList('all')}
             </TabsContent>
             <TabsContent value="buy" className="m-0">
-              {renderTransactionList()}
+              {renderTransactionList('buy')}
             </TabsContent>
             <TabsContent value="sell" className="m-0">
-              {renderTransactionList()}
+              {renderTransactionList('sell')}
             </TabsContent>
           </Tabs>
         ) : (
-          renderTransactionList()
+          renderTransactionList(activeType)
         )}
       </CardContent>
     </Card>
