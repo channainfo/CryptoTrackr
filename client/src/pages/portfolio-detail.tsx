@@ -115,6 +115,7 @@ const PortfolioDetail = () => {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="assets">Assets</TabsTrigger>
                 <TabsTrigger value="transactions">Transactions</TabsTrigger>
+                <TabsTrigger value="risk">Risk Analysis</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
               </TabsList>
             </div>
@@ -145,6 +146,10 @@ const PortfolioDetail = () => {
             <TransactionList showViewAll={false} portfolioId={portfolioId} />
           </TabsContent>
           
+          <TabsContent value="risk" className="risk-analysis-tab">
+            <PortfolioRiskTab portfolioId={portfolioId} />
+          </TabsContent>
+          
           <TabsContent value="analytics">
             <div className="text-center py-12 bg-neutral-lighter dark:bg-zinc-800 rounded-xl">
               <p className="text-neutral-mid dark:text-gray-400">
@@ -163,7 +168,7 @@ const PortfolioDetail = () => {
       
       {/* Onboarding wizard */}
       <OnboardingWizard
-        tourType="portfolio"
+        type="portfolio"
         isEnabled={true}
         onComplete={handleTourComplete}
       />

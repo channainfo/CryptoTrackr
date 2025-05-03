@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import TokenPerformance from "@/components/dashboard/TokenPerformance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
+import TokenRiskSection from "@/components/token/TokenRiskSection";
 
 interface TokenDetailParams {
   portfolioTokenId: string;
@@ -132,11 +133,19 @@ export default function TokenDetailPage() {
           </div>
 
           {/* Performance Chart */}
-          <div className="tutorial-token-performance">
+          <div className="tutorial-token-performance mb-6">
             <TokenPerformance 
               portfolioTokenId={params.portfolioTokenId} 
               tokenName={tokenDetails.tokenInfo?.name || tokenDetails.name}
               tokenSymbol={tokenDetails.tokenInfo?.symbol || tokenDetails.symbol}
+            />
+          </div>
+          
+          {/* Risk Analysis */}
+          <div className="tutorial-token-risk">
+            <TokenRiskSection 
+              symbol={tokenDetails.tokenInfo?.symbol || tokenDetails.symbol}
+              name={tokenDetails.tokenInfo?.name || tokenDetails.name}
             />
           </div>
         </>

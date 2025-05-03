@@ -115,12 +115,12 @@ const RiskAssessmentCard: React.FC<RiskAssessmentCardProps> = ({
             </div>
             <Progress
               value={data.overallRisk.score * 10}
-              className="h-2"
-              indicatorClassName={cn(
-                data.overallRisk.score <= 3 ? "bg-green-600" :
-                data.overallRisk.score <= 6 ? "bg-yellow-500" :
-                data.overallRisk.score <= 8 ? "bg-orange-500" :
-                "bg-red-600"
+              className={cn(
+                "h-2",
+                data.overallRisk.score <= 3 ? "bg-green-600/20" :
+                data.overallRisk.score <= 6 ? "bg-yellow-500/20" :
+                data.overallRisk.score <= 8 ? "bg-orange-500/20" :
+                "bg-red-600/20"
               )}
             />
           </div>
@@ -137,11 +137,11 @@ const RiskAssessmentCard: React.FC<RiskAssessmentCardProps> = ({
                 </div>
                 <Progress
                   value={data.diversificationScore * 10}
-                  className="h-2"
-                  indicatorClassName={cn(
-                    data.diversificationScore >= 7 ? "bg-green-600" :
-                    data.diversificationScore >= 4 ? "bg-yellow-500" :
-                    "bg-red-600"
+                  className={cn(
+                    "h-2",
+                    data.diversificationScore >= 7 ? "bg-green-600/20" :
+                    data.diversificationScore >= 4 ? "bg-yellow-500/20" :
+                    "bg-red-600/20"
                   )}
                 />
               </div>
