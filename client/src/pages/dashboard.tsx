@@ -3,6 +3,7 @@ import { PlusIcon, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SummaryCard from "@/components/dashboard/SummaryCard";
 import PortfolioChart from "@/components/dashboard/PortfolioChart";
+import PortfolioPerformance from "@/components/dashboard/PortfolioPerformance";
 import AssetTable from "@/components/dashboard/AssetTable";
 import TransactionList from "@/components/dashboard/TransactionList";
 import MarketTrends from "@/components/dashboard/MarketTrends";
@@ -75,6 +76,13 @@ const Dashboard = () => {
         
         {/* Asset Breakdown */}
         <AssetTable portfolioId={selectedPortfolioId} />
+        
+        {/* Portfolio Performance */}
+        {selectedPortfolioId && (
+          <div className="mb-6">
+            <PortfolioPerformance portfolioId={selectedPortfolioId} />
+          </div>
+        )}
         
         {/* Recent Transactions & Market Trends */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

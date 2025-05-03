@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Portfolio from "@/pages/portfolio";
 import PortfolioDetail from "@/pages/portfolio-detail";
+import TokenDetail from "@/pages/token-detail";
 import Transactions from "@/pages/transactions";
 import Markets from "@/pages/markets";
 import Settings from "@/pages/settings";
