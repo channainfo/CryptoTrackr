@@ -1,4 +1,4 @@
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, inArray } from "drizzle-orm";
 import { db } from "../db";
 import {
   learningModules,
@@ -309,6 +309,19 @@ export class LearningModuleModel {
     module: LearningModule | undefined, 
     explanation: string 
   }> {
+    // Special case for demo user - return the first module with a custom explanation
+    if (userId === 'demo') {
+      const [firstModule] = await db
+        .select()
+        .from(learningModules)
+        .orderBy(learningModules.order);
+      
+      return {
+        module: firstModule,
+        explanation: "This foundational module is perfect for starting your crypto learning journey."
+      };
+    }
+
     try {
       // Import OpenAI service dynamically to avoid circular dependencies
       const { OpenAIService } = await import("../services/openai");
@@ -328,7 +341,7 @@ export class LearningModuleModel {
         ? await db
             .select()
             .from(learningModules)
-            .where(sql`${learningModules.id} IN (${completedModuleIds.join(', ')})`)
+            .where(inArray(learningModules.id, completedModuleIds))
         : [];
       
       // Get in-progress modules with full module data
@@ -340,7 +353,7 @@ export class LearningModuleModel {
         ? await db
             .select()
             .from(learningModules)
-            .where(sql`${learningModules.id} IN (${inProgressModuleIds.join(', ')})`)
+            .where(inArray(learningModules.id, inProgressModuleIds))
         : [];
       
       // Get user stats for better recommendation

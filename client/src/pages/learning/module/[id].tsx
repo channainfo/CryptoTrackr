@@ -106,7 +106,29 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   
   // Initialize module when first loaded
   useEffect(() => {
-    if (moduleData?.module && !moduleData.progress) {
+    // Additional check to prevent infinite loop
+    if (moduleData?.module && !moduleData.progress && !startModuleMutation.isPending) {
+      // For demo user, check localStorage first
+      if (DEFAULT_USER_ID === 'demo') {
+        const savedProgressStr = localStorage.getItem('demo-learning-progress');
+        
+        if (savedProgressStr) {
+          try {
+            const savedProgress = JSON.parse(savedProgressStr);
+            const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
+            
+            if (existingProgress) {
+              // If we have progress in localStorage, use that instead of making an API call
+              setCurrentSection(existingProgress.lastCompletedSection);
+              return; // Exit early, no need to call API
+            }
+          } catch (e) {
+            console.error("Error parsing local progress:", e);
+          }
+        }
+      }
+      
+      // Only initialize if we don't have local progress
       startModuleMutation.mutate({
         userId: DEFAULT_USER_ID,
         moduleId: id
@@ -115,7 +137,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
       // If module was already started, go to last section
       setCurrentSection(moduleData.progress.lastCompletedSection);
     }
-  }, [moduleData, id, startModuleMutation]);
+  }, [moduleData, id, startModuleMutation.isPending]);
   
   // Update section progress when moving to next section
   const handleNextSection = () => {
@@ -166,6 +188,18 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
       setCurrentSection(nextSection);
     } else {
       // Complete the module if this is the last section
+      // Create a stable function reference for the navigation based on module data
+      const navigateAfterCompletion = () => {
+        // If we have a quiz, go to it, otherwise go back to learning page
+        if (moduleData?.quizzes?.length > 0) {
+          // Get the first quiz ID for this module
+          const quizId = moduleData.quizzes[0].id;
+          setLocation(`/learning/quiz/${quizId}`);
+        } else {
+          setLocation('/learning');
+        }
+      };
+      
       completeModuleMutation.mutate({
         userId: DEFAULT_USER_ID,
         moduleId: id
@@ -217,16 +251,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
           });
           
           // Hide confetti and navigate after a delay
-          setTimeout(() => {
-            // If we have a quiz, go to it, otherwise go back to learning page
-            if (moduleData?.quizzes?.length) {
-              // Get the first quiz ID for this module
-              const quizId = moduleData.quizzes[0].id;
-              setLocation(`/learning/quiz/${quizId}`);
-            } else {
-              setLocation('/learning');
-            }
-          }, 3000);
+          setTimeout(navigateAfterCompletion, 3000);
         }
       });
     }
@@ -357,19 +382,29 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
             <Button 
               onClick={handleNextSection}
             >
-              {isLastSection ? (
-                <>
-                  {moduleData?.quizzes?.length 
+              {(() => {
+                // Move the conditional logic to a function that returns JSX
+                // This ensures consistent hook usage between renders
+                
+                if (isLastSection) {
+                  const buttonText = moduleData?.quizzes?.length > 0 
                     ? "Go to Quiz" 
-                    : "Complete Module"
-                  }
-                  <CheckCircle className="ml-1 w-4 h-4" />
-                </>
-              ) : (
-                <>
-                  Next <ChevronRight className="ml-1 w-4 h-4" />
-                </>
-              )}
+                    : "Complete Module";
+                    
+                  return (
+                    <>
+                      {buttonText}
+                      <CheckCircle className="ml-1 w-4 h-4" />
+                    </>
+                  );
+                } else {
+                  return (
+                    <>
+                      Next <ChevronRight className="ml-1 w-4 h-4" />
+                    </>
+                  );
+                }
+              })()}
             </Button>
           </CardFooter>
         </Card>
