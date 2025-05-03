@@ -185,6 +185,32 @@ const LearningPage = () => {
   // Combine server progress with simulated progress
   const effectiveProgress = userProgress?.length ? userProgress : simulatedProgress;
   
+  // Calculate derived stats from localStorage progress when server returns empty stats
+  const effectiveStats = React.useMemo(() => {
+    if (userStats && userStats.completedModules > 0) {
+      return userStats; // Use server stats if available
+    }
+    
+    // Calculate stats from our simulated progress if we have modules
+    if (allModules && allModules.length > 0 && effectiveProgress && effectiveProgress.length > 0) {
+      const totalModules = allModules.length;
+      const completedModules = effectiveProgress.filter(p => p.status === 'completed').length;
+      const inProgressModules = effectiveProgress.filter(p => p.status === 'in_progress').length;
+      const notStartedModules = totalModules - completedModules - inProgressModules;
+      const completionPercentage = Math.round((completedModules / totalModules) * 100);
+      
+      return {
+        completedModules,
+        inProgressModules,
+        notStartedModules,
+        totalModules,
+        completionPercentage
+      };
+    }
+    
+    return userStats; // Fall back to server stats
+  }, [userStats, allModules, effectiveProgress]);
+  
   // Helper to update simulated progress
   const updateSimulatedProgress = (moduleId: string, status: "not_started" | "in_progress" | "completed", section = 0) => {
     setSimulatedProgress(prev => {
@@ -300,7 +326,7 @@ const LearningPage = () => {
           </Button>
         </div>
         
-        {userStats && (
+        {effectiveStats && (
           <Card className="mb-8">
             <CardHeader className="pb-2">
               <CardTitle className="text-xl flex items-center">
@@ -310,19 +336,19 @@ const LearningPage = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{userStats.completedModules}</div>
+                  <div className="text-2xl font-bold">{effectiveStats.completedModules}</div>
                   <div className="text-sm text-muted-foreground">Completed</div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{userStats.inProgressModules}</div>
+                  <div className="text-2xl font-bold">{effectiveStats.inProgressModules}</div>
                   <div className="text-sm text-muted-foreground">In Progress</div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{userStats.notStartedModules}</div>
+                  <div className="text-2xl font-bold">{effectiveStats.notStartedModules}</div>
                   <div className="text-sm text-muted-foreground">Not Started</div>
                 </div>
                 <div className="p-4 border rounded-lg">
-                  <div className="text-2xl font-bold">{userStats.completionPercentage}%</div>
+                  <div className="text-2xl font-bold">{effectiveStats.completionPercentage}%</div>
                   <div className="text-sm text-muted-foreground">Overall Completion</div>
                 </div>
               </div>
@@ -330,9 +356,9 @@ const LearningPage = () => {
               <div className="mt-4">
                 <div className="flex justify-between mb-1 text-sm">
                   <span>Overall Progress</span>
-                  <span>{userStats.completionPercentage}%</span>
+                  <span>{effectiveStats.completionPercentage}%</span>
                 </div>
-                <Progress value={userStats.completionPercentage} className="h-2" />
+                <Progress value={effectiveStats.completionPercentage} className="h-2" />
               </div>
             </CardContent>
           </Card>
