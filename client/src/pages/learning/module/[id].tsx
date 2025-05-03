@@ -13,6 +13,41 @@ import { useLearningModuleDetails, useStartModule, useUpdateSectionProgress, use
 import type { LearningModule, ContentSection } from "@/types/education";
 import ReactConfetti from "react-confetti";
 
+// Separate Confetti component to avoid hooks ordering issues
+const Celebration = ({ show }: { show: boolean }) => {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  if (!show) return null;
+  
+  return (
+    <ReactConfetti
+      width={windowSize.width}
+      height={windowSize.height}
+      recycle={false}
+      numberOfPieces={500}
+      gravity={0.15}
+      colors={['#FF6B6B', '#4ECDC4', '#F9D423', '#45B7D1', '#E14658', '#6E44FF']}
+    />
+  );
+};
+
 // Default user ID for demo purposes
 const DEFAULT_USER_ID = "demo";
 
@@ -52,27 +87,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   const [, setLocation] = useLocation();
   const [currentSection, setCurrentSection] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [windowSize, setWindowSize] = useState({width: 0, height: 0});
   const { toast } = useToast();
-  
-  // Initialize window size
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-    
-    // Set initial size
-    handleResize();
-    
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   
   // Fetch module details including quizzes and progress
   const { data: moduleData, isLoading } = useLearningModuleDetails(id);
@@ -276,16 +291,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
 
   return (
     <Container>
-      {showConfetti && windowSize.width > 0 && (
-        <ReactConfetti
-          width={windowSize.width}
-          height={windowSize.height}
-          recycle={false}
-          numberOfPieces={500}
-          gravity={0.15}
-          colors={['#FF6B6B', '#4ECDC4', '#F9D423', '#45B7D1', '#E14658', '#6E44FF']}
-        />
-      )}
+      <Celebration show={showConfetti} />
       <div className="py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
