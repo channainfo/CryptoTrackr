@@ -213,7 +213,7 @@ const Dashboard = () => {
             {/* Recent Transactions & Market Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div className="transactions-list lg:col-span-2">
-                <TransactionList portfolioId={selectedPortfolioId} />
+                <TransactionList portfolioId={selectedPortfolioId} transactionType="all" />
               </div>
               <div className="space-y-6">
                 <div className="market-trends">

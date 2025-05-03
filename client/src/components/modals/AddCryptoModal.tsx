@@ -68,11 +68,11 @@ const AddCryptoModal = ({ isOpen, onClose, portfolioId }: AddCryptoModalProps) =
   };
 
   const handleAddCrypto = () => {
-    if (!selectedCrypto || !quantity || isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0) {
+    if (!selectedCrypto || !quantity || isNaN(parseFloat(quantity)) || parseFloat(quantity) < 0) {
       toast({
         variant: "destructive",
         title: "Invalid quantity",
-        description: "Please enter a valid quantity greater than 0",
+        description: "Please enter a valid quantity (0 or greater)",
       });
       return;
     }
@@ -221,7 +221,7 @@ const AddCryptoModal = ({ isOpen, onClose, portfolioId }: AddCryptoModalProps) =
               />
             </div>
             
-            {quantity && !isNaN(parseFloat(quantity)) && parseFloat(quantity) > 0 && (
+            {quantity && !isNaN(parseFloat(quantity)) && parseFloat(quantity) >= 0 && (
               <div className="rounded-md bg-neutral-lighter p-3 mb-4">
                 <p className="text-sm">
                   Total Value: <span className="font-medium">${(parseFloat(quantity) * selectedCrypto.currentPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -236,7 +236,7 @@ const AddCryptoModal = ({ isOpen, onClose, portfolioId }: AddCryptoModalProps) =
             <Button 
               className="w-full" 
               onClick={handleAddCrypto}
-              disabled={!quantity || isNaN(parseFloat(quantity)) || parseFloat(quantity) <= 0}
+              disabled={!quantity || isNaN(parseFloat(quantity)) || parseFloat(quantity) < 0}
             >
               Add to Portfolio
             </Button>
