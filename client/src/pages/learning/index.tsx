@@ -474,39 +474,42 @@ const LearningPage = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="all" className="w-full" onValueChange={setCategory}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="all">All Modules</TabsTrigger>
-            <TabsTrigger value="basics">Basics</TabsTrigger>
-            <TabsTrigger value="trading">Trading</TabsTrigger>
-            <TabsTrigger value="defi">DeFi</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
-          </TabsList>
+        <div className="border-t border-gray-200 dark:border-gray-800 my-12 pt-4">
+          <h2 className="text-2xl font-bold mb-6">Explore Learning Modules</h2>
+          <Tabs defaultValue="all" className="w-full" onValueChange={setCategory}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="all">All Modules</TabsTrigger>
+              <TabsTrigger value="basics">Basics</TabsTrigger>
+              <TabsTrigger value="trading">Trading</TabsTrigger>
+              <TabsTrigger value="defi">DeFi</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            </TabsList>
           
-          <TabsContent value={category} className="mt-0">
-            {modulesToDisplay && modulesToDisplay.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {modulesToDisplay.map((module: LearningModule) => (
-                  <ModuleCard 
-                    key={module.id} 
-                    module={module} 
-                    progress={effectiveProgress}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <h3 className="text-lg font-medium mb-2">No modules available</h3>
-                <p className="text-muted-foreground">
-                  {category === "all" 
-                    ? "Check back later for new learning content." 
-                    : `No modules found in the ${category} category.`}
-                </p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            <TabsContent value={category} className="mt-0">
+              {modulesToDisplay && modulesToDisplay.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {modulesToDisplay.map((module: LearningModule) => (
+                    <ModuleCard 
+                      key={module.id} 
+                      module={module} 
+                      progress={effectiveProgress}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <h3 className="text-lg font-medium mb-2">No modules available</h3>
+                  <p className="text-muted-foreground">
+                    {category === "all" 
+                      ? "Check back later for new learning content." 
+                      : `No modules found in the ${category} category.`}
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </Container>
   );
