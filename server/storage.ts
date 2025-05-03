@@ -44,6 +44,7 @@ export interface IStorage {
   getUserPortfolios(userId: string): Promise<Portfolio[]>;
   createPortfolio(data: Partial<Portfolio>): Promise<Portfolio>;
   getPortfolioById(id: string): Promise<Portfolio | undefined>;
+  updatePortfolio(id: string, data: Partial<Portfolio>): Promise<Portfolio | undefined>;
   
   // Portfolio assets methods
   getPortfolioAssets(): Promise<PortfolioAsset[]>;
@@ -108,6 +109,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(portfolios.id, id));
     
     return portfolio;
+  }
+  
+  async updatePortfolio(id: string, data: Partial<Portfolio>): Promise<Portfolio | undefined> {
+    const updateData: Partial<typeof portfolios.$inferInsert> = {};
+    
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.isDefault !== undefined) updateData.isDefault = data.isDefault;
+    
+    if (Object.keys(updateData).length === 0) {
+      // No valid update fields provided
+      const portfolio = await this.getPortfolioById(id);
+      return portfolio;
+    }
+    
+    updateData.updatedAt = new Date();
+    
+    const [updatedPortfolio] = await db.update(portfolios)
+      .set(updateData)
+      .where(eq(portfolios.id, id))
+      .returning();
+    
+    return updatedPortfolio;
   }
 
   async getPortfolioAssetsById(portfolioId: string): Promise<PortfolioAsset[]> {

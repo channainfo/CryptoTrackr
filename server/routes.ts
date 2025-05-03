@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Remove asset from portfolio
+  // Remove asset from portfolio (default portfolio)
   app.delete('/api/portfolio/:id', async (req, res) => {
     try {
       const id = req.params.id;
@@ -118,6 +118,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       await storage.removePortfolioAsset(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error removing portfolio asset:', error);
+      res.status(500).json({ message: 'Failed to remove asset' });
+    }
+  });
+  
+  // Remove asset from specific portfolio
+  app.delete('/api/portfolios/:portfolioId/assets/:assetId', async (req, res) => {
+    try {
+      const { portfolioId, assetId } = req.params;
+      if (!portfolioId || !assetId) {
+        return res.status(400).json({ message: 'Invalid portfolio or asset ID' });
+      }
+      
+      // Get the default user
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== defaultUser.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      // Check if asset exists and belongs to the specified portfolio
+      const asset = await storage.getPortfolioAsset(assetId);
+      if (!asset) {
+        return res.status(404).json({ message: 'Asset not found' });
+      }
+      
+      await storage.removePortfolioAsset(assetId);
       res.status(204).send();
     } catch (error) {
       console.error('Error removing portfolio asset:', error);
@@ -139,6 +171,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch portfolios' });
     }
   });
+  
+  // Get portfolio by ID
+  app.get('/api/portfolios/:portfolioId', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      
+      if (!portfolio || portfolio.userId !== defaultUser.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      res.json(portfolio);
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio' });
+    }
+  });
 
   // Create new portfolio
   app.post('/api/portfolios', async (req, res) => {
@@ -149,8 +206,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const portfolioData = {
         name: req.body.name,
+        description: req.body.description,
+        isDefault: req.body.isDefault || false,
         userId: defaultUser.id
       };
+      
+      // If this portfolio is set as default, update any existing default portfolios
+      if (portfolioData.isDefault) {
+        const userPortfolios = await storage.getUserPortfolios(defaultUser.id);
+        for (const p of userPortfolios) {
+          if (p.isDefault) {
+            // Update this portfolio to not be the default
+            await storage.updatePortfolio(p.id, { isDefault: false });
+          }
+        }
+      }
       
       const portfolio = await storage.createPortfolio(portfolioData);
       res.status(201).json(portfolio);
