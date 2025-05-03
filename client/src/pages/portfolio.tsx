@@ -50,19 +50,10 @@ const Portfolio = () => {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("all");
   
-  // Determine the correct portfolio type for the hook based on active tab
-  const getPortfolioType = (tab: string): 'all' | 'watchlist' | 'standard' => {
-    if (tab === "watchlist") return "watchlist";
-    if (tab === "active") return "all"; // We'll filter active portfolios client-side
-    return "all";
-  };
-  
-  // Get the portfolio type for the current tab
-  const portfolioType = getPortfolioType(activeTab);
-  console.log(`Active tab: ${activeTab}, using portfolio type: ${portfolioType}`);
-  
-  // Pass the portfolioType to the hook for server-side filtering
-  const { portfoliosWithAssets, isLoading } = usePortfolios(portfolioType);
+  // With our optimized approach, we're getting ALL portfolios once and filtering client-side
+  // We're not passing any type to usePortfolios so it doesn't need to conditionally fetch
+  const { allPortfoliosWithAssets, isLoading } = usePortfolios();
+  console.log(`Active tab: ${activeTab}, using client-side filtering from ${allPortfoliosWithAssets?.length || 0} portfolios`);
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newPortfolioName, setNewPortfolioName] = useState('');
@@ -131,17 +122,10 @@ const Portfolio = () => {
       });
     },
     onSuccess: (data) => {
-      // Invalidate all portfolio queries to refresh data
+      // With our new approach, we only need to invalidate the main portfolio query
+      // This will refetch all portfolios and assets in a single request
+      console.log("Created portfolio, invalidating portfolio queries");
       queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
-      
-      // Also invalidate specific tabs
-      if (data.isWatchlist) {
-        console.log("Created watchlist portfolio, invalidating watchlist queries");
-        queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'watchlist'] });
-      } else {
-        console.log("Created standard portfolio, invalidating standard queries");
-        queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'standard'] });
-      }
       
       setIsCreateOpen(false);
       resetForm();
@@ -250,15 +234,9 @@ const Portfolio = () => {
         defaultValue="all" 
         className="w-full" 
         onValueChange={(value) => {
+          // Just update the active tab state - no need to refetch
           setActiveTab(value);
-          // Force refetch the appropriate data when tab changes
-          if (value === 'watchlist') {
-            queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'watchlist'] });
-          } else if (value === 'standard') {
-            queryClient.invalidateQueries({ queryKey: ['/api/portfolios', 'standard'] });
-          } else {
-            queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
-          }
+          console.log(`Tab changed to ${value} - using client-side filtering`);
         }}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <TabsList className="mb-4 md:mb-0">
