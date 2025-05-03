@@ -16,6 +16,7 @@ const MobileNav = () => {
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
     { href: '/transactions', label: 'Transactions', icon: ActivitySquare },
     { href: '/markets', label: 'Markets', icon: LineChart },
+    { href: '/tax-report', label: 'Tax Report', icon: FileText },
   ];
   
   return (
