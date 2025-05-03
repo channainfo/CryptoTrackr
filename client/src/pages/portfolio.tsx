@@ -50,17 +50,19 @@ const Portfolio = () => {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("all");
   
-  // Use the hook with filtering by type based on active tab
-  const portfolioType = activeTab === "watchlist" 
-    ? "watchlist" 
-    : activeTab === "active" 
-      ? "standard" 
-      : "all";
+  // Determine the correct portfolio type for the hook based on active tab
+  const getPortfolioType = (tab: string): 'all' | 'watchlist' | 'standard' => {
+    if (tab === "watchlist") return "watchlist";
+    if (tab === "active") return "all"; // We'll filter active portfolios client-side
+    return "all";
+  };
+  
+  // Get the portfolio type for the current tab
+  const portfolioType = getPortfolioType(activeTab);
+  console.log(`Active tab: ${activeTab}, using portfolio type: ${portfolioType}`);
   
   // Pass the portfolioType to the hook for server-side filtering
-  const { portfoliosWithAssets, isLoading } = usePortfolios(
-    activeTab === "active" ? undefined : portfolioType as any
-  );
+  const { portfoliosWithAssets, isLoading } = usePortfolios(portfolioType);
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newPortfolioName, setNewPortfolioName] = useState('');
@@ -70,14 +72,23 @@ const Portfolio = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Filter and sort portfolios based on selected tab and sort option
-  // We already have server filtering, but we need to filter active portfolios with assets
+  // Apply additional client-side filtering for active portfolios with assets
   const filteredPortfolios = portfoliosWithAssets.filter(item => {
-    console.log("Portfolio in tab:", activeTab, "- Name:", item.portfolio.name, "isWatchlist:", item.portfolio.isWatchlist);
+    console.log(`Filtering portfolio "${item.portfolio.name}" in "${activeTab}" tab (isWatchlist: ${item.portfolio.isWatchlist})`);
     
-    if (activeTab === "all") return true;
-    if (activeTab === "active" && item.assets.length > 0) return true;
-    if (activeTab === "watchlist") return true; // Already filtered by server
+    if (activeTab === "all") {
+      // For "all" tab, show all portfolios
+      return true;
+    } 
+    else if (activeTab === "active") {
+      // For "active" tab, only show portfolios with assets and not watchlists
+      return item.assets.length > 0 && !item.portfolio.isWatchlist;
+    }
+    else if (activeTab === "watchlist") {
+      // For "watchlist" tab, show only watchlist portfolios
+      // This should already be filtered by the server, but double-check
+      return item.portfolio.isWatchlist === true;
+    }
     return false;
   });
   

@@ -19,6 +19,8 @@ export const usePortfolios = (type?: 'all' | 'watchlist' | 'standard') => {
   const queryParams = type && type !== 'all' ? `?type=${type}` : '';
   const endpoint = `/api/portfolios${queryParams}`;
   
+  console.log(`Fetching portfolios with type: ${type || 'all'}, endpoint: ${endpoint}`);
+  
   const portfoliosQuery = useQuery({
     queryKey: ['/api/portfolios', type],
     queryFn: () => fetch(endpoint)
@@ -26,6 +28,20 @@ export const usePortfolios = (type?: 'all' | 'watchlist' | 'standard') => {
         if (res.status === 401) return null;
         if (!res.ok) throw new Error('Failed to fetch portfolios');
         return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          console.log(`Received ${data.length} portfolios from server`);
+          // Double-check that we're getting the right type of portfolios
+          if (type === 'watchlist') {
+            console.log('Ensuring only watchlist portfolios are included');
+            return data.filter(p => p.isWatchlist === true);
+          } else if (type === 'standard') {
+            console.log('Ensuring only standard portfolios are included');
+            return data.filter(p => p.isWatchlist === false);
+          }
+        }
+        return data;
       })
   });
 

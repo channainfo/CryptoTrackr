@@ -322,10 +322,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Apply filters if specified
       if (type === 'watchlist') {
-        portfolios = portfolios.filter(p => p.isWatchlist);
+        console.log('Filtering for watchlist portfolios only');
+        portfolios = portfolios.filter(p => p.isWatchlist === true);
       } else if (type === 'standard') {
-        portfolios = portfolios.filter(p => !p.isWatchlist);
+        console.log('Filtering for standard portfolios only');
+        portfolios = portfolios.filter(p => p.isWatchlist === false);
+      } else {
+        console.log('No filtering applied, returning all portfolios');
       }
+      
+      console.log(`Found ${portfolios.length} portfolios for type: ${type || 'all'}`);
+      portfolios.forEach(p => {
+        console.log(`- ${p.name} (id: ${p.id}, isWatchlist: ${p.isWatchlist})`);
+      });
       
       res.json(portfolios);
     } catch (error) {
