@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 /**
  * Risk assessment response type

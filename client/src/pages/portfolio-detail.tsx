@@ -12,6 +12,7 @@ import AddCryptoModal from "@/components/modals/AddCryptoModal";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import PortfolioRiskTab from "@/components/portfolio/PortfolioRiskTab";
 
 const PortfolioDetail = () => {
   const [, setLocation] = useLocation();
