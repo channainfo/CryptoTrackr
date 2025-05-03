@@ -79,10 +79,11 @@ router.get("/modules/:id/details", async (req, res) => {
       .where(eq(learningQuizzes.moduleId, id))
       .orderBy(learningQuizzes.order);
     
-    // Special handling for demo user - return null progress
+    // For demo user, always return null for progress
     let progress = null;
+    
+    // Only query the database for non-demo users
     if (userId !== 'demo') {
-      // Get user progress for non-demo users
       const [userProgress] = await db
         .select()
         .from(userLearningProgress)
@@ -92,7 +93,10 @@ router.get("/modules/:id/details", async (req, res) => {
             eq(userLearningProgress.moduleId, id)
           )
         );
-      progress = userProgress;
+      
+      if (userProgress) {
+        progress = userProgress;
+      }
     }
     
     res.json({
