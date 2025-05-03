@@ -23,6 +23,9 @@ const PortfolioDetail = () => {
   // Setup onboarding tour for portfolio page
   const { showTour, handleTourComplete } = useOnboarding('portfolio');
   
+  // Debug log for onboarding state
+  console.log('Portfolio Detail - Onboarding State:', { showTour, portfolioId });
+  
   const handleBack = () => {
     setLocation("/portfolio");
   };

@@ -10,7 +10,22 @@ export interface OnboardingOptions {
 
 export function useOnboarding(tourId: TourType, options: OnboardingOptions = {}) {
   const { isEnabled = true, forceStart = false } = options;
-  const [showTour, setShowTour] = useState(forceStart);
+  
+  // Check if this tour was already completed
+  const wasCompleted = (): boolean => {
+    try {
+      const completedTours = localStorage.getItem('completed-tours');
+      if (!completedTours) return false;
+      const parsedTours = JSON.parse(completedTours) as string[];
+      return parsedTours.includes(tourId);
+    } catch (e) {
+      console.error('Error checking tour completion:', e);
+      return false;
+    }
+  };
+  
+  // Initialize showTour based on forceStart or whether it has been completed
+  const [showTour, setShowTour] = useState(forceStart || (isEnabled && !wasCompleted()));
   
   // Check if this tour has already been completed
   const hasTourBeenCompleted = useCallback((): boolean => {
