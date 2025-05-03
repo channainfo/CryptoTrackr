@@ -1,10 +1,6 @@
-interface CryptoDefinition {
-  term: string;
-  definition: string;
-  learnMoreUrl?: string;
-}
+import type { CryptoDefinition, CryptoDefinitionDictionary } from '@/types/education';
 
-export const cryptoDefinitions: Record<string, CryptoDefinition> = {
+export const cryptoDefinitions: CryptoDefinitionDictionary = {
   // Basic Concepts
   'blockchain': {
     term: 'Blockchain',
