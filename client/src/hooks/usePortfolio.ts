@@ -12,12 +12,21 @@ export const usePortfolio = (portfolioId?: string | null) => {
   const { data: portfolioData, isLoading: isLoadingPortfolio } = useQuery({
     queryKey: portfolioId ? ['/api/portfolio', portfolioId] : ['/api/portfolio'],
     queryFn: async () => {
-      const endpoint = portfolioId ? `/api/portfolio/${portfolioId}` : '/api/portfolio';
+      console.log('Fetching portfolio assets for id:', portfolioId);
+      // First check if we need to get assets for a specific portfolio
+      let endpoint;
+      if (portfolioId) {
+        endpoint = `/api/portfolios/${portfolioId}/assets`;
+      } else {
+        endpoint = '/api/portfolio';
+      }
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Failed to fetch portfolio data');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('Fetched portfolio data:', data);
+      return data;
     }
   });
   

@@ -44,28 +44,46 @@ const PortfolioSelector = ({ onPortfolioChange }: PortfolioSelectorProps) => {
   const { data: portfolios, isLoading } = useQuery({
     queryKey: ['/api/portfolios'],
     queryFn: async () => {
-      const response = await fetch('/api/portfolios');
-      if (!response.ok) {
-        throw new Error('Failed to fetch portfolios');
+      console.log('Fetching portfolios');
+      try {
+        const response = await fetch('/api/portfolios');
+        if (!response.ok) {
+          throw new Error('Failed to fetch portfolios');
+        }
+        const data = await response.json();
+        console.log('Fetched portfolios:', data);
+        return data;
+      } catch (error) {
+        console.error('Error fetching portfolios:', error);
+        throw error;
       }
-      return response.json();
     }
   });
 
   // Mutation to create a new portfolio
   const createPortfolioMutation = useMutation({
     mutationFn: async (data: { name: string, description?: string }) => {
-      const response = await fetch('/api/portfolios', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) {
-        throw new Error('Failed to create portfolio');
+      console.log('Creating portfolio:', data);
+      try {
+        const response = await fetch('/api/portfolios', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to create portfolio:', errorText);
+          throw new Error('Failed to create portfolio');
+        }
+        const result = await response.json();
+        console.log('Created portfolio:', result);
+        return result;
+      } catch (error) {
+        console.error('Error creating portfolio:', error);
+        throw error;
       }
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });

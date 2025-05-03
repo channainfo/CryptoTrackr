@@ -196,6 +196,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch portfolio' });
     }
   });
+  
+  // Get assets for a specific portfolio
+  app.get('/api/portfolios/:portfolioId/assets', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      const assets = await storage.getPortfolioAssetsById(portfolioId);
+      res.json(assets);
+    } catch (error) {
+      console.error('Error fetching portfolio assets:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio assets' });
+    }
+  });
 
   // Create new portfolio
   app.post('/api/portfolios', async (req, res) => {
