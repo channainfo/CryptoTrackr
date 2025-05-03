@@ -42,7 +42,18 @@ const TransactionList = ({
                 : 'Recent Transactions'}
           </h3>
           {showViewAll && (
-            <button className="text-primary text-sm font-medium dark:text-blue-400">View All</button>
+            <button 
+              className="text-primary text-sm font-medium dark:text-blue-400"
+              onClick={() => {
+                // Find and click the transactions tab
+                const transactionsTab = document.querySelector('[data-value="transactions"]');
+                if (transactionsTab) {
+                  (transactionsTab as HTMLElement).click();
+                }
+              }}
+            >
+              View All
+            </button>
           )}
         </div>
         
