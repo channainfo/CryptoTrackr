@@ -133,6 +133,9 @@ const LearningPage = () => {
   const [category, setCategory] = useState<string>("all");
   const { toast } = useToast();
   
+  // Setup onboarding tour for learning page
+  const { showTour, handleTourComplete } = useOnboarding('learning');
+  
   // Fetch all modules
   const { data: allModules, isLoading: isLoadingModules } = useLearningModules();
   
@@ -330,7 +333,7 @@ const LearningPage = () => {
         </div>
         
         {effectiveStats && (
-          <Card className="mb-8">
+          <Card className="mb-8 learning-stats">
             <CardHeader className="pb-2">
               <CardTitle className="text-xl flex items-center">
                 <User className="mr-2 w-5 h-5" /> Your Learning Progress
@@ -376,12 +379,12 @@ const LearningPage = () => {
             <LearningPath 
               modules={allModules || []} 
               progress={effectiveProgress}
-              className="mb-8"
+              className="mb-8 learning-path"
             />
             
             {/* Split the achievements and sharing into separate rows */}
             <div className="space-y-8">
-              <div>
+              <div className="learning-achievements">
                 <h2 className="text-xl font-semibold mb-4">My Achievements</h2>
                 <AchievementGrid 
                   modules={allModules || []} 
@@ -389,7 +392,7 @@ const LearningPage = () => {
                 />
               </div>
               
-              <div>
+              <div className="learning-share">
                 <h2 className="text-xl font-semibold mb-4">Share Your Progress</h2>
                 <ShareableAchievementsGrid
                   modules={allModules || []} 
@@ -476,7 +479,7 @@ const LearningPage = () => {
         
         <div className="border-t border-gray-200 dark:border-gray-800 my-12 pt-4">
           <h2 className="text-2xl font-bold mb-6">Explore Learning Modules</h2>
-          <Tabs defaultValue="all" className="w-full" onValueChange={setCategory}>
+          <Tabs defaultValue="all" className="w-full learning-tabs" onValueChange={setCategory}>
             <div className="tabs-wrapper">
               <div className="overflow-x-auto overflow-y-hidden pb-2 no-scrollbar">
                 <TabsList className="mb-4 inline-flex min-w-max w-[650px] md:w-auto">
@@ -515,6 +518,40 @@ const LearningPage = () => {
           </Tabs>
         </div>
       </div>
+      
+      {/* Add the onboarding wizard */}
+      <OnboardingWizard
+        tourId="learning"
+        showTour={showTour}
+        onComplete={handleTourComplete}
+        steps={[
+          {
+            target: '.learning-stats',
+            content: 'This is your learning dashboard. Here you can see your progress across all learning modules.',
+            disableBeacon: true,
+          },
+          {
+            target: '.learning-path',
+            content: 'The learning path shows your journey through different crypto topics. Follow it to build your knowledge systematically.',
+            disableBeacon: true,
+          },
+          {
+            target: '.learning-achievements',
+            content: 'As you complete modules, you\'ll earn achievements that showcase your growing expertise.',
+            disableBeacon: true,
+          },
+          {
+            target: '.learning-share',
+            content: 'Share your achievements on social media to showcase your crypto knowledge.',
+            disableBeacon: true,
+          },
+          {
+            target: '.learning-tabs',
+            content: 'Filter modules by category to focus on specific areas of interest. Start with the basics and work your way up to advanced topics.',
+            disableBeacon: true,
+          }
+        ]}
+      />
     </Container>
   );
 };

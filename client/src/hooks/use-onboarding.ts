@@ -1,12 +1,14 @@
-import { useState, useCallback, useEffect } from 'react';
-import { TourType } from '@/components/onboarding/OnboardingWizard';
+import { useState, useCallback } from 'react';
+
+// Define tour types
+export type TourType = 'dashboard' | 'portfolio' | 'learning' | 'transactions' | 'markets' | 'alerts';
 
 export interface OnboardingOptions {
   isEnabled?: boolean;
   forceStart?: boolean;
 }
 
-export function useOnboarding(tourType: TourType, options: OnboardingOptions = {}) {
+export function useOnboarding(tourId: TourType, options: OnboardingOptions = {}) {
   const { isEnabled = true, forceStart = false } = options;
   const [showTour, setShowTour] = useState(forceStart);
   
@@ -17,12 +19,12 @@ export function useOnboarding(tourType: TourType, options: OnboardingOptions = {
     
     try {
       const parsedTours = JSON.parse(completedTours) as string[];
-      return parsedTours.includes(tourType);
+      return parsedTours.includes(tourId);
     } catch (e) {
       console.error('Error parsing completed tours:', e);
       return false;
     }
-  }, [tourType]);
+  }, [tourId]);
   
   // Reset the tour to be shown again (remove from completed list)
   const resetTour = useCallback(() => {
@@ -31,7 +33,7 @@ export function useOnboarding(tourType: TourType, options: OnboardingOptions = {
     
     try {
       const parsedTours = JSON.parse(completedTours) as string[];
-      const updatedTours = parsedTours.filter(t => t !== tourType);
+      const updatedTours = parsedTours.filter(t => t !== tourId);
       localStorage.setItem('completed-tours', JSON.stringify(updatedTours));
       
       // Set to show the tour
@@ -39,7 +41,7 @@ export function useOnboarding(tourType: TourType, options: OnboardingOptions = {
     } catch (e) {
       console.error('Error parsing completed tours:', e);
     }
-  }, [tourType]);
+  }, [tourId]);
   
   // Start the tour manually
   const startTour = useCallback(() => {
@@ -85,7 +87,7 @@ export function useOnboarding(tourType: TourType, options: OnboardingOptions = {
   }, []);
   
   return {
-    tourType,
+    tourId,
     showTour,
     isEnabled,
     hasTourBeenCompleted: hasTourBeenCompleted(),
