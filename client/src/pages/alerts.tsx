@@ -111,10 +111,9 @@ const AlertsPage = () => {
   // Delete alert
   const { mutate: deleteAlert, isPending: isDeleting } = useMutation({
     mutationFn: async (alertId: string) => {
-      await apiRequest(`/api/alerts/${alertId}`, {
+      return apiRequest(`/api/alerts/${alertId}`, {
         method: 'DELETE',
-      });
-      return alertId;
+      }).then(() => alertId);
     },
     onSuccess: (alertId) => {
       toast({
