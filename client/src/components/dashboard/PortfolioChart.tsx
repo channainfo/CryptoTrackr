@@ -31,9 +31,14 @@ const TimeRangeButton = ({ range, activeRange, onClick }: TimeRangeButtonProps) 
   </button>
 );
 
-const PortfolioChart = () => {
+interface PortfolioChartProps {
+  className?: string;
+  portfolioId?: string;
+}
+
+const PortfolioChart = ({ className = '', portfolioId }: PortfolioChartProps) => {
   const [timeRange, setTimeRange] = useState<TimeRange>("1D");
-  const { getPortfolioChartData } = usePortfolio();
+  const { getPortfolioChartData } = usePortfolio(portfolioId);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   
   useEffect(() => {

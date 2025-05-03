@@ -13,12 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface AssetTableProps {
   limit?: number;
   showViewAll?: boolean;
+  portfolioId?: string;
 }
 
-const AssetTable = ({ limit, showViewAll = true }: AssetTableProps) => {
-  const { assets, isLoading, removeAssetFromPortfolio } = usePortfolio();
+const AssetTable = ({ limit, showViewAll = true, portfolioId }: AssetTableProps) => {
+  const { assets, isLoading, removeAssetFromPortfolio } = usePortfolio(portfolioId);
   
-  const displayedAssets = limit ? assets.slice(0, limit) : assets;
+  const displayedAssets = limit ? (assets || []).slice(0, limit) : (assets || []);
   
   // Function to determine background color based on symbol
   const getBgColor = (symbol: string) => {

@@ -8,10 +8,11 @@ import { format } from "date-fns";
 interface TransactionListProps {
   limit?: number;
   showViewAll?: boolean;
+  portfolioId?: string;
 }
 
-const TransactionList = ({ limit = 3, showViewAll = true }: TransactionListProps) => {
-  const { transactions, isLoading } = usePortfolio();
+const TransactionList = ({ limit = 3, showViewAll = true, portfolioId }: TransactionListProps) => {
+  const { transactions, isLoading } = usePortfolio(portfolioId);
   
   const displayedTransactions = limit ? transactions.slice(0, limit) : transactions;
   

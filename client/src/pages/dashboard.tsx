@@ -70,15 +70,15 @@ const Dashboard = () => {
         
         {/* Portfolio Chart Section */}
         <div className="mb-6">
-          <PortfolioChart />
+          <PortfolioChart portfolioId={selectedPortfolioId} />
         </div>
         
         {/* Asset Breakdown */}
-        <AssetTable />
+        <AssetTable portfolioId={selectedPortfolioId} />
         
         {/* Recent Transactions & Market Trends */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <TransactionList />
+          <TransactionList portfolioId={selectedPortfolioId} />
           <MarketTrends />
         </div>
       </div>
