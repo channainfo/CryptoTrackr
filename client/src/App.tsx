@@ -38,8 +38,13 @@ function Router() {
       <Route path="/learning" component={LearningPage} />
       <Route path="/learning/module/:id">
         {params => {
-          const ModuleDetailPage = require("@/pages/learning/module/[id]").default;
-          return <ModuleDetailPage id={params.id} />;
+          // Using dynamic import instead of require
+          const ModuleDetailPage = React.lazy(() => import("@/pages/learning/module/[id]"));
+          return (
+            <React.Suspense fallback={<div className="p-8 flex justify-center">Loading module...</div>}>
+              <ModuleDetailPage id={params.id} />
+            </React.Suspense>
+          );
         }}
       </Route>
       <Route path="/learning/quiz/:id">
