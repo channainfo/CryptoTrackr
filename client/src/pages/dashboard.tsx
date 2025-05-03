@@ -12,6 +12,7 @@ import AssetTable from "@/components/dashboard/AssetTable";
 import TransactionList from "@/components/dashboard/TransactionList";
 import MarketTrends from "@/components/dashboard/MarketTrends";
 import MarketSentiment from "@/components/dashboard/MarketSentiment";
+import { NewsWidget } from "@/components/dashboard/NewsWidget";
 import PortfolioSelector, { Portfolio } from "@/components/dashboard/PortfolioSelector";
 import AddCryptoModal from "@/components/modals/AddCryptoModal";
 import { usePortfolio } from "@/hooks/usePortfolio";
@@ -221,6 +222,9 @@ const Dashboard = () => {
                 <div className="market-sentiment">
                   <MarketSentiment />
                 </div>
+                <div className="crypto-news">
+                  <NewsWidget />
+                </div>
               </div>
             </div>
           </>
@@ -296,6 +300,11 @@ const Dashboard = () => {
             target: '.quick-actions',
             content: 'Use these quick actions to add crypto, record values, and manage your portfolio.',
             placement: 'top',
+          },
+          {
+            target: '.crypto-news',
+            content: 'Get personalized crypto news recommendations based on your portfolio holdings.',
+            placement: 'left',
           }
         ]}
       />

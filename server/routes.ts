@@ -121,6 +121,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get personalized crypto news based on portfolio
+  app.get('/api/crypto/news', async (req, res) => {
+    try {
+      // Fetch news articles
+      const newsArticles = await OpenAIService.fetchCryptoNews();
+      
+      // Get the default user
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Get portfolio tokens for personalization
+      let portfolioTokens: Array<{symbol: string, name: string}> = [];
+      
+      // Get user's portfolios
+      const portfolios = await storage.getUserPortfolios(defaultUser.id);
+      
+      // Get all tokens from active portfolios (non-watchlist)
+      for (const portfolio of portfolios) {
+        if (portfolio.isWatchlist) continue;
+        
+        const assets = await storage.getPortfolioAssetsById(portfolio.id);
+        if (assets && assets.length > 0) {
+          // Add portfolio tokens
+          portfolioTokens = portfolioTokens.concat(assets.map(asset => ({
+            symbol: asset.symbol,
+            name: asset.name
+          })));
+        }
+      }
+      
+      // Deduplicate tokens by symbol
+      const uniqueTokens = Array.from(
+        new Map(portfolioTokens.map(token => [token.symbol, token])).values()
+      );
+      
+      // Get personalized news recommendations
+      const recommendations = await OpenAIService.getPersonalizedNewsRecommendations(
+        uniqueTokens,
+        newsArticles,
+        4 // Limit to 4 articles
+      );
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error('Error fetching personalized news:', error);
+      res.status(500).json({ 
+        articles: [], 
+        portfolioInsight: "Unable to fetch personalized news at this time."
+      });
+    }
+  });
+  
   // Get all available tokens
   app.get('/api/crypto/tokens', async (req, res) => {
     try {

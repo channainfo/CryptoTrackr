@@ -66,7 +66,7 @@ export class OpenAIService {
    * @returns Filtered and ranked news articles with relevance explanations
    */
   static async getPersonalizedNewsRecommendations(
-    portfolioTokens: PortfolioToken[],
+    portfolioTokens: Array<{symbol: string, name: string}>,
     newsArticles: NewsArticle[],
     limit: number = 4
   ): Promise<NewsRecommendationResponse> {
