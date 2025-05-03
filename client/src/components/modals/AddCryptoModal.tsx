@@ -20,9 +20,10 @@ import { Separator } from "@/components/ui/separator";
 interface AddCryptoModalProps {
   isOpen: boolean;
   onClose: () => void;
+  portfolioId?: string;
 }
 
-const AddCryptoModal = ({ isOpen, onClose }: AddCryptoModalProps) => {
+const AddCryptoModal = ({ isOpen, onClose, portfolioId }: AddCryptoModalProps) => {
   const { marketData, isLoading } = useCryptoData();
   const { addAssetToPortfolio } = usePortfolio();
   const { toast } = useToast();
@@ -76,11 +77,14 @@ const AddCryptoModal = ({ isOpen, onClose }: AddCryptoModalProps) => {
       return;
     }
 
-    addAssetToPortfolio({
-      ...selectedCrypto,
-      quantity: parseFloat(quantity),
-      value: parseFloat(quantity) * selectedCrypto.currentPrice
-    });
+    addAssetToPortfolio(
+      {
+        ...selectedCrypto,
+        quantity: parseFloat(quantity),
+        value: parseFloat(quantity) * selectedCrypto.currentPrice
+      },
+      portfolioId
+    );
 
     toast({
       title: "Cryptocurrency added",

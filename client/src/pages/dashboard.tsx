@@ -12,7 +12,7 @@ import { usePortfolio } from "@/hooks/usePortfolio";
 
 const Dashboard = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | undefined>(undefined);
   const { portfolioSummary, isLoading } = usePortfolio(selectedPortfolioId);
   
   const handlePortfolioChange = (portfolioId: string) => {
@@ -85,7 +85,8 @@ const Dashboard = () => {
       
       <AddCryptoModal 
         isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
+        onClose={() => setIsAddModalOpen(false)}
+        portfolioId={selectedPortfolioId}
       />
     </>
   );
