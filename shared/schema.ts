@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, uuid, numeric, timestamp, boolean, integer, pgEnum, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, uuid, numeric, timestamp, boolean, integer, pgEnum, date, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -8,12 +8,56 @@ export const transactionTypeEnum = pgEnum('enum_transactions_type', ['buy', 'sel
 export const timeframeEnum = pgEnum('enum_timeframe', ['daily', 'weekly', 'monthly']);
 export const alertTypeEnum = pgEnum('enum_alert_type', ['price_above', 'price_below', 'percent_change', 'volume_above', 'market_cap_above']);
 export const alertStatusEnum = pgEnum('enum_alert_status', ['active', 'triggered', 'disabled']);
+export const learningModuleStatusEnum = pgEnum('enum_learning_module_status', ['not_started', 'in_progress', 'completed']);
+export const learningCategoryEnum = pgEnum('enum_learning_category', ['basics', 'trading', 'defi', 'security', 'advanced']);
 
 // User table
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// Learning Modules
+export const learningModules = pgTable("learning_modules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  category: learningCategoryEnum("category").notNull(),
+  difficulty: integer("difficulty").notNull().default(1),
+  order: integer("order").notNull(),
+  estimatedMinutes: integer("estimated_minutes").notNull().default(10),
+  imageUrl: varchar("image_url", { length: 255 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// Learning Module Quizzes
+export const learningQuizzes = pgTable("learning_quizzes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  moduleId: uuid("module_id").notNull().references(() => learningModules.id),
+  question: text("question").notNull(),
+  options: jsonb("options").$type<string[]>().notNull(),
+  correctOption: integer("correct_option").notNull(),
+  explanation: text("explanation"),
+  order: integer("order").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// User Learning Progress
+export const userLearningProgress = pgTable("user_learning_progress", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  moduleId: uuid("module_id").notNull().references(() => learningModules.id),
+  status: learningModuleStatusEnum("status").notNull().default('not_started'),
+  lastCompletedSection: integer("last_completed_section"),
+  quizScore: integer("quiz_score"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
@@ -202,6 +246,37 @@ export const insertTokenHistoricalValueSchema = createInsertSchema(tokenHistoric
 });
 
 // Set up relations
+// Insert schemas for learning models
+export const insertLearningModuleSchema = createInsertSchema(learningModules).pick({
+  title: true,
+  description: true,
+  content: true,
+  category: true,
+  difficulty: true,
+  order: true,
+  estimatedMinutes: true,
+  imageUrl: true,
+});
+
+export const insertLearningQuizSchema = createInsertSchema(learningQuizzes).pick({
+  moduleId: true,
+  question: true,
+  options: true,
+  correctOption: true,
+  explanation: true,
+  order: true,
+});
+
+export const insertUserLearningProgressSchema = createInsertSchema(userLearningProgress).pick({
+  userId: true,
+  moduleId: true,
+  status: true,
+  lastCompletedSection: true,
+  quizScore: true,
+  startedAt: true,
+  completedAt: true,
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   portfolios: many(portfolios),
   portfolioTokens: many(portfolioTokens),
@@ -209,6 +284,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   portfolioHistoricalValues: many(portfolioHistoricalValues),
   tokenHistoricalValues: many(tokenHistoricalValues),
   alerts: many(alerts),
+  learningProgress: many(userLearningProgress),
 }));
 
 export const tokensRelations = relations(tokens, ({ one, many }) => ({
@@ -333,6 +409,30 @@ export const alertsRelations = relations(alerts, ({ one }) => ({
   }),
 }));
 
+// Learning module relations
+export const learningModulesRelations = relations(learningModules, ({ many }) => ({
+  quizzes: many(learningQuizzes),
+  userProgress: many(userLearningProgress),
+}));
+
+export const learningQuizzesRelations = relations(learningQuizzes, ({ one }) => ({
+  module: one(learningModules, {
+    fields: [learningQuizzes.moduleId],
+    references: [learningModules.id],
+  }),
+}));
+
+export const userLearningProgressRelations = relations(userLearningProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userLearningProgress.userId],
+    references: [users.id],
+  }),
+  module: one(learningModules, {
+    fields: [userLearningProgress.moduleId],
+    references: [learningModules.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -359,3 +459,12 @@ export type InsertTokenHistoricalValue = z.infer<typeof insertTokenHistoricalVal
 
 export type Alert = typeof alerts.$inferSelect;
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
+
+export type LearningModule = typeof learningModules.$inferSelect;
+export type InsertLearningModule = z.infer<typeof insertLearningModuleSchema>;
+
+export type LearningQuiz = typeof learningQuizzes.$inferSelect;
+export type InsertLearningQuiz = z.infer<typeof insertLearningQuizSchema>;
+
+export type UserLearningProgress = typeof userLearningProgress.$inferSelect;
+export type InsertUserLearningProgress = z.infer<typeof insertUserLearningProgressSchema>;
