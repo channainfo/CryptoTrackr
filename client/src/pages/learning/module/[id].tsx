@@ -13,6 +13,9 @@ import { useLearningModuleDetails, useStartModule, useUpdateSectionProgress, use
 import type { LearningModule, ContentSection } from "@/types/education";
 import ReactConfetti from "react-confetti";
 
+// Default user ID for demo purposes
+const DEFAULT_USER_ID = "demo";
+
 // Separate Confetti component to avoid hooks ordering issues
 const Celebration = ({ show }: { show: boolean }) => {
   const [windowSize, setWindowSize] = useState({
@@ -48,9 +51,6 @@ const Celebration = ({ show }: { show: boolean }) => {
   );
 };
 
-// Default user ID for demo purposes
-const DEFAULT_USER_ID = "demo";
-
 // Parse the module content (JSON string) into structured content sections
 function parseModuleContent(content: string): ContentSection[] {
   try {
@@ -79,6 +79,31 @@ const ContentSectionComponent = ({ section }: { section: ContentSection }) => {
   }
 };
 
+// Component for the next button content to avoid conditional hook issues
+const NextButtonContent = ({ 
+  isLastSection, 
+  hasQuizzes 
+}: { 
+  isLastSection: boolean, 
+  hasQuizzes: boolean 
+}) => {
+  if (isLastSection) {
+    const buttonText = hasQuizzes ? "Go to Quiz" : "Complete Module";
+    return (
+      <>
+        {buttonText}
+        <CheckCircle className="ml-1 w-4 h-4" />
+      </>
+    );
+  }
+  
+  return (
+    <>
+      Next <ChevronRight className="ml-1 w-4 h-4" />
+    </>
+  );
+};
+
 interface ModuleDetailProps {
   id: string;
 }
@@ -96,192 +121,211 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   const startModuleMutation = useStartModule();
   const updateSectionMutation = useUpdateSectionProgress();
   const completeModuleMutation = useCompleteModule();
+
+  // Extract module and quizzes early to avoid conditional logic in render
+  const module = moduleData?.module;
+  const quizzes = moduleData?.quizzes || [];
+  const progress = moduleData?.progress;
+  const hasQuizzes = quizzes.length > 0;
   
   // Memoized content sections to avoid recalculations
   const contentSections = useMemo(() => {
-    return moduleData?.module?.content 
-      ? parseModuleContent(moduleData.module.content) 
+    return module?.content 
+      ? parseModuleContent(module.content) 
       : [];
-  }, [moduleData?.module?.content]);
+  }, [module?.content]);
+
+  // Derived state
+  const currentContentSection = contentSections[currentSection] || null;
+  const isLastSection = currentSection === contentSections.length - 1;
+  const progressPercentage = contentSections.length > 0 
+    ? ((currentSection + 1) / contentSections.length) * 100
+    : 0;
   
-  // Initialize module when first loaded
-  useEffect(() => {
-    // Additional check to prevent infinite loop
-    if (moduleData?.module && !moduleData.progress && !startModuleMutation.isPending) {
-      // For demo user, check localStorage first
-      if (DEFAULT_USER_ID === 'demo') {
-        const savedProgressStr = localStorage.getItem('demo-learning-progress');
-        
-        if (savedProgressStr) {
-          try {
-            const savedProgress = JSON.parse(savedProgressStr);
-            const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
-            
-            if (existingProgress) {
-              // If we have progress in localStorage, use that instead of making an API call
-              setCurrentSection(existingProgress.lastCompletedSection);
-              return; // Exit early, no need to call API
-            }
-          } catch (e) {
-            console.error("Error parsing local progress:", e);
-          }
+  // Function to save progress to localStorage for demo user
+  const saveProgressToLocalStorage = (
+    status: 'in_progress' | 'completed', 
+    sectionNumber: number,
+    completed = false
+  ) => {
+    if (DEFAULT_USER_ID !== 'demo') return;
+    
+    try {
+      const savedProgressStr = localStorage.getItem('demo-learning-progress');
+      let savedProgress = savedProgressStr ? JSON.parse(savedProgressStr) : [];
+      
+      const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
+      const now = new Date().toISOString();
+      
+      if (existingProgress) {
+        existingProgress.lastCompletedSection = sectionNumber;
+        existingProgress.status = status;
+        existingProgress.updatedAt = now;
+        if (completed) {
+          existingProgress.completedAt = now;
         }
+      } else {
+        const newProgress = {
+          id: `demo-${id}`,
+          userId: DEFAULT_USER_ID,
+          moduleId: id,
+          status: status,
+          lastCompletedSection: sectionNumber,
+          createdAt: now,
+          updatedAt: now
+        };
+        if (completed) {
+          newProgress.completedAt = now;
+        }
+        savedProgress.push(newProgress);
       }
       
-      // Only initialize if we don't have local progress
+      localStorage.setItem('demo-learning-progress', JSON.stringify(savedProgress));
+    } catch (e) {
+      console.error("Error saving progress to localStorage:", e);
+    }
+  };
+  
+  // Check for locally saved progress on mount
+  useEffect(() => {
+    if (DEFAULT_USER_ID === 'demo' && !progress && !isLoading) {
+      try {
+        const savedProgressStr = localStorage.getItem('demo-learning-progress');
+        if (savedProgressStr) {
+          const savedProgress = JSON.parse(savedProgressStr);
+          const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
+          
+          if (existingProgress) {
+            setCurrentSection(existingProgress.lastCompletedSection);
+            return; // Skip API call if we have local progress
+          }
+        }
+      } catch (e) {
+        console.error("Error reading progress from localStorage:", e);
+      }
+    }
+  }, [id, progress, isLoading]);
+  
+  // Initialize module when first loaded - if needed and not already loaded
+  useEffect(() => {
+    const shouldStartModule = 
+      module && 
+      !progress && 
+      !startModuleMutation.isPending && 
+      !startModuleMutation.isSuccess;
+      
+    if (shouldStartModule) {
       startModuleMutation.mutate({
         userId: DEFAULT_USER_ID,
         moduleId: id
       });
-    } else if (moduleData?.progress?.status === "in_progress") {
-      // If module was already started, go to last section
-      setCurrentSection(moduleData.progress.lastCompletedSection);
+    } else if (progress?.status === "in_progress") {
+      setCurrentSection(progress.lastCompletedSection || 0);
     }
-  }, [moduleData, id, startModuleMutation.isPending]);
+  }, [
+    module, 
+    progress, 
+    id, 
+    startModuleMutation.isPending, 
+    startModuleMutation.isSuccess,
+    startModuleMutation
+  ]);
   
-  // Update section progress when moving to next section
+  // Handle next button click - advance section or complete module
   const handleNextSection = () => {
+    // Guard clause - do nothing if no content
+    if (contentSections.length === 0) return;
+    
     if (currentSection < contentSections.length - 1) {
+      // Not the last section - move to next
       const nextSection = currentSection + 1;
       
-      // Update the progress in the database
+      // Update progress via API
       updateSectionMutation.mutate({
         userId: DEFAULT_USER_ID,
         moduleId: id,
         section: nextSection
       });
       
-      // For demo user, also update localStorage
-      if (DEFAULT_USER_ID === 'demo') {
-        const savedProgressStr = localStorage.getItem('demo-learning-progress');
-        let savedProgress = [];
-        
-        if (savedProgressStr) {
-          try {
-            savedProgress = JSON.parse(savedProgressStr);
-          } catch (e) {
-            console.error("Error parsing progress:", e);
-          }
-        }
-        
-        const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
-        
-        if (existingProgress) {
-          existingProgress.lastCompletedSection = nextSection;
-          existingProgress.status = "in_progress";
-          existingProgress.updatedAt = new Date().toISOString();
-        } else {
-          savedProgress.push({
-            id: `demo-${id}`,
-            userId: DEFAULT_USER_ID,
-            moduleId: id,
-            status: "in_progress",
-            lastCompletedSection: nextSection,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        }
-        
-        localStorage.setItem('demo-learning-progress', JSON.stringify(savedProgress));
-      }
+      // Update local progress
+      saveProgressToLocalStorage('in_progress', nextSection);
       
+      // Update UI
       setCurrentSection(nextSection);
     } else {
-      // Complete the module if this is the last section
-      // Create a stable function reference for the navigation based on module data
-      const navigateAfterCompletion = () => {
-        // If we have a quiz, go to it, otherwise go back to learning page
-        if (moduleData?.quizzes?.length > 0) {
-          // Get the first quiz ID for this module
-          const quizId = moduleData.quizzes[0].id;
-          setLocation(`/learning/quiz/${quizId}`);
-        } else {
-          setLocation('/learning');
-        }
-      };
-      
-      completeModuleMutation.mutate({
-        userId: DEFAULT_USER_ID,
-        moduleId: id
-      }, {
-        onSuccess: () => {
-          // For demo user, also update localStorage
-          if (DEFAULT_USER_ID === 'demo') {
-            const savedProgressStr = localStorage.getItem('demo-learning-progress');
-            let savedProgress = [];
+      // Last section - complete the module
+      completeModuleMutation.mutate(
+        {
+          userId: DEFAULT_USER_ID,
+          moduleId: id
+        }, 
+        {
+          onSuccess: () => {
+            // Update local progress
+            saveProgressToLocalStorage(
+              'completed', 
+              contentSections.length, 
+              true
+            );
             
-            if (savedProgressStr) {
-              try {
-                savedProgress = JSON.parse(savedProgressStr);
-              } catch (e) {
-                console.error("Error parsing progress:", e);
+            // Show completion UI effects
+            setShowConfetti(true);
+            
+            // Notify user
+            toast({
+              title: "Module Completed!",
+              description: "Congratulations on completing this module.",
+            });
+            
+            // Navigate after delay
+            setTimeout(() => {
+              if (hasQuizzes) {
+                setLocation(`/learning/quiz/${quizzes[0].id}`);
+              } else {
+                setLocation('/learning');
               }
-            }
-            
-            const existingProgress = savedProgress.find((p: any) => p.moduleId === id);
-            
-            if (existingProgress) {
-              existingProgress.lastCompletedSection = contentSections.length;
-              existingProgress.status = "completed";
-              existingProgress.updatedAt = new Date().toISOString();
-              existingProgress.completedAt = new Date().toISOString();
-            } else {
-              savedProgress.push({
-                id: `demo-${id}`,
-                userId: DEFAULT_USER_ID,
-                moduleId: id,
-                status: "completed",
-                lastCompletedSection: contentSections.length,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                completedAt: new Date().toISOString()
-              });
-            }
-            
-            localStorage.setItem('demo-learning-progress', JSON.stringify(savedProgress));
+            }, 3000);
           }
-          
-          // Show confetti first
-          setShowConfetti(true);
-          
-          // Display completion toast
-          toast({
-            title: "Module Completed!",
-            description: "Congratulations on completing this module.",
-          });
-          
-          // Hide confetti and navigate after a delay
-          setTimeout(navigateAfterCompletion, 3000);
         }
-      });
+      );
     }
   };
   
+  // Handle previous button click
   const handlePreviousSection = () => {
     if (currentSection > 0) {
       setCurrentSection(currentSection - 1);
     }
   };
   
+  // Effect to hide confetti after a few seconds
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
+  
+  // Loading state
   if (isLoading) {
     return (
       <Container>
         <div className="py-8">
-          {/* Back button skeleton */}
           <div className="mb-2">
             <Button variant="ghost" size="sm" disabled>
               <ChevronLeft className="mr-1 w-4 h-4" /> Back to Learning Center
             </Button>
           </div>
-          
-          {/* Module content skeleton */}
           <ModuleDetailSkeleton />
         </div>
       </Container>
     );
   }
   
-  if (!moduleData?.module) {
+  // Module not found state
+  if (!module) {
     return (
       <Container>
         <div className="py-8">
@@ -298,22 +342,8 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
       </Container>
     );
   }
-  
-  const { module, progress } = moduleData;
-  const currentContentSection = contentSections[currentSection];
-  const isLastSection = currentSection === contentSections.length - 1;
-  const progressPercentage = ((currentSection + 1) / contentSections.length) * 100;
-  
-  // Effect to hide confetti after a few seconds
-  useEffect(() => {
-    if (showConfetti) {
-      const timer = setTimeout(() => {
-        setShowConfetti(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showConfetti]);
 
+  // Main UI render
   return (
     <Container>
       <Celebration show={showConfetti} />
@@ -379,32 +409,11 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
             >
               <ChevronLeft className="mr-1 w-4 h-4" /> Previous
             </Button>
-            <Button 
-              onClick={handleNextSection}
-            >
-              {(() => {
-                // Move the conditional logic to a function that returns JSX
-                // This ensures consistent hook usage between renders
-                
-                if (isLastSection) {
-                  const buttonText = moduleData?.quizzes?.length > 0 
-                    ? "Go to Quiz" 
-                    : "Complete Module";
-                    
-                  return (
-                    <>
-                      {buttonText}
-                      <CheckCircle className="ml-1 w-4 h-4" />
-                    </>
-                  );
-                } else {
-                  return (
-                    <>
-                      Next <ChevronRight className="ml-1 w-4 h-4" />
-                    </>
-                  );
-                }
-              })()}
+            <Button onClick={handleNextSection}>
+              <NextButtonContent 
+                isLastSection={isLastSection} 
+                hasQuizzes={hasQuizzes} 
+              />
             </Button>
           </CardFooter>
         </Card>

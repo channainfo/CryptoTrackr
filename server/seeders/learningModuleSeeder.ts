@@ -134,6 +134,7 @@ const learningModulesData: InsertLearningModule[] = [
 const learningQuizzesData = [
   {
     question: "What is the maximum supply of Bitcoin?",
+    // Use string[] format for options to match the schema
     options: ["10 million", "21 million", "100 million", "There is no maximum supply"],
     correctOption: 1,
     explanation: "Bitcoin has a fixed supply cap of 21 million coins, which is one of its defining features that creates digital scarcity.",
