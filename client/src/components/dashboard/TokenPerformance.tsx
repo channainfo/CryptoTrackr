@@ -53,7 +53,7 @@ export default function TokenPerformance({ portfolioTokenId, tokenName, tokenSym
         method: 'GET'
       });
       
-      setPerformanceData(response as PerformanceData);
+      setPerformanceData(response);
     } catch (error) {
       console.error('Error fetching token performance data:', error);
       toast({

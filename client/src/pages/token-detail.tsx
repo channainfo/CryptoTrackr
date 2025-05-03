@@ -42,7 +42,7 @@ export default function TokenDetailPage() {
           url: `/api/portfolio-tokens/${params.portfolioTokenId}`,
           method: 'GET'
         });
-        setTokenDetails(response as TokenDetails);
+        setTokenDetails(response);
       } catch (error) {
         console.error("Error fetching token details:", error);
       } finally {

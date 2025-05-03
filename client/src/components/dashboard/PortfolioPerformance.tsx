@@ -48,7 +48,7 @@ export default function PortfolioPerformance({ portfolioId }: PortfolioPerforman
         method: 'GET'
       });
       
-      setPerformanceData(response as PerformanceData);
+      setPerformanceData(response);
     } catch (error) {
       console.error('Error fetching performance data:', error);
       toast({
