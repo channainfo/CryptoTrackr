@@ -5,7 +5,8 @@ import {
   ActivitySquare, 
   LineChart,
   FileText,
-  Calculator
+  Calculator,
+  GraduationCap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,7 @@ const MobileNav = () => {
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
     { href: '/transactions', label: 'Transactions', icon: ActivitySquare },
     { href: '/markets', label: 'Markets', icon: LineChart },
-    { href: '/budget-planner', label: 'Budget', icon: Calculator },
+    { href: '/learning', label: 'Learn', icon: GraduationCap },
   ];
   
   return (
