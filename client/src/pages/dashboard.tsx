@@ -10,6 +10,7 @@ import PortfolioPerformance from "@/components/dashboard/PortfolioPerformance";
 import AssetTable from "@/components/dashboard/AssetTable";
 import TransactionList from "@/components/dashboard/TransactionList";
 import MarketTrends from "@/components/dashboard/MarketTrends";
+import MarketSentiment from "@/components/dashboard/MarketSentiment";
 import PortfolioSelector, { Portfolio } from "@/components/dashboard/PortfolioSelector";
 import AddCryptoModal from "@/components/modals/AddCryptoModal";
 import { usePortfolio } from "@/hooks/usePortfolio";
@@ -197,13 +198,18 @@ const Dashboard = () => {
               <PortfolioPerformance portfolioId={selectedPortfolioId} />
             </div>
             
-            {/* Recent Transactions & Market Trends */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="tutorial-transactions">
+            {/* Recent Transactions & Market Insights */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <div className="tutorial-transactions lg:col-span-2">
                 <TransactionList portfolioId={selectedPortfolioId} />
               </div>
-              <div className="tutorial-market">
-                <MarketTrends />
+              <div className="space-y-6">
+                <div className="tutorial-market">
+                  <MarketTrends />
+                </div>
+                <div className="tutorial-sentiment">
+                  <MarketSentiment />
+                </div>
               </div>
             </div>
           </>

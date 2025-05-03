@@ -49,7 +49,7 @@ export default function MarketSentiment() {
   });
 
   // Determine sentiment based on data
-  const sentimentData: SentimentData | null = data?.sentiment || null;
+  const sentimentData: SentimentData | null = data && data.sentiment ? data.sentiment : null;
   
   // Calculate sentiment if API fails
   useEffect(() => {
