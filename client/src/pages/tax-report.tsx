@@ -92,7 +92,7 @@ const TAX_BRACKETS = {
 };
 
 export default function TaxReport() {
-  const [navigate] = useLocation();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
