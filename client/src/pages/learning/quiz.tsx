@@ -52,6 +52,43 @@ const QuizPage = ({ params }: { params: { id: string } }) => {
   
   const handleContinue = () => {
     if (quizData?.module) {
+      // For demo user, make sure we mark the module as completed in localStorage
+      if (DEFAULT_USER_ID === 'demo') {
+        const savedProgressStr = localStorage.getItem('demo-learning-progress');
+        let savedProgress = [];
+        
+        if (savedProgressStr) {
+          try {
+            savedProgress = JSON.parse(savedProgressStr);
+          } catch (e) {
+            console.error("Error parsing progress:", e);
+          }
+        }
+        
+        const moduleId = quizData.module.id;
+        const existingProgress = savedProgress.find((p: any) => p.moduleId === moduleId);
+        
+        if (existingProgress) {
+          existingProgress.status = "completed";
+          existingProgress.lastCompletedSection = 10; // High number to indicate completion
+          existingProgress.updatedAt = new Date().toISOString();
+          existingProgress.completedAt = new Date().toISOString();
+        } else {
+          savedProgress.push({
+            id: `demo-${moduleId}`,
+            userId: DEFAULT_USER_ID,
+            moduleId,
+            status: "completed",
+            lastCompletedSection: 10,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString()
+          });
+        }
+        
+        localStorage.setItem('demo-learning-progress', JSON.stringify(savedProgress));
+      }
+      
       setLocation(`/learning`);
     }
   };
