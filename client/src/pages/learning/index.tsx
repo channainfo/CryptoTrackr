@@ -377,29 +377,26 @@ const LearningPage = () => {
               className="h-full mb-8"
             />
             
-            {/* ShareableAchievements (tabs version) */}
-            <Tabs defaultValue="achievements" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="achievements">My Achievements</TabsTrigger>
-                <TabsTrigger value="shareable">Shareable Cards</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="achievements">
+            {/* Split the achievements and sharing into separate rows */}
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-xl font-semibold mb-4">My Achievements</h2>
                 <AchievementGrid 
                   modules={allModules || []} 
                   progress={effectiveProgress}
                   className="h-full"
                 />
-              </TabsContent>
+              </div>
               
-              <TabsContent value="shareable">
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Share Your Progress</h2>
                 <ShareableAchievementsGrid
                   modules={allModules || []} 
                   progress={effectiveProgress}
                   className="h-full"
                 />
-              </TabsContent>
-            </Tabs>
+              </div>
+            </div>
           </div>
           
           {/* Right column with next recommended module */}
