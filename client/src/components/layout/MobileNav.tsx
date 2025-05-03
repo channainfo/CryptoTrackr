@@ -3,7 +3,8 @@ import {
   LayoutDashboard, 
   PieChart, 
   ActivitySquare, 
-  LineChart 
+  LineChart,
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

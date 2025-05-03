@@ -27,6 +27,7 @@ function Router() {
       <Route path="/transactions" component={Transactions} />
       <Route path="/markets" component={Markets} />
       <Route path="/settings" component={Settings} />
+      <Route path="/tax-report" component={TaxReport} />
       <Route component={NotFound} />
     </Switch>
   );

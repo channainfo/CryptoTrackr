@@ -5,7 +5,8 @@ import {
   ActivitySquare, 
   LineChart, 
   Settings, 
-  Ticket 
+  Ticket,
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -22,6 +23,7 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
     { href: '/transactions', label: 'Transactions', icon: ActivitySquare },
     { href: '/markets', label: 'Markets', icon: LineChart },
+    { href: '/tax-report', label: 'Tax Report', icon: FileText },
     { href: '/settings', label: 'Settings', icon: Settings },
   ];
   
