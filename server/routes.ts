@@ -320,18 +320,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all portfolios for this user
       let portfolios = await storage.getUserPortfolios(defaultUser.id);
       
+      // Print all portfolios and their isWatchlist value for debugging
+      console.log("All portfolios before filtering:");
+      portfolios.forEach(p => {
+        console.log(`Portfolio ${p.name}: isWatchlist=${p.isWatchlist}, type=${typeof p.isWatchlist}`);
+      });
+      
       // Apply filters if specified
       if (type === 'watchlist') {
         console.log('Filtering for watchlist portfolios only');
-        portfolios = portfolios.filter(p => p.isWatchlist === true);
+        // Use Boolean constructor to ensure we're comparing booleans
+        portfolios = portfolios.filter(p => Boolean(p.isWatchlist) === true);
       } else if (type === 'standard') {
         console.log('Filtering for standard portfolios only');
-        portfolios = portfolios.filter(p => p.isWatchlist === false);
+        portfolios = portfolios.filter(p => Boolean(p.isWatchlist) === false);
       } else {
         console.log('No filtering applied, returning all portfolios');
       }
       
-      console.log(`Found ${portfolios.length} portfolios for type: ${type || 'all'}`);
+      console.log(`After filtering for ${type || 'all'}, found ${portfolios.length} portfolios`);
       portfolios.forEach(p => {
         console.log(`- ${p.name} (id: ${p.id}, isWatchlist: ${p.isWatchlist})`);
       });
@@ -458,10 +465,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Creating portfolio with data:", JSON.stringify(req.body, null, 2));
       console.log("Is watchlist flag in request:", req.body.isWatchlist);
+      console.log("Request body type:", typeof req.body);
+      console.log("isWatchlist type:", typeof req.body.isWatchlist);
       
-      // Make sure isWatchlist is a boolean, not a string
-      const isWatchlist = req.body.isWatchlist === true || req.body.isWatchlist === "true";
-      console.log("Converted isWatchlist value:", isWatchlist);
+      // DEBUGGING: Force isWatchlist to true if the tab is 'watchlist'
+      // This checks req.body.activeTab and forces isWatchlist accordingly
+      let isWatchlist = false;
+      
+      if (req.body.activeTab === 'watchlist') {
+        console.log("Creating from watchlist tab, forcing isWatchlist=true");
+        isWatchlist = true;
+      } else {
+        isWatchlist = req.body.isWatchlist === true || req.body.isWatchlist === "true";
+        console.log("Standard create, isWatchlist=", isWatchlist);
+      }
+      
+      // Last safety check - if the request contains isWatchlist and it's strictly true, honor that
+      if (req.body.isWatchlist === true) {
+        console.log("Explicit isWatchlist=true in request, honoring that");
+        isWatchlist = true;
+      }
+      
+      console.log("Final isWatchlist value:", isWatchlist);
       
       const portfolioData = {
         name: req.body.name,

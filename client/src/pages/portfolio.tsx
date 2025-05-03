@@ -74,20 +74,26 @@ const Portfolio = () => {
 
   // Apply additional client-side filtering for active portfolios with assets
   const filteredPortfolios = portfoliosWithAssets.filter(item => {
-    console.log(`Filtering portfolio "${item.portfolio.name}" in "${activeTab}" tab (isWatchlist: ${item.portfolio.isWatchlist})`);
+    // Convert isWatchlist to a boolean to handle any possible type issues
+    const isWatchlist = Boolean(item.portfolio.isWatchlist);
+    
+    console.log(`Filtering portfolio "${item.portfolio.name}" in "${activeTab}" tab (isWatchlist: ${isWatchlist})`);
     
     if (activeTab === "all") {
       // For "all" tab, show all portfolios
       return true;
     } 
     else if (activeTab === "active") {
-      // For "active" tab, only show portfolios with assets and not watchlists
-      return item.assets.length > 0 && !item.portfolio.isWatchlist;
+      // For "active" tab, only show portfolios with assets and NOT watchlists
+      const hasAssets = item.assets.length > 0;
+      const notWatchlist = !isWatchlist;
+      console.log(`Portfolio ${item.portfolio.name}: hasAssets=${hasAssets}, notWatchlist=${notWatchlist}`);
+      return hasAssets && notWatchlist;
     }
     else if (activeTab === "watchlist") {
-      // For "watchlist" tab, show only watchlist portfolios
-      // This should already be filtered by the server, but double-check
-      return item.portfolio.isWatchlist === true;
+      // For "watchlist" tab, show ONLY watchlist portfolios
+      console.log(`Watchlist filter for ${item.portfolio.name}, isWatchlist=${isWatchlist}`);
+      return isWatchlist === true;
     }
     return false;
   });
@@ -179,7 +185,9 @@ const Portfolio = () => {
       description: newPortfolioDescription || undefined,
       isDefault: isDefaultPortfolio,
       // Explicitly use Boolean constructor to force true/false value
-      isWatchlist: Boolean(isWatchlist)
+      isWatchlist: Boolean(isWatchlist),
+      // CRITICAL: Send the activeTab so the server knows which tab we're creating from
+      activeTab: activeTab
     };
     
     console.log("Sending portfolio creation request:", requestData);
