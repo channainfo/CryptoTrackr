@@ -41,7 +41,13 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Portfolio methods
+  getUserPortfolios(userId: string): Promise<Portfolio[]>;
+  createPortfolio(data: Partial<Portfolio>): Promise<Portfolio>;
+  getPortfolioById(id: string): Promise<Portfolio | undefined>;
+  
+  // Portfolio assets methods
   getPortfolioAssets(): Promise<PortfolioAsset[]>;
+  getPortfolioAssetsById(portfolioId: string): Promise<PortfolioAsset[]>;
   getPortfolioAsset(id: string): Promise<PortfolioAsset | undefined>;
   addPortfolioAsset(asset: Partial<PortfolioAsset>): Promise<PortfolioAsset>;
   updatePortfolioAsset(id: string, data: Partial<PortfolioAsset>): Promise<PortfolioAsset | undefined>;
@@ -70,7 +76,67 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // PORTFOLIO METHODS
+  // PORTFOLIO MANAGEMENT METHODS
+  async getUserPortfolios(userId: string): Promise<Portfolio[]> {
+    const userPortfolios = await db.select()
+      .from(portfolios)
+      .where(eq(portfolios.userId, userId));
+    
+    return userPortfolios;
+  }
+
+  async createPortfolio(data: Partial<Portfolio>): Promise<Portfolio> {
+    if (!data.userId) {
+      throw new Error('User ID is required to create a portfolio');
+    }
+
+    const [portfolio] = await db.insert(portfolios)
+      .values({
+        userId: data.userId,
+        name: data.name || 'New Portfolio',
+        description: data.description,
+        isDefault: data.isDefault || false,
+      })
+      .returning();
+    
+    return portfolio;
+  }
+
+  async getPortfolioById(id: string): Promise<Portfolio | undefined> {
+    const [portfolio] = await db.select()
+      .from(portfolios)
+      .where(eq(portfolios.id, id));
+    
+    return portfolio;
+  }
+
+  async getPortfolioAssetsById(portfolioId: string): Promise<PortfolioAsset[]> {
+    // Get the portfolio tokens with related token information
+    const portfolioTokensWithTokens = await db.query.portfolioTokens.findMany({
+      where: eq(portfolioTokens.portfolioId, portfolioId),
+      with: {
+        token: true,
+      },
+    });
+
+    // Convert to the expected format
+    return portfolioTokensWithTokens.map(pt => {
+      return {
+        id: pt.id,
+        userId: pt.userId,
+        cryptoId: pt.tokenId,
+        symbol: pt.token.symbol,
+        name: pt.token.name,
+        quantity: Number(pt.amount),
+        purchasePrice: Number(pt.averageBuyPrice),
+        currentPrice: Number(pt.currentPrice),
+        value: Number(pt.totalValue),
+        priceChangePercentage24h: 0 // This would need to come from market data
+      };
+    });
+  }
+
+  // PORTFOLIO ASSETS METHODS
   async getPortfolioAssets(): Promise<PortfolioAsset[]> {
     // First, get the default portfolio or create it if it doesn't exist
     let defaultPortfolio = await this.getDefaultPortfolio();

@@ -68,6 +68,8 @@ export const portfolios = pgTable("portfolios", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id),
   name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
@@ -75,6 +77,8 @@ export const portfolios = pgTable("portfolios", {
 export const insertPortfolioSchema = createInsertSchema(portfolios).pick({
   userId: true,
   name: true,
+  description: true,
+  isDefault: true,
 });
 
 // Portfolio tokens table

@@ -18,7 +18,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get portfolio assets
+  // Get portfolio assets (all portfolios)
   app.get('/api/portfolio', async (req, res) => {
     try {
       const assets = await storage.getPortfolioAssets();
@@ -28,8 +28,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch portfolio data' });
     }
   });
+  
+  // Get assets for a specific portfolio
+  app.get('/api/portfolios/:portfolioId/assets', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      const assets = await storage.getPortfolioAssetsById(portfolioId);
+      res.json(assets);
+    } catch (error) {
+      console.error('Error fetching portfolio assets:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolio data' });
+    }
+  });
 
-  // Add asset to portfolio
+  // Add asset to portfolio (default portfolio)
   app.post('/api/portfolio', async (req, res) => {
     try {
       // Get the default user and portfolio first
@@ -38,6 +54,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // We'll automatically handle the userId so user doesn't have to provide it
       const assetData = {
+        symbol: req.body.symbol,
+        name: req.body.name,
+        quantity: req.body.quantity,
+        currentPrice: req.body.currentPrice,
+        priceChangePercentage24h: req.body.priceChangePercentage24h || 0,
+        userId: defaultUser.id,
+        value: req.body.quantity * req.body.currentPrice
+      };
+      
+      const asset = await storage.addPortfolioAsset(assetData);
+      res.status(201).json(asset);
+    } catch (error) {
+      console.error('Error adding portfolio asset:', error);
+      res.status(400).json({ message: 'Invalid portfolio data' });
+    }
+  });
+  
+  // Add asset to a specific portfolio
+  app.post('/api/portfolios/:portfolioId/assets', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the default user
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== defaultUser.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      // Create asset with specific portfolio ID
+      const assetData = {
+        portfolioId: portfolioId,
         symbol: req.body.symbol,
         name: req.body.name,
         quantity: req.body.quantity,
@@ -71,6 +125,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user portfolios
+  app.get('/api/portfolios', async (req, res) => {
+    try {
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      const portfolios = await storage.getUserPortfolios(defaultUser.id);
+      res.json(portfolios);
+    } catch (error) {
+      console.error('Error fetching user portfolios:', error);
+      res.status(500).json({ message: 'Failed to fetch portfolios' });
+    }
+  });
+
+  // Create new portfolio
+  app.post('/api/portfolios', async (req, res) => {
+    try {
+      // Get the default user first
+      const defaultUser = await storage.getUserByUsername('demo') || 
+        await storage.createUser({ username: 'demo', password: 'password' });
+      
+      const portfolioData = {
+        name: req.body.name,
+        userId: defaultUser.id
+      };
+      
+      const portfolio = await storage.createPortfolio(portfolioData);
+      res.status(201).json(portfolio);
+    } catch (error) {
+      console.error('Error creating portfolio:', error);
+      res.status(400).json({ message: 'Invalid portfolio data' });
+    }
+  });
+  
   // Get transactions
   app.get('/api/transactions', async (req, res) => {
     try {
