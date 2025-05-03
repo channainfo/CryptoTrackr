@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ArrowLeft, PlusIcon, Settings, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import TransactionList from "@/components/dashboard/TransactionList";
 import AddCryptoModal from "@/components/modals/AddCryptoModal";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
-import OnboardingDebug from "@/components/onboarding/OnboardingDebug";
 import { useOnboarding } from "@/hooks/use-onboarding";
 
 const PortfolioDetail = () => {
@@ -22,15 +21,7 @@ const PortfolioDetail = () => {
   const { portfolioSummary, isLoading } = usePortfolio(portfolioId);
   
   // Setup onboarding tour for portfolio page
-  const { 
-    showTour, 
-    handleTourComplete, 
-    startTour, 
-    resetTour 
-  } = useOnboarding('portfolio');
-  
-  // Debug log for onboarding state
-  console.log('Portfolio Detail - Onboarding State:', { showTour, portfolioId });
+  const { showTour, handleTourComplete } = useOnboarding('portfolio');
   
   const handleBack = () => {
     setLocation("/portfolio");
@@ -171,40 +162,9 @@ const PortfolioDetail = () => {
       
       {/* Onboarding wizard */}
       <OnboardingWizard
-        tourId="portfolio"
-        showTour={showTour}
+        tourType="portfolio"
+        isEnabled={true}
         onComplete={handleTourComplete}
-        steps={[
-          {
-            target: '.portfolio-tabs',
-            content: 'Navigate between different views of your portfolio.',
-            disableBeacon: true,
-            placement: 'bottom',
-          },
-          {
-            target: '.portfolio-chart',
-            content: 'This chart shows your portfolio performance over time.',
-            placement: 'bottom',
-          },
-          {
-            target: '.portfolio-assets',
-            content: 'View all cryptocurrencies in your portfolio, including current value and performance.',
-            placement: 'top',
-          },
-          {
-            target: '.add-asset-button',
-            content: 'Click here to add new cryptocurrencies to your portfolio.',
-            placement: 'left',
-          },
-        ]}
-      />
-      
-      {/* Debug panel for onboarding */}
-      <OnboardingDebug 
-        tourId="portfolio"
-        showTour={showTour}
-        onStartTour={startTour}
-        onResetTour={resetTour}
       />
     </>
   );
