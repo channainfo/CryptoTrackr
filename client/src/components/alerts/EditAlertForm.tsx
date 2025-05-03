@@ -98,7 +98,7 @@ export const EditAlertForm = ({ alert, onSuccess }: EditAlertFormProps) => {
 
   // Update alert mutation
   const { mutate: updateAlert, isPending } = useMutation({
-    mutationFn: async (values: FormValues) => {
+    mutationFn: async (values: any) => {
       return apiRequest(`/api/alerts/${alert.id}`, {
         method: 'PATCH',
         data: values,
@@ -116,14 +116,19 @@ export const EditAlertForm = ({ alert, onSuccess }: EditAlertFormProps) => {
       console.error('Error updating alert:', error);
       toast({
         title: 'Error updating alert',
-        description: 'Something went wrong. Please try again.',
+        description: error.message || 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
     },
   });
 
   const onSubmit = (values: FormValues) => {
-    updateAlert(values);
+    // Convert threshold to string to match the database schema expectation
+    const dataToSubmit = {
+      ...values,
+      threshold: values.threshold.toString()
+    };
+    updateAlert(dataToSubmit);
   };
 
   // Determine if we should show currency symbol

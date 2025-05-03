@@ -83,7 +83,7 @@ export const CreateAlertForm = ({ onSuccess }: CreateAlertFormProps) => {
 
   // Create alert mutation
   const { mutate: createAlert, isPending } = useMutation({
-    mutationFn: async (values: FormValues) => {
+    mutationFn: async (values: any) => {
       return apiRequest('/api/alerts', {
         method: 'POST',
         data: values,
@@ -101,14 +101,19 @@ export const CreateAlertForm = ({ onSuccess }: CreateAlertFormProps) => {
       console.error('Error creating alert:', error);
       toast({
         title: 'Error creating alert',
-        description: 'Something went wrong. Please try again.',
+        description: error.message || 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
     },
   });
 
   const onSubmit = (values: FormValues) => {
-    createAlert(values);
+    // Convert threshold to string to match the database schema expectation
+    const dataToSubmit = {
+      ...values,
+      threshold: values.threshold.toString()
+    };
+    createAlert(dataToSubmit);
   };
 
   // Determine if we should show currency symbol
