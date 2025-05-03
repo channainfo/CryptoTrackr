@@ -28,7 +28,8 @@ const Dashboard = () => {
             <h2 className="text-2xl font-bold">Dashboard</h2>
             <p className="text-neutral-mid mt-1">Overview of your crypto portfolio</p>
           </div>
-          <div className="mt-4 sm:mt-0 space-x-2">
+          <div className="mt-4 sm:mt-0 flex items-center space-x-2">
+            <PortfolioSelector onPortfolioChange={handlePortfolioChange} />
             <Button onClick={() => setIsAddModalOpen(true)}>
               <PlusIcon className="h-4 w-4 mr-1" />
               Add Crypto

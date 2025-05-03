@@ -41,11 +41,19 @@ export const usePortfolio = (portfolioId?: string | null) => {
   
   // Add asset mutation
   const addAssetMutation = useMutation({
-    mutationFn: (asset: PortfolioAsset) => {
-      return apiRequest('POST', '/api/portfolio', asset);
+    mutationFn: (asset: PortfolioAsset & { portfolioId?: string }) => {
+      const endpoint = asset.portfolioId 
+        ? `/api/portfolio/${asset.portfolioId}/assets` 
+        : '/api/portfolio';
+      
+      return apiRequest('POST', endpoint, asset);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/portfolio'] });
+    onSuccess: (_, variables) => {
+      const queryKey = variables.portfolioId 
+        ? ['/api/portfolio', variables.portfolioId] 
+        : ['/api/portfolio'];
+      
+      queryClient.invalidateQueries({ queryKey });
     },
     onError: (error) => {
       toast({
@@ -58,11 +66,19 @@ export const usePortfolio = (portfolioId?: string | null) => {
   
   // Remove asset mutation
   const removeAssetMutation = useMutation({
-    mutationFn: (assetId: string) => {
-      return apiRequest('DELETE', `/api/portfolio/${assetId}`);
+    mutationFn: ({ assetId, portfolioId }: { assetId: string, portfolioId?: string }) => {
+      const endpoint = portfolioId
+        ? `/api/portfolio/${portfolioId}/assets/${assetId}`
+        : `/api/portfolio/${assetId}`;
+      
+      return apiRequest('DELETE', endpoint);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/portfolio'] });
+    onSuccess: (_, variables) => {
+      const queryKey = variables.portfolioId 
+        ? ['/api/portfolio', variables.portfolioId] 
+        : ['/api/portfolio'];
+      
+      queryClient.invalidateQueries({ queryKey });
     },
     onError: (error) => {
       toast({
@@ -96,7 +112,7 @@ export const usePortfolio = (portfolioId?: string | null) => {
   // Update transactions data when API data changes
   useEffect(() => {
     if (transactionsData) {
-      setTransactions(transactionsData);
+      setTransactions(transactionsData as Transaction[]);
     }
   }, [transactionsData]);
   
@@ -174,7 +190,7 @@ export const usePortfolio = (portfolioId?: string | null) => {
   };
   
   // Add asset to portfolio
-  const addAssetToPortfolio = (asset: PortfolioAsset) => {
+  const addAssetToPortfolio = (asset: PortfolioAsset, customPortfolioId?: string) => {
     // Add the asset locally first for immediate UI update
     setAssets(prevAssets => {
       const existingAssetIndex = prevAssets.findIndex(a => a.id === asset.id);
@@ -195,8 +211,11 @@ export const usePortfolio = (portfolioId?: string | null) => {
       }
     });
     
-    // Then call the API
-    addAssetMutation.mutate(asset);
+    // Then call the API with portfolio ID if specified
+    addAssetMutation.mutate({
+      ...asset,
+      portfolioId: customPortfolioId || (portfolioId ? portfolioId : undefined)
+    });
     
     // Update portfolio summary
     setPortfolioSummary(prev => ({
@@ -207,7 +226,7 @@ export const usePortfolio = (portfolioId?: string | null) => {
   };
   
   // Remove asset from portfolio
-  const removeAssetFromPortfolio = (assetId: string) => {
+  const removeAssetFromPortfolio = (assetId: string, customPortfolioId?: string) => {
     // Find the asset to remove
     const assetToRemove = assets.find(a => a.id === assetId);
     if (!assetToRemove) return;
@@ -215,8 +234,11 @@ export const usePortfolio = (portfolioId?: string | null) => {
     // Remove the asset locally first for immediate UI update
     setAssets(prevAssets => prevAssets.filter(a => a.id !== assetId));
     
-    // Then call the API
-    removeAssetMutation.mutate(assetId);
+    // Then call the API with portfolio ID if specified
+    removeAssetMutation.mutate({
+      assetId,
+      portfolioId: customPortfolioId || (portfolioId ? portfolioId : undefined)
+    });
     
     // Update portfolio summary
     if (assetToRemove) {
