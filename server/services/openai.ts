@@ -1,5 +1,6 @@
 import OpenAI from "openai";
-import { LearningModule, UserLearningProgress } from "@shared/schema";
+import { LearningModule, UserLearningProgress, PortfolioToken } from "@shared/schema";
+import axios from "axios";
 
 // Create OpenAI client with API key from environment variables
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -7,7 +8,247 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 /**
  * Service for handling OpenAI API interactions
  */
+/**
+ * News article type definition
+ */
+interface NewsArticle {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string;
+  summary?: string;
+  imageUrl?: string;
+  relevance?: string;
+}
+
+/**
+ * News recommendation response
+ */
+interface NewsRecommendationResponse {
+  articles: NewsArticle[];
+  portfolioInsight: string;
+}
+
 export class OpenAIService {
+  /**
+   * Fetch crypto news from a public API
+   * @returns Array of news articles
+   */
+  static async fetchCryptoNews(limit: number = 15): Promise<NewsArticle[]> {
+    try {
+      // Using CryptoCompare News API (free and doesn't require API key)
+      const response = await axios.get(
+        `https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=${limit}`
+      );
+      
+      if (response.data && response.data.Data && Array.isArray(response.data.Data)) {
+        // Transform the API response to our NewsArticle format
+        return response.data.Data.map((item: any) => ({
+          title: item.title,
+          url: item.url,
+          source: item.source || item.source_info?.name || "Unknown",
+          publishedAt: new Date(item.published_on * 1000).toISOString(),
+          summary: item.body?.substring(0, 140) + "..." || "No summary available",
+          imageUrl: item.imageurl || null
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error("Error fetching crypto news:", error);
+      return [];
+    }
+  }
+  
+  /**
+   * Get personalized news recommendations based on user's portfolio
+   * @param portfolioTokens The user's portfolio tokens
+   * @param newsArticles Array of news articles to filter and rank
+   * @returns Filtered and ranked news articles with relevance explanations
+   */
+  static async getPersonalizedNewsRecommendations(
+    portfolioTokens: PortfolioToken[],
+    newsArticles: NewsArticle[],
+    limit: number = 4
+  ): Promise<NewsRecommendationResponse> {
+    // Extract symbols and names from portfolio tokens
+    const tokenSymbols = portfolioTokens.map(token => token.symbol.toUpperCase());
+    const tokenNames = portfolioTokens.map(token => token.name);
+    
+    try {
+      // If no portfolio tokens, return general recommendations
+      if (portfolioTokens.length === 0) {
+        return this.getGeneralNewsRecommendations(newsArticles, limit);
+      }
+      
+      // Prepare news articles data for the prompt
+      const newsData = newsArticles.map(article => ({
+        id: newsArticles.indexOf(article),
+        title: article.title,
+        summary: article.summary || "",
+        source: article.source,
+        publishedAt: article.publishedAt,
+      }));
+      
+      // Use OpenAI to rank and filter the news articles based on portfolio
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are a crypto investment news assistant who helps users find the most relevant news for their portfolio."
+          },
+          {
+            role: "user",
+            content: `I have a portfolio with these tokens: ${tokenSymbols.join(", ")} (${tokenNames.join(", ")}).
+            
+            Here are some recent news articles:
+            ${JSON.stringify(newsData, null, 2)}
+            
+            Please select the ${limit} most relevant articles for my portfolio and explain why each is relevant. 
+            Also provide a brief portfolio insight based on today's news that might impact my portfolio.
+            
+            Return your response as JSON with this format:
+            {
+              "articles": [
+                {
+                  "id": 0,
+                  "relevance": "Brief explanation of relevance to portfolio"
+                }
+              ],
+              "portfolioInsight": "Brief insight about how the news might impact the portfolio"
+            }`
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 800,
+      });
+      
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("Empty response from OpenAI");
+      }
+      
+      const recommendation = JSON.parse(content);
+      
+      // Map the recommended article IDs back to the original news articles
+      const recommendedArticles = recommendation.articles.map((rec: any) => {
+        const article = newsArticles[rec.id];
+        return {
+          ...article,
+          relevance: rec.relevance
+        };
+      });
+      
+      return {
+        articles: recommendedArticles,
+        portfolioInsight: recommendation.portfolioInsight
+      };
+    } catch (error) {
+      console.error("Error getting personalized news recommendations:", error);
+      
+      // Fallback to simpler filtering if AI fails
+      const filteredArticles = newsArticles
+        .filter(article => {
+          // Simple keyword matching
+          const content = (article.title + " " + (article.summary || "")).toLowerCase();
+          return tokenSymbols.some(symbol => 
+            content.includes(symbol.toLowerCase()) || 
+            content.includes(symbol.toLowerCase().replace(/^[a-z]{0,3}/, ""))
+          ) || tokenNames.some(name => 
+            content.includes(name.toLowerCase())
+          );
+        })
+        .slice(0, limit);
+      
+      return {
+        articles: filteredArticles,
+        portfolioInsight: "These articles may be relevant to your portfolio holdings."
+      };
+    }
+  }
+  
+  /**
+   * Get general news recommendations when no portfolio data is available
+   * @param newsArticles Array of news articles
+   * @param limit Number of articles to return
+   * @returns General news recommendations
+   */
+  private static async getGeneralNewsRecommendations(
+    newsArticles: NewsArticle[],
+    limit: number = 4
+  ): Promise<NewsRecommendationResponse> {
+    try {
+      // Prepare news articles data for the prompt
+      const newsData = newsArticles.map(article => ({
+        id: newsArticles.indexOf(article),
+        title: article.title,
+        summary: article.summary || "",
+        source: article.source,
+        publishedAt: article.publishedAt,
+      }));
+      
+      // Use OpenAI to select the most important general crypto news
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are a crypto news curator who helps users find the most important and interesting crypto news articles."
+          },
+          {
+            role: "user",
+            content: `Here are some recent crypto news articles:
+            ${JSON.stringify(newsData, null, 2)}
+            
+            Please select the ${limit} most important or interesting articles that would be relevant for a general crypto investor.
+            For each article, explain why it's important. Also provide a brief market insight based on today's news.
+            
+            Return your response as JSON with this format:
+            {
+              "articles": [
+                {
+                  "id": 0,
+                  "relevance": "Brief explanation of importance"
+                }
+              ],
+              "portfolioInsight": "Brief insight about the current crypto market"
+            }`
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 800,
+      });
+      
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("Empty response from OpenAI");
+      }
+      
+      const recommendation = JSON.parse(content);
+      
+      // Map the recommended article IDs back to the original news articles
+      const recommendedArticles = recommendation.articles.map((rec: any) => {
+        const article = newsArticles[rec.id];
+        return {
+          ...article,
+          relevance: rec.relevance
+        };
+      });
+      
+      return {
+        articles: recommendedArticles,
+        portfolioInsight: recommendation.portfolioInsight
+      };
+    } catch (error) {
+      console.error("Error getting general news recommendations:", error);
+      
+      // Simple fallback if AI fails
+      return {
+        articles: newsArticles.slice(0, limit),
+        portfolioInsight: "Stay updated with the latest crypto market developments."
+      };
+    }
+  }
   /**
    * Get personalized learning module recommendations based on user's learning history and portfolio
    * @param userId The user ID
