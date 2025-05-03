@@ -341,7 +341,9 @@ export class LearningModuleModel {
         ? await db
             .select()
             .from(learningModules)
-            .where(inArray(learningModules.id, completedModuleIds))
+            .where(completedModuleIds.length === 1 
+              ? eq(learningModules.id, completedModuleIds[0])
+              : sql`${learningModules.id} IN (${completedModuleIds.join(',')})`)
         : [];
       
       // Get in-progress modules with full module data
@@ -353,7 +355,9 @@ export class LearningModuleModel {
         ? await db
             .select()
             .from(learningModules)
-            .where(inArray(learningModules.id, inProgressModuleIds))
+            .where(inProgressModuleIds.length === 1 
+              ? eq(learningModules.id, inProgressModuleIds[0])
+              : sql`${learningModules.id} IN (${inProgressModuleIds.join(',')})`)
         : [];
       
       // Get user stats for better recommendation
