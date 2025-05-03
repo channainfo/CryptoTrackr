@@ -12,6 +12,7 @@ import Transactions from "@/pages/transactions";
 import Markets from "@/pages/markets";
 import Settings from "@/pages/settings";
 import TaxReport from "@/pages/tax-report";
+import BudgetPlanner from "@/pages/budget-planner";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/markets" component={Markets} />
       <Route path="/settings" component={Settings} />
       <Route path="/tax-report" component={TaxReport} />
+      <Route path="/budget-planner" component={BudgetPlanner} />
       <Route component={NotFound} />
     </Switch>
   );
