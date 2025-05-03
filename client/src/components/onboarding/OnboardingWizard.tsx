@@ -37,19 +37,47 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 }) => {
   const { toast } = useToast();
   const [run, setRun] = useState(showTour);
+  const [stepIndex, setStepIndex] = useState(0);
   
   // Update run state when showTour prop changes
   useEffect(() => {
     setRun(showTour);
   }, [showTour]);
 
+  // For debugging
+  useEffect(() => {
+    if (showTour) {
+      console.log('OnboardingWizard: Tour is enabled with steps:', steps);
+    }
+  }, [showTour, steps]);
+
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status, type, index } = data;
+    const { status, type, index, action } = data;
+    
+    console.log('Joyride callback:', {
+      status,
+      type,
+      index,
+      action,
+    });
+    
+    // Update the step index
+    if (type === 'step:after' && action === 'next') {
+      setStepIndex(index + 1);
+    }
     
     // Tour is completed (either all steps viewed or skipped)
-    if (status === 'finished' || status === 'skipped') {
+    if (['finished', 'skipped'].includes(status)) {
+      // Reset step index
+      setStepIndex(0);
+      
+      // Mark tour as completed
       markTourAsCompleted(tourId);
       
+      // Stop running the tour
+      setRun(false);
+      
+      // Call onComplete callback
       if (onComplete) {
         onComplete();
       }
@@ -60,30 +88,30 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         description: "You can restart tours anytime from your settings.",
       });
     }
-    
-    // For debugging
-    console.log('Joyride state:', {
-      type,
-      index,
-      status,
-    });
   };
+
+  if (!steps || steps.length === 0) {
+    console.warn('OnboardingWizard: No steps provided for tour:', tourId);
+    return null;
+  }
 
   return (
     <Joyride
       callback={handleJoyrideCallback}
-      continuous
-      hideCloseButton
+      continuous={true}
+      hideCloseButton={false}
       run={run}
-      scrollToFirstStep
-      showProgress
-      showSkipButton
+      scrollToFirstStep={true}
+      showProgress={true}
+      showSkipButton={true}
+      stepIndex={stepIndex}
       steps={steps}
+      disableOverlayClose={false}
+      spotlightClicks={false}
       styles={{
         options: {
           zIndex: 10000,
           primaryColor: '#3b82f6', // blue-500
-          // Use these colors to match your theme
           backgroundColor: 'var(--background)',
           textColor: 'var(--foreground)',
           arrowColor: 'var(--background)',

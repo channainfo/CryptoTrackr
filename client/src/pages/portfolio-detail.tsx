@@ -162,9 +162,32 @@ const PortfolioDetail = () => {
       
       {/* Onboarding wizard */}
       <OnboardingWizard
-        tourType="portfolio"
-        isEnabled={true}
+        tourId="portfolio"
+        showTour={showTour}
         onComplete={handleTourComplete}
+        steps={[
+          {
+            target: '.portfolio-tabs',
+            content: 'Navigate between different views of your portfolio.',
+            disableBeacon: true,
+            placement: 'bottom',
+          },
+          {
+            target: '.portfolio-chart',
+            content: 'This chart shows your portfolio performance over time.',
+            placement: 'bottom',
+          },
+          {
+            target: '.portfolio-assets',
+            content: 'View all cryptocurrencies in your portfolio, including current value and performance.',
+            placement: 'top',
+          },
+          {
+            target: '.add-asset-button',
+            content: 'Click here to add new cryptocurrencies to your portfolio.',
+            placement: 'left',
+          },
+        ]}
       />
     </>
   );
