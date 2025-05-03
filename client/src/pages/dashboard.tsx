@@ -17,6 +17,7 @@ import AddCryptoModal from "@/components/modals/AddCryptoModal";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useQuery } from "@tanstack/react-query";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
+import OnboardingDebug from "@/components/onboarding/OnboardingDebug";
 import { useOnboarding } from "@/hooks/use-onboarding";
 
 const Dashboard = () => {
@@ -28,7 +29,10 @@ const Dashboard = () => {
   const [firstLoad, setFirstLoad] = useState(true);
   
   // Setup onboarding tour for dashboard
-  const { showTour, handleTourComplete } = useOnboarding('dashboard');
+  const { showTour, handleTourComplete, startTour, resetTour } = useOnboarding('dashboard');
+  
+  // Debug log for onboarding state
+  console.log('Dashboard - Onboarding State:', { showTour });
 
   // Fetch all portfolios
   const { data: portfolios, isLoading: loadingPortfolios } = useQuery({
@@ -298,6 +302,14 @@ const Dashboard = () => {
             placement: 'top',
           }
         ]}
+      />
+      
+      {/* Debug panel for onboarding */}
+      <OnboardingDebug 
+        tourId="dashboard"
+        showTour={showTour}
+        onStartTour={startTour}
+        onResetTour={resetTour}
       />
     </>
   );
