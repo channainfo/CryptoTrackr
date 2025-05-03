@@ -13,6 +13,8 @@ import Markets from "@/pages/markets";
 import Settings from "@/pages/settings";
 import TaxReport from "@/pages/tax-report";
 import BudgetPlanner from "@/pages/budget-planner";
+import LearningPage from "@/pages/learning";
+import QuizPage from "@/pages/learning/quiz";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
@@ -30,6 +32,8 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/tax-report" component={TaxReport} />
       <Route path="/budget-planner" component={BudgetPlanner} />
+      <Route path="/learning" component={LearningPage} />
+      <Route path="/learning/quiz/:id" component={QuizPage} />
       <Route component={NotFound} />
     </Switch>
   );

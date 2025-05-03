@@ -18,10 +18,10 @@ const QuizResult: React.FC<QuizResultProps> = ({ quiz, score, onRetry }) => {
   
   // Determine message based on score
   const getMessage = () => {
-    if (percentage >= 90) return 'Excellent! You're a crypto expert!';
+    if (percentage >= 90) return 'Excellent! You are a crypto expert!';
     if (percentage >= 70) return 'Great job! You have solid knowledge!';
     if (percentage >= 50) return 'Good effort! Keep learning!';
-    return 'Keep studying! You'll improve with practice.';
+    return 'Keep studying! You will improve with practice.';
   };
   
   // Determine badge based on score
@@ -54,12 +54,11 @@ const QuizResult: React.FC<QuizResultProps> = ({ quiz, score, onRetry }) => {
           </div>
           <Progress 
             value={percentage} 
-            className="h-2.5" 
-            indicatorClassName={
+            className={`h-2.5 ${
               percentage >= 90 ? "bg-yellow-500" :
               percentage >= 70 ? "bg-blue-500" :
               percentage >= 50 ? "bg-green-500" : "bg-red-500"
-            }
+            }`}
           />
         </div>
         
