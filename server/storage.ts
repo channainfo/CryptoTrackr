@@ -92,12 +92,16 @@ export class DatabaseStorage implements IStorage {
       throw new Error('User ID is required to create a portfolio');
     }
 
+    console.log("Creating portfolio in storage:", JSON.stringify(data, null, 2));
+    console.log("isWatchlist value:", data.isWatchlist);
+
     const [portfolio] = await db.insert(portfolios)
       .values({
         userId: data.userId,
         name: data.name || 'New Portfolio',
         description: data.description,
         isDefault: data.isDefault || false,
+        isWatchlist: data.isWatchlist || false, // CRITICAL FIX: Include isWatchlist here
       })
       .returning();
     
@@ -118,6 +122,10 @@ export class DatabaseStorage implements IStorage {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.isDefault !== undefined) updateData.isDefault = data.isDefault;
+    if (data.isWatchlist !== undefined) updateData.isWatchlist = data.isWatchlist; // CRITICAL FIX: Include isWatchlist here
+    
+    console.log("Updating portfolio, data received:", JSON.stringify(data, null, 2));
+    console.log("Update data to apply:", JSON.stringify(updateData, null, 2));
     
     if (Object.keys(updateData).length === 0) {
       // No valid update fields provided
