@@ -20,6 +20,7 @@ import { db } from "./db";
 import { eq } from "drizzle-orm";
 import learningRoutes from "./routes/learningRoutes";
 import { OpenAIService } from "./services/openai";
+import { RiskAssessmentService } from "./services/riskAssessment";
 
 // Utility function to calculate market sentiment based on market data
 function calculateSentimentFromMarket(marketData: any[]) {
@@ -118,6 +119,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const marketData = await services.getMarketData();
       const fallbackSentiment = calculateSentimentFromMarket(marketData);
       res.json(fallbackSentiment);
+    }
+  });
+  
+  // Risk assessment for a portfolio
+  app.get('/api/portfolios/:portfolioId/risk-assessment', async (req, res) => {
+    try {
+      const portfolioId = req.params.portfolioId;
+      if (!portfolioId) {
+        return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get portfolio details
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio) {
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      // Get portfolio assets
+      const assets = await storage.getPortfolioAssetsById(portfolioId);
+      
+      // Get market data for context
+      const marketData = await services.getMarketData();
+      
+      // Generate risk assessment
+      const riskAssessment = await RiskAssessmentService.analyzePortfolioRisk(
+        portfolio,
+        assets as any[], // Type cast to handle schema differences
+        marketData
+      );
+      
+      res.json(riskAssessment);
+    } catch (error) {
+      console.error('Error generating risk assessment:', error);
+      res.status(500).json({ message: 'Failed to generate risk assessment' });
+    }
+  });
+  
+  // Risk assessment for a specific token
+  app.get('/api/crypto/tokens/:symbol/risk-assessment', async (req, res) => {
+    try {
+      const symbol = req.params.symbol;
+      if (!symbol) {
+        return res.status(400).json({ message: 'Invalid token symbol' });
+      }
+      
+      // Get market data for context
+      const marketData = await services.getMarketData();
+      
+      // Find token info
+      const tokenData = marketData.find(coin => 
+        coin.symbol.toLowerCase() === symbol.toLowerCase()
+      );
+      
+      if (!tokenData) {
+        return res.status(404).json({ message: 'Token not found' });
+      }
+      
+      // Generate risk assessment
+      const riskAssessment = await RiskAssessmentService.analyzeSingleTokenRisk(
+        symbol,
+        tokenData.name,
+        marketData
+      );
+      
+      res.json(riskAssessment);
+    } catch (error) {
+      console.error('Error generating token risk assessment:', error);
+      res.status(500).json({ message: 'Failed to generate risk assessment' });
     }
   });
   
