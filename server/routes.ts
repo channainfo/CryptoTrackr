@@ -439,6 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: req.body.name,
         description: req.body.description,
         isDefault: req.body.isDefault || false,
+        isWatchlist: req.body.isWatchlist || false,
         userId: defaultUser.id
       };
       
@@ -482,7 +483,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = {
         name: req.body.name,
         description: req.body.description,
-        isDefault: req.body.isDefault
+        isDefault: req.body.isDefault,
+        isWatchlist: req.body.isWatchlist
       };
       
       // If this portfolio is set as default, update any existing default portfolios

@@ -4,7 +4,7 @@ import { PortfolioAsset } from "@/types/crypto";
 import { getQueryFn } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 
-interface PortfolioWithAssets {
+export interface PortfolioWithAssets {
   portfolio: Portfolio;
   assets: PortfolioAsset[];
   totalValue: number;

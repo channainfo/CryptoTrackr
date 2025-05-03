@@ -2,8 +2,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Portfolio } from "@shared/schema";
 import { PortfolioAsset } from "@/types/crypto";
-import { ArrowRight, Coins, TrendingUp } from "lucide-react";
+import { ArrowRight, Coins, TrendingUp, Eye, Bookmark, BarChart3 } from "lucide-react";
 import { useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface PortfolioCardProps {
   portfolio: Portfolio;
@@ -43,20 +44,35 @@ const PortfolioCard = ({ portfolio, assets }: PortfolioCardProps) => {
   };
 
   return (
-    <Card className="shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
+    <Card className={`shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100 dark:border-gray-800 dark:bg-zinc-900
+      ${portfolio.isWatchlist ? 'border-l-4 border-l-amber-400' : 'border-l-4 border-l-primary'}`}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-xl font-semibold dark:text-white">{portfolio.name}</h3>
-            <p className="text-neutral-mid text-sm dark:text-gray-400">
-              {portfolio.description || `Created ${new Date(portfolio.createdAt).toLocaleDateString()}`}
-            </p>
+          <div className="flex items-center">
+            {portfolio.isWatchlist ? (
+              <Eye className="h-5 w-5 mr-2 text-amber-500" />
+            ) : (
+              <BarChart3 className="h-5 w-5 mr-2 text-primary" />
+            )}
+            <div>
+              <h3 className="text-xl font-semibold dark:text-white">{portfolio.name}</h3>
+              <p className="text-neutral-mid text-sm dark:text-gray-400">
+                {portfolio.description || `Created ${new Date(portfolio.createdAt).toLocaleDateString()}`}
+              </p>
+            </div>
           </div>
-          {portfolio.isDefault && (
-            <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded font-medium">
-              Default
-            </span>
-          )}
+          <div className="flex flex-col gap-1 items-end">
+            {portfolio.isDefault && (
+              <Badge variant="outline" className="bg-primary/10 text-primary">
+                Default
+              </Badge>
+            )}
+            {portfolio.isWatchlist && (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-500">
+                Watchlist
+              </Badge>
+            )}
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
@@ -93,11 +109,11 @@ const PortfolioCard = ({ portfolio, assets }: PortfolioCardProps) => {
       
       <CardFooter className="p-6 pt-0">
         <Button 
-          variant="outline" 
+          variant={portfolio.isWatchlist ? "secondary" : "outline"} 
           className="w-full justify-between"
           onClick={viewPortfolioDetails}
         >
-          View Details
+          {portfolio.isWatchlist ? "Manage Watchlist" : "View Details"}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </CardFooter>

@@ -117,6 +117,7 @@ export const portfolios = pgTable("portfolios", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   isDefault: boolean("is_default").notNull().default(false),
+  isWatchlist: boolean("is_watchlist").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
@@ -126,6 +127,7 @@ export const insertPortfolioSchema = createInsertSchema(portfolios).pick({
   name: true,
   description: true,
   isDefault: true,
+  isWatchlist: true,
 });
 
 // Portfolio tokens table
