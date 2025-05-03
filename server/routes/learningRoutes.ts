@@ -29,7 +29,7 @@ router.get("/modules/category/:category", async (req, res) => {
     const modules = await db
       .select()
       .from(learningModules)
-      .where(eq(learningModules.category, category))
+      .where(eq(learningModules.category, category as any))
       .orderBy(learningModules.order);
     
     res.json(modules);
