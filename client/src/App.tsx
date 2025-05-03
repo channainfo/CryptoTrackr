@@ -35,6 +35,7 @@ function Router() {
       <Route path="/tax-report" component={TaxReport} />
       <Route path="/budget-planner" component={BudgetPlanner} />
       <Route path="/learning" component={LearningPage} />
+      <Route path="/learning/module/:id" component={() => import("@/pages/learning/module/[id]").then(module => module.default)} />
       <Route path="/learning/quiz/:id" component={QuizPage} />
       <Route path="/learning/glossary" component={GlossaryPage} />
       <Route path="/alerts" component={Alerts} />
