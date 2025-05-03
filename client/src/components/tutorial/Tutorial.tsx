@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Joyride, { CallBackProps, Status, Step } from 'react-joyride';
+import Joyride, { CallBackProps, Step } from 'react-joyride';
 import { useLocation } from 'wouter';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { Button } from '@/components/ui/button';
@@ -114,7 +114,7 @@ const Tutorial = ({ isFirstVisit = false }: TutorialProps) => {
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status } = data;
     
-    if ([Status.FINISHED, Status.SKIPPED].includes(status)) {
+    if (['finished', 'skipped'].includes(status)) {
       setRun(false);
       endTutorial();
       markTutorialComplete();

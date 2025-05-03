@@ -58,11 +58,11 @@ export default function TokenDetailPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
       {/* Header */}
-      <div className="flex items-center mb-6">
+      <div className="flex items-center mb-6 tutorial-token-detail">
         <Button 
           variant="ghost" 
           size="sm" 
-          className="mr-2" 
+          className="mr-2 tutorial-back-button" 
           onClick={() => navigate("/dashboard")}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
@@ -75,7 +75,7 @@ export default function TokenDetailPage() {
       {/* Token Overview */}
       {!isLoading && tokenDetails && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 tutorial-token-stats">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Amount</CardTitle>
@@ -102,7 +102,7 @@ export default function TokenDetailPage() {
             </Card>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 tutorial-token-stats">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Average Buy Price</CardTitle>

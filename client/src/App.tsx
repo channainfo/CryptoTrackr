@@ -12,6 +12,8 @@ import Transactions from "@/pages/transactions";
 import Markets from "@/pages/markets";
 import Settings from "@/pages/settings";
 import AppLayout from "@/components/layout/AppLayout";
+import { TutorialProvider } from "@/contexts/TutorialContext";
+import { Tutorial, TutorialButton } from "@/components/tutorial";
 
 function Router() {
   return (
@@ -32,12 +34,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <AppLayout>
-          <Router />
-        </AppLayout>
-      </TooltipProvider>
+      <TutorialProvider>
+        <TooltipProvider>
+          <Toaster />
+          <AppLayout>
+            <Router />
+          </AppLayout>
+          <Tutorial />
+          <TutorialButton />
+        </TooltipProvider>
+      </TutorialProvider>
     </QueryClientProvider>
   );
 }

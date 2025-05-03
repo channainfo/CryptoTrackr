@@ -30,8 +30,10 @@ const Dashboard = () => {
             <p className="text-neutral-mid mt-1">Overview of your crypto portfolio</p>
           </div>
           <div className="mt-4 sm:mt-0 flex items-center space-x-2">
-            <PortfolioSelector onPortfolioChange={handlePortfolioChange} />
-            <Button onClick={() => setIsAddModalOpen(true)}>
+            <div className="tutorial-portfolios">
+              <PortfolioSelector onPortfolioChange={handlePortfolioChange} />
+            </div>
+            <Button onClick={() => setIsAddModalOpen(true)} className="tutorial-add-crypto">
               <PlusIcon className="h-4 w-4 mr-1" />
               Add Crypto
             </Button>
@@ -75,19 +77,25 @@ const Dashboard = () => {
         </div>
         
         {/* Asset Breakdown */}
-        <AssetTable portfolioId={selectedPortfolioId} />
+        <div className="tutorial-assets">
+          <AssetTable portfolioId={selectedPortfolioId} />
+        </div>
         
         {/* Portfolio Performance */}
         {selectedPortfolioId && (
-          <div className="mb-6">
+          <div className="mb-6 tutorial-performance">
             <PortfolioPerformance portfolioId={selectedPortfolioId} />
           </div>
         )}
         
         {/* Recent Transactions & Market Trends */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <TransactionList portfolioId={selectedPortfolioId} />
-          <MarketTrends />
+          <div className="tutorial-transactions">
+            <TransactionList portfolioId={selectedPortfolioId} />
+          </div>
+          <div className="tutorial-market">
+            <MarketTrends />
+          </div>
         </div>
       </div>
       
