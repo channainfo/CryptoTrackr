@@ -326,19 +326,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Portfolio ${p.name}: isWatchlist=${p.isWatchlist}, type=${typeof p.isWatchlist}`);
       });
       
-      // Apply filters if specified
+      // No longer filtering on the server side - just log the request type
       if (type === 'watchlist') {
-        console.log('Filtering for watchlist portfolios only');
-        // Use Boolean constructor to ensure we're comparing booleans
-        portfolios = portfolios.filter(p => Boolean(p.isWatchlist) === true);
+        console.log('Watchlist filter requested, but sending all portfolios');
       } else if (type === 'standard') {
-        console.log('Filtering for standard portfolios only');
-        portfolios = portfolios.filter(p => Boolean(p.isWatchlist) === false);
+        console.log('Standard filter requested, but sending all portfolios');
       } else {
-        // When no filter specified (i.e., "all portfolios"), still exclude watchlists
-        console.log('No specific filtering applied, but excluding watchlists from the default view');
-        portfolios = portfolios.filter(p => Boolean(p.isWatchlist) === false);
+        console.log('No filter specified, sending all portfolios');
       }
+      
+      // Return all portfolios and let the client filter them
       
       console.log(`After filtering for ${type || 'all'}, found ${portfolios.length} portfolios`);
       portfolios.forEach(p => {

@@ -15,11 +15,10 @@ export interface PortfolioWithAssets {
 export const usePortfolios = (type?: 'all' | 'watchlist' | 'standard') => {
   const [portfoliosWithAssets, setPortfoliosWithAssets] = useState<PortfolioWithAssets[]>([]);
   
-  // Fetch all portfolios or filtered by type
-  const queryParams = type && type !== 'all' ? `?type=${type}` : '';
-  const endpoint = `/api/portfolios${queryParams}`;
+  // Always fetch all portfolios and filter on client side
+  const endpoint = '/api/portfolios';
   
-  console.log(`Fetching portfolios with type: ${type || 'all'}, endpoint: ${endpoint}`);
+  console.log(`Fetching all portfolios from endpoint: ${endpoint}, will filter for ${type || 'all'} on client side`);
   
   const portfoliosQuery = useQuery({
     queryKey: ['/api/portfolios', type],
@@ -36,13 +35,18 @@ export const usePortfolios = (type?: 'all' | 'watchlist' | 'standard') => {
             console.log(`Portfolio ${p.name}: isWatchlist=${p.isWatchlist}`);
           });
           
-          // Double-check client-side to ensure we only get the correct portfolios
+          // Apply client-side filtering based on portfolio type
           let filteredData = data;
+          
           if (type === 'watchlist') {
             console.log('Client-side filter: ensuring only watchlist portfolios are included');
             filteredData = data.filter(p => Boolean(p.isWatchlist) === true);
           } else if (type === 'standard') {
             console.log('Client-side filter: ensuring only standard portfolios are included');
+            filteredData = data.filter(p => Boolean(p.isWatchlist) === false);
+          } else if (type === 'all') {
+            // For 'all' tab, we still want to exclude watchlists
+            console.log('Client-side filter for "all" tab: excluding watchlists');
             filteredData = data.filter(p => Boolean(p.isWatchlist) === false);
           }
           
