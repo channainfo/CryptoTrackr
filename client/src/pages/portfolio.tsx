@@ -1,67 +1,111 @@
 import { useState } from "react";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import AssetTable from "@/components/dashboard/AssetTable";
-import PortfolioChart from "@/components/dashboard/PortfolioChart";
-import AddCryptoModal from "@/components/modals/AddCryptoModal";
-import { usePortfolio } from "@/hooks/usePortfolio";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLocation } from "wouter";
+import { Skeleton } from "@/components/ui/skeleton";
+import PortfolioCard from "@/components/portfolio/PortfolioCard";
+import { usePortfolios } from "@/hooks/usePortfolios";
 
 const Portfolio = () => {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { portfolioSummary } = usePortfolio();
+  const [, setLocation] = useLocation();
+  const { portfoliosWithAssets, isLoading } = usePortfolios();
   
   return (
-    <>
-      <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold dark:text-white">Portfolio</h2>
-            <p className="text-neutral-mid dark:text-gray-400 mt-1">Manage your cryptocurrency holdings</p>
-          </div>
-          <div className="mt-4 sm:mt-0 space-x-2">
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <PlusIcon className="h-4 w-4 mr-1" />
-              Add Crypto
-            </Button>
-          </div>
+    <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold dark:text-white">My Portfolios</h2>
+          <p className="text-neutral-mid dark:text-gray-400 mt-1">View and manage your cryptocurrency portfolios</p>
         </div>
-        
-        {/* Portfolio Summary */}
-        <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 md:p-6 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-neutral-lighter dark:bg-zinc-800 rounded-lg">
-              <p className="text-sm text-neutral-mid dark:text-gray-400">Total Balance</p>
-              <p className="text-2xl font-bold mt-1 dark:text-white">${portfolioSummary.totalValue.toLocaleString()}</p>
-            </div>
-            <div className="p-4 bg-neutral-lighter dark:bg-zinc-800 rounded-lg">
-              <p className="text-sm text-neutral-mid dark:text-gray-400">24h Change</p>
-              <p className={`text-2xl font-bold mt-1 ${portfolioSummary.dayChange >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                {portfolioSummary.dayChange >= 0 ? '+' : ''}{portfolioSummary.dayChange.toLocaleString()}
-                <span className="text-sm ml-1">({portfolioSummary.dayChangePercent.toFixed(1)}%)</span>
-              </p>
-            </div>
-            <div className="p-4 bg-neutral-lighter dark:bg-zinc-800 rounded-lg">
-              <p className="text-sm text-neutral-mid dark:text-gray-400">Asset Count</p>
-              <p className="text-2xl font-bold mt-1 dark:text-white">{portfolioSummary.assetCount}</p>
-            </div>
-          </div>
+        <div className="mt-4 sm:mt-0 space-x-2">
+          <Button onClick={() => setLocation("/portfolio/create")}>
+            <FolderPlus className="h-4 w-4 mr-1" />
+            Create Portfolio
+          </Button>
         </div>
-        
-        {/* Portfolio Chart */}
-        <div className="mb-6">
-          <PortfolioChart />
-        </div>
-        
-        {/* Assets Table (showing all assets) */}
-        <AssetTable showViewAll={false} />
       </div>
       
-      <AddCryptoModal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
-      />
-    </>
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="all">All Portfolios</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all" className="space-y-6">
+          {isLoading ? (
+            // Loading skeleton
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2].map((item) => (
+                <div key={item} className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                  <Skeleton className="h-8 w-1/3 mb-2" />
+                  <Skeleton className="h-4 w-2/3 mb-6" />
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <Skeleton className="h-4 w-4/5 mb-2" />
+                      <Skeleton className="h-6 w-2/3" />
+                    </div>
+                    <div>
+                      <Skeleton className="h-4 w-4/5 mb-2" />
+                      <Skeleton className="h-6 w-2/3" />
+                    </div>
+                    <div>
+                      <Skeleton className="h-4 w-4/5 mb-2" />
+                      <Skeleton className="h-6 w-2/3" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ))}
+            </div>
+          ) : portfoliosWithAssets.length === 0 ? (
+            // Empty state
+            <div className="text-center py-12 bg-neutral-lighter dark:bg-zinc-800 rounded-xl">
+              <div className="max-w-md mx-auto">
+                <FolderPlus className="h-12 w-12 text-neutral-mid mx-auto mb-4" />
+                <h3 className="text-xl font-medium mb-2 dark:text-white">No Portfolios Found</h3>
+                <p className="text-neutral-mid dark:text-gray-400 mb-6">
+                  Create your first portfolio to start tracking your crypto assets.
+                </p>
+                <Button onClick={() => setLocation("/portfolio/create")}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  Create Portfolio
+                </Button>
+              </div>
+            </div>
+          ) : (
+            // Portfolio grid
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {portfoliosWithAssets.map((item) => (
+                <PortfolioCard 
+                  key={item.portfolio.id} 
+                  portfolio={item.portfolio} 
+                  assets={item.assets} 
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="active">
+          <div className="text-center py-12 bg-neutral-lighter dark:bg-zinc-800 rounded-xl">
+            <p className="text-neutral-mid dark:text-gray-400">
+              Active portfolios will be displayed here.
+            </p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="watchlist">
+          <div className="text-center py-12 bg-neutral-lighter dark:bg-zinc-800 rounded-xl">
+            <p className="text-neutral-mid dark:text-gray-400">
+              Watchlist portfolios will be displayed here.
+            </p>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
