@@ -190,19 +190,28 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async addPortfolioAsset(assetData: Partial<PortfolioAsset>): Promise<PortfolioAsset> {
+  async addPortfolioAsset(assetData: Partial<PortfolioAsset & { portfolioId?: string }>): Promise<PortfolioAsset> {
     // First, get or create the token
     let token = await this.getOrCreateToken(assetData.symbol || 'UNKNOWN', assetData.name || 'Unknown Cryptocurrency');
     
-    // Then, get the default portfolio or create it
-    let defaultPortfolio = await this.getDefaultPortfolio();
+    // Get the portfolio - either specified or default
+    let targetPortfolio;
+    if (assetData.portfolioId) {
+      const portfolio = await this.getPortfolioById(assetData.portfolioId);
+      if (!portfolio) {
+        throw new Error(`Portfolio with ID ${assetData.portfolioId} not found`);
+      }
+      targetPortfolio = portfolio;
+    } else {
+      targetPortfolio = await this.getDefaultPortfolio();
+    }
     
     // Check if the portfolio already has this token
     const [existingPortfolioToken] = await db.select()
       .from(portfolioTokens)
       .where(
         and(
-          eq(portfolioTokens.portfolioId, defaultPortfolio.id),
+          eq(portfolioTokens.portfolioId, targetPortfolio.id),
           eq(portfolioTokens.tokenId, token.id)
         )
       );
@@ -266,8 +275,8 @@ export class DatabaseStorage implements IStorage {
       
       const [newPortfolioToken] = await db.insert(portfolioTokens)
         .values({
-          userId: defaultPortfolio.userId,
-          portfolioId: defaultPortfolio.id,
+          userId: targetPortfolio.userId,
+          portfolioId: targetPortfolio.id,
           tokenId: token.id,
           amount: quantity.toString(),
           averageBuyPrice: currentPrice.toString(),
@@ -574,7 +583,9 @@ export class DatabaseStorage implements IStorage {
         const [newPortfolio] = await db.insert(portfolios)
           .values({
             userId: defaultUser.id,
-            name: 'Default Portfolio'
+            name: 'Default Portfolio',
+            description: 'Your default portfolio',
+            isDefault: true
           })
           .returning();
         defaultPortfolio = newPortfolio;
@@ -585,7 +596,9 @@ export class DatabaseStorage implements IStorage {
       const [newPortfolio] = await db.insert(portfolios)
         .values({
           userId: defaultUser.id,
-          name: 'Default Portfolio'
+          name: 'Default Portfolio',
+          description: 'Your default portfolio',
+          isDefault: true
         })
         .returning();
       defaultPortfolio = newPortfolio;
