@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ModuleDetailSkeleton } from "@/components/learning/ModuleDetailSkeleton";
 import { useLearningModuleDetails, useStartModule, useUpdateSectionProgress, useCompleteModule } from "@/hooks/use-learning";
 import type { LearningModule, ContentSection } from "@/types/education";
+import ReactConfetti from "react-confetti";
 
 // Default user ID for demo purposes
 const DEFAULT_USER_ID = "demo";
@@ -50,6 +51,7 @@ interface ModuleDetailProps {
 const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   const [, setLocation] = useLocation();
   const [currentSection, setCurrentSection] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
   
   // Fetch module details including quizzes and progress
@@ -168,18 +170,26 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
             localStorage.setItem('demo-learning-progress', JSON.stringify(savedProgress));
           }
           
-          // If we have a quiz, go to it, otherwise go back to learning page
-          if (moduleData?.quizzes?.length) {
-            // Get the first quiz ID for this module
-            const quizId = moduleData.quizzes[0].id;
-            setLocation(`/learning/quiz/${quizId}`);
-          } else {
-            toast({
-              title: "Module Completed!",
-              description: "Congratulations on completing this module.",
-            });
-            setLocation('/learning');
-          }
+          // Show confetti first
+          setShowConfetti(true);
+          
+          // Display completion toast
+          toast({
+            title: "Module Completed!",
+            description: "Congratulations on completing this module.",
+          });
+          
+          // Hide confetti and navigate after a delay
+          setTimeout(() => {
+            // If we have a quiz, go to it, otherwise go back to learning page
+            if (moduleData?.quizzes?.length) {
+              // Get the first quiz ID for this module
+              const quizId = moduleData.quizzes[0].id;
+              setLocation(`/learning/quiz/${quizId}`);
+            } else {
+              setLocation('/learning');
+            }
+          }, 3000);
         }
       });
     }
@@ -232,8 +242,28 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   const isLastSection = currentSection === contentSections.length - 1;
   const progressPercentage = ((currentSection + 1) / contentSections.length) * 100;
   
+  // Effect to hide confetti after a few seconds
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
+
   return (
     <Container>
+      {showConfetti && (
+        <ReactConfetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.15}
+          colors={['#FF6B6B', '#4ECDC4', '#F9D423', '#45B7D1', '#E14658', '#6E44FF']}
+        />
+      )}
       <div className="py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>

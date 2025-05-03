@@ -256,76 +256,94 @@ const AlertsPage = () => {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {alerts.map((alert: Alert) => (
-            <Card key={alert.id} className="overflow-hidden relative">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg truncate">
-                      {alert.name}
-                    </CardTitle>
-                    <CardDescription className="flex items-center mt-1">
-                      {alert.token?.imageUrl && (
-                        <img 
-                          src={alert.token.imageUrl} 
-                          alt={alert.token.name} 
-                          className="w-5 h-5 mr-1"
-                        />
+        <div className="rounded-md border">
+          <div className="relative w-full overflow-auto">
+            <table className="w-full caption-bottom text-sm">
+              <thead className="[&_tr]:border-b">
+                <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                  <th className="h-12 px-4 text-left align-middle font-medium">Name</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium">Token</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium">Condition</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium">Status</th>
+                  <th className="h-12 px-4 text-left align-middle font-medium">Last Triggered</th>
+                  <th className="h-12 px-4 text-right align-middle font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="[&_tr:last-child]:border-0">
+                {alerts.map((alert: Alert) => (
+                  <tr 
+                    key={alert.id} 
+                    className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                  >
+                    <td className="p-4 align-middle">
+                      <div className="font-medium">{alert.name}</div>
+                      {alert.description && (
+                        <div className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
+                          {alert.description}
+                        </div>
                       )}
-                      {alert.token?.name || "Unknown"} ({alert.token?.symbol || "?"})
-                    </CardDescription>
-                  </div>
-                  <Badge className={getStatusColor(alert.status)}>
-                    {alert.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pb-3">
-                <div className="flex items-center font-medium mt-1 mb-2">
-                  <span className="text-2xl mr-2">{getAlertTypeIcon(alert.alertType)}</span>
-                  <span>{alert.typeLabel || alert.alertType}</span>
-                  <span className="mx-2">→</span>
-                  <span className="text-primary font-bold">
-                    {alert.formattedThreshold || alert.threshold}
-                  </span>
-                </div>
-                
-                {alert.description && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {alert.description}
-                  </p>
-                )}
-                
-                {alert.lastTriggeredAt && (
-                  <div className="mt-4 text-xs text-muted-foreground">
-                    <div className="flex items-center">
-                      <Info className="h-3 w-3 mr-1" />
-                      Last triggered: {formatDate(alert.lastTriggeredAt)}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter className="pt-1 flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEditClick(alert)}
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeleteClick(alert.id)}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                    </td>
+                    <td className="p-4 align-middle">
+                      <div className="flex items-center">
+                        {alert.token?.imageUrl && (
+                          <img 
+                            src={alert.token.imageUrl} 
+                            alt={alert.token.name} 
+                            className="w-5 h-5 mr-2"
+                          />
+                        )}
+                        <div>
+                          <div>{alert.token?.symbol || "?"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {alert.token?.name || "Unknown"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 align-middle">
+                      <div className="flex items-center">
+                        <span className="text-xl mr-2">{getAlertTypeIcon(alert.alertType)}</span>
+                        <div>
+                          <div>{alert.typeLabel || alert.alertType}</div>
+                          <div className="font-medium text-primary">
+                            {alert.formattedThreshold || alert.threshold}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 align-middle">
+                      <Badge className={getStatusColor(alert.status)}>
+                        {alert.status}
+                      </Badge>
+                    </td>
+                    <td className="p-4 align-middle text-muted-foreground">
+                      {formatDate(alert.lastTriggeredAt)}
+                    </td>
+                    <td className="p-4 align-middle text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditClick(alert)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClick(alert.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       
