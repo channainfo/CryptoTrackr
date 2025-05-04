@@ -313,12 +313,4 @@ const Dashboard = () => {
   );
 };
 
-const DashboardWithCryptoConceptsProvider = () => {
-  return (
-    <DashboardCryptoConceptsProvider>
-      <Dashboard />
-    </DashboardCryptoConceptsProvider>
-  );
-};
-
-export default DashboardWithCryptoConceptsProvider;
+export default Dashboard;
