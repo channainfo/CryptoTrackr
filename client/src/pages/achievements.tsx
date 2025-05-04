@@ -2,8 +2,8 @@ import React from 'react';
 import { useAchievements } from '@/hooks/useAchievements';
 import AchievementGrid from '@/components/achievement/AchievementGrid';
 import PageHeader from '@/components/layout/PageHeader';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Trophy, Home, Briefcase, BarChart2, BookOpen, Clock, Award } from 'lucide-react';
+import Breadcrumbs from '@/components/layout/Breadcrumbs';
+import { Trophy, Briefcase, BarChart2, BookOpen, Clock, Award } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,31 +88,21 @@ const AchievementsPage: React.FC = () => {
   ];
   
   return (
-    <div className="container py-6 space-y-6">
+    <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+      <Breadcrumbs 
+        items={[
+          { label: 'Dashboard', href: '/' },
+          { label: 'Achievements' }
+        ]}
+      />
+      
       <PageHeader
         title="Investment Achievements"
         description="Track your progress and earn badges for investment milestones"
         icon={<Trophy className="h-6 w-6" />}
       />
       
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/">
-              <Home className="h-4 w-4 mr-1" />
-              Home
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/achievements">
-              Achievements
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-      
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Achievement Progress</CardTitle>
@@ -178,9 +168,15 @@ const AchievementsPage: React.FC = () => {
       </div>
       
       <Tabs defaultValue="achievements" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="achievements">All Achievements</TabsTrigger>
-          <TabsTrigger value="categories">By Category</TabsTrigger>
+        <TabsList className="mb-6">
+          <TabsTrigger value="achievements" className="flex items-center gap-2">
+            <Trophy className="h-4 w-4" />
+            All Achievements
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="flex items-center gap-2">
+            <Award className="h-4 w-4" />
+            By Category
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="achievements">
