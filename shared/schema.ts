@@ -72,6 +72,12 @@ export const userLearningProgress = pgTable("user_learning_progress", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  walletAddress: true,
+  provider: true,
+  providerUserId: true,
+  profileImage: true,
+  displayName: true,
 });
 
 // Tokens table based on the provided schema
