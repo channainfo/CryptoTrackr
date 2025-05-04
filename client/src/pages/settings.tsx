@@ -15,6 +15,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useToast } from "@/hooks/use-toast";
 import { ConnectedWallets } from "@/components/wallet/ConnectedWallets";
+import { LinkWalletCard } from "@/components/wallet/LinkWalletCard";
 import { UserInformation } from "@/components/account/UserInformation";
 
 const Settings = () => {
@@ -136,7 +137,12 @@ const Settings = () => {
         </TabsContent>
 
         <TabsContent value="wallets">
-          <ConnectedWallets />
+          <div className="space-y-6">
+            <ConnectedWallets />
+            
+            {/* Add the ability to link new wallets */}
+            <LinkWalletCard />
+          </div>
         </TabsContent>
 
         <TabsContent value="preferences">
