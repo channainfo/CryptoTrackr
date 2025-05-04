@@ -123,14 +123,19 @@ export const LinkWalletCard = () => {
         throw new Error(`Unsupported wallet type: ${walletType}`);
       }
       
+      // Create the request payload
+      const payload = {
+        address,
+        signature,
+        walletType: walletType.toLowerCase() // Send the type of wallet
+      };
+      
+      console.log("Sending link wallet request with payload:", payload);
+      
       // Link wallet using our new endpoint
       const linkResponse = await apiRequest('/api/auth/link-wallet', {
         method: "POST",
-        data: {
-          address,
-          signature,
-          walletType: walletType.toLowerCase() // Send the type of wallet
-        }
+        data: payload
       });
       
       console.log("Link wallet response:", linkResponse);

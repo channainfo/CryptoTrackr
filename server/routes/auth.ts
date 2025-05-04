@@ -29,6 +29,11 @@ const walletAuthSchema = z.object({
   signature: z.string().min(1, "Signature is required")
 });
 
+// Extended validation schema for wallet linking that includes wallet type
+const walletLinkSchema = walletAuthSchema.extend({
+  walletType: z.string().min(1, "Wallet type is required")
+});
+
 // Get a nonce for wallet authentication
 router.get("/wallet/nonce/:address", (req: Request, res: Response) => {
   try {
@@ -417,8 +422,10 @@ router.get("/wallets", (req: Request, res: Response) => {
 // Link a new wallet to an existing user
 router.post("/link-wallet", async (req: Request, res: Response) => {
   try {
-    // Validate request body
-    const validation = walletAuthSchema.safeParse(req.body);
+    console.log("Link wallet request body:", req.body);
+    
+    // Validate request body using the extended schema that includes walletType
+    const validation = walletLinkSchema.safeParse(req.body);
     
     if (!validation.success) {
       return res.status(400).json({ 
@@ -436,10 +443,7 @@ router.post("/link-wallet", async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
     
-    const { address, signature, walletType } = validation.data as any; // Add walletType to know which blockchain
-    if (!walletType) {
-      return res.status(400).json({ message: "Wallet type is required" });
-    }
+    const { address, signature, walletType } = validation.data;
     
     const addressLower = address.toLowerCase();
     
