@@ -9,7 +9,8 @@ import {
   FileText,
   Calculator,
   GraduationCap,
-  BellRing
+  BellRing,
+  BarChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -24,6 +25,7 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
+    { href: '/analytics', label: 'Analytics', icon: BarChart },
     { href: '/transactions', label: 'Transactions', icon: ActivitySquare },
     { href: '/markets', label: 'Markets', icon: LineChart },
     { href: '/budget-planner', label: 'Budget Planner', icon: Calculator },

@@ -77,7 +77,7 @@ const PortfolioAnalytics = () => {
   React.useEffect(() => {
     if (!selectedPortfolioId && portfolios && portfolios.length > 0) {
       // Find default portfolio or use the first one
-      const defaultPortfolio = portfolios.find(p => p.isDefault) || portfolios[0];
+      const defaultPortfolio = portfolios.find((p: any) => p.isDefault) || portfolios[0];
       if (defaultPortfolio) {
         setSelectedPortfolioId(defaultPortfolio.id);
       }
@@ -202,7 +202,7 @@ const PortfolioAnalytics = () => {
               <SelectValue placeholder="Select portfolio" />
             </SelectTrigger>
             <SelectContent>
-              {portfolios.map(portfolio => (
+              {portfolios.map((portfolio: any) => (
                 <SelectItem key={portfolio.id} value={portfolio.id}>
                   {portfolio.name}
                 </SelectItem>

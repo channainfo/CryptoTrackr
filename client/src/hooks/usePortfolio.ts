@@ -8,6 +8,21 @@ import { useState, useEffect } from "react";
 export const usePortfolio = (portfolioId?: string | null) => {
   const { toast } = useToast();
   
+  // Query all portfolios for selection
+  const { data: portfoliosData } = useQuery({
+    queryKey: ['/api/portfolios'],
+    queryFn: async () => {
+      console.log('Fetching portfolios');
+      const response = await fetch('/api/portfolios');
+      if (!response.ok) {
+        throw new Error('Failed to fetch portfolios');
+      }
+      const data = await response.json();
+      console.log('Fetched portfolios:', data);
+      return data;
+    }
+  });
+  
   // Query portfolio assets
   const { data: portfolioData, isLoading: isLoadingPortfolio } = useQuery({
     queryKey: portfolioId ? ['/api/portfolio', portfolioId] : ['/api/portfolio'],
@@ -38,6 +53,7 @@ export const usePortfolio = (portfolioId?: string | null) => {
   // State for portfolio
   const [assets, setAssets] = useState<PortfolioAsset[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [portfoliosList, setPortfoliosList] = useState<any[]>([]);
   const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary>({
     totalValue: 0,
     totalChangePercent: 0,
@@ -137,6 +153,13 @@ export const usePortfolio = (portfolioId?: string | null) => {
       setTransactions(transactionsData as Transaction[]);
     }
   }, [transactionsData]);
+  
+  // Update portfolios list when API data changes
+  useEffect(() => {
+    if (portfoliosData) {
+      setPortfoliosList(portfoliosData);
+    }
+  }, [portfoliosData]);
   
   // Generate portfolio chart data
   const getPortfolioChartData = (timeRange: TimeRange): ChartData[] => {
@@ -368,6 +391,7 @@ export const usePortfolio = (portfolioId?: string | null) => {
     assets,
     transactions,
     portfolioSummary,
+    portfoliosList,
     isLoading: isLoadingPortfolio || isLoadingTransactions,
     addAssetToPortfolio,
     removeAssetFromPortfolio,
