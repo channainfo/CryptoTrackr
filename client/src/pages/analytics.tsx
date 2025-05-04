@@ -22,7 +22,7 @@ const AnalyticsPage = () => {
   // Fetch all portfolios
   const { data: portfolios, isLoading: isLoadingPortfolios } = useQuery({
     queryKey: ['/api/portfolios'],
-    select: (data) => data.filter((p: any) => !p.isWatchlist)
+    select: (data: any[]) => data.filter((p) => !p.isWatchlist)
   });
   
   // Set default portfolio when data is loaded

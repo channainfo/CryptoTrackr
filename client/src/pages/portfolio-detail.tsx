@@ -187,7 +187,7 @@ const PortfolioDetail = () => {
       {/* Onboarding wizard */}
       <OnboardingWizard
         tourId="portfolio"
-        showTour={showTour}
+        showTour={showTour} 
         onComplete={handleTourComplete}
         steps={tourSteps}
       />
