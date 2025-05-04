@@ -38,7 +38,8 @@ export interface IStorage {
   // User methods
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByWalletAddress(address: string, walletType: string): Promise<User | undefined>;
+  createUser(user: InsertUser & { walletAddress?: string, walletType?: string }): Promise<User>;
   
   // Portfolio methods
   getUserPortfolios(userId: string): Promise<Portfolio[]>;
