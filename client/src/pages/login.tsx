@@ -1,24 +1,19 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest } from "@/lib/queryClient";
-import { LucideAlertCircle, LucideLogIn, LucideUserPlus } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { ethers } from "ethers";
-import { Web3Button } from "@/components/crypto/Web3Button";
-import { SolanaButton } from "@/components/crypto/SolanaButton";
-import { BaseButton } from "@/components/crypto/BaseButton";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { Separator } from "@/components/ui/separator";
+
+import { SiEthereum, SiSolana } from "react-icons/si";
 
 // Login form schema
 const loginSchema = z.object({
@@ -27,24 +22,23 @@ const loginSchema = z.object({
 });
 
 // Registration form schema
-const registerSchema = z.object({
+const registrationSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
+// Type definitions
 type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
-export default function LoginPage() {
-  const [, setLocation] = useLocation();
-  const [error, setError] = useState<string | null>(null);
+export default function Login() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -55,9 +49,9 @@ export default function LoginPage() {
     },
   });
 
-  // Register form
-  const registerForm = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+  // Registration form
+  const registerForm = useForm<RegistrationFormValues>({
+    resolver: zodResolver(registrationSchema),
     defaultValues: {
       username: "",
       password: "",
@@ -65,264 +59,242 @@ export default function LoginPage() {
     },
   });
 
-  // Handle login submission
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
-      setError(null);
-      const response = await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({
-          username: values.username,
-          password: values.password,
-        }),
+      const response = await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(values),
       });
 
-      toast({
-        title: "Login Successful",
-        description: "Welcome back to Trailer!",
-      });
-
-      // Invalidate queries to refetch data with new auth
-      queryClient.invalidateQueries();
-      setLocation("/dashboard");
-    } catch (error) {
-      console.error("Login error:", error);
-      setError("Invalid username or password. Please try again.");
-    }
-  };
-
-  // Handle registration submission
-  const onRegisterSubmit = async (values: RegisterFormValues) => {
-    try {
-      setError(null);
-      const response = await apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          username: values.username,
-          password: values.password,
-        }),
-      });
-
-      toast({
-        title: "Registration Successful",
-        description: "Your account has been created. You can now login.",
-      });
-
-      // Switch to login tab after successful registration
-      setActiveTab("login");
-      loginForm.setValue("username", values.username);
-    } catch (error) {
-      console.error("Registration error:", error);
-      setError("Username may already be taken. Please try a different username.");
-    }
-  };
-
-  // Handle Ethereum wallet connection
-  const connectEthereumWallet = async () => {
-    try {
-      // Check if MetaMask is installed
-      if (typeof window !== 'undefined' && 'ethereum' in window) {
-        // Use any to handle ethereum window object
-        const ethereum = (window as any).ethereum;
-        
-        // Request account access
-        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-        const address = accounts[0];
-        
-        // Sign message to verify ownership
-        // Use BrowserProvider which is the replacement for Web3Provider in ethers v6
-        const provider = new ethers.BrowserProvider(ethereum);
-        const signer = await provider.getSigner();
-        const message = `Login to Trailer with address: ${address}`;
-        const signature = await signer.signMessage(message);
-        
-        // Send to backend for verification
-        await loginWithWallet('ethereum', address, signature);
-      } else {
+      if (response) {
         toast({
-          title: "Wallet Not Found",
-          description: "Please install MetaMask to use this feature.",
-          variant: "destructive"
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "Invalid username or password",
+        variant: "destructive",
+      });
+      console.error("Login error:", error);
+    }
+  };
+
+  const onRegisterSubmit = async (values: RegistrationFormValues) => {
+    try {
+      const { confirmPassword, ...userData } = values;
+      const response = await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify(userData),
+      });
+
+      if (response) {
+        toast({
+          title: "Registration successful",
+          description: "Your account has been created. You can now log in.",
+        });
+        setActiveTab("login");
+        loginForm.reset({
+          username: values.username,
+          password: "",
         });
       }
     } catch (error) {
-      console.error("Ethereum wallet connection error:", error);
-      setError("Failed to connect Ethereum wallet. Please try again.");
+      toast({
+        title: "Registration failed",
+        description: "Username may already be taken",
+        variant: "destructive",
+      });
+      console.error("Registration error:", error);
     }
   };
 
-  // Handle wallet login
-  const loginWithWallet = async (provider: string, walletAddress: string, signature?: string) => {
-    try {
-      const response = await apiRequest('/api/auth/wallet-login', {
-        method: 'POST',
-        body: JSON.stringify({
-          provider,
-          walletAddress,
-          signature
-        }),
-      });
-
+  const handleWalletConnect = (walletType: string) => {
+    toast({
+      title: `${walletType} connection attempted`,
+      description: "Wallet integration coming soon!",
+    });
+    
+    // For demo purposes, log in automatically
+    setTimeout(() => {
       toast({
-        title: "Wallet Login Successful",
-        description: `You're now logged in with your ${provider} wallet.`,
+        title: "Demo mode",
+        description: "Logged in as demo user",
       });
-
-      // Invalidate queries to refetch data with new auth
-      queryClient.invalidateQueries();
-      setLocation("/dashboard");
-    } catch (error) {
-      console.error("Wallet login error:", error);
-      setError(`Failed to login with ${provider} wallet. Please try again.`);
-    }
+      navigate("/dashboard");
+    }, 1500);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4 md:p-8">
-      <Card className="mx-auto w-full max-w-md shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome to Trailer</CardTitle>
-          <CardDescription>
-            Your ultimate crypto portfolio management platform
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-background to-primary/5 p-4">
+      <div className="absolute inset-0 bg-grid-white/10 bg-[size:var(--grid-size)_var(--grid-size)] [--grid-size:100px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,black_40%,transparent_100%)]"></div>
+      
+      <div className="relative z-10 w-full max-w-md">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-foreground bg-clip-text text-transparent">Trailer</h1>
+          <p className="text-lg text-muted-foreground mt-2">Crypto Portfolio Management</p>
+        </div>
+        
+        <Card className="border border-border/40 shadow-lg backdrop-blur-sm bg-background/80">
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
-
+            
             <TabsContent value="login">
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <LucideAlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+              <CardHeader>
+                <CardTitle>Welcome back</CardTitle>
+                <CardDescription>Enter your credentials to access your account</CardDescription>
+              </CardHeader>
               
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                  <FormField
-                    control={loginForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your username" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Enter your password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
-                    <LucideLogIn className="mr-2 h-4 w-4" />
-                    Log in
-                  </Button>
-                </form>
-              </Form>
-              
-              <div className="my-6">
-                <div className="relative">
+              <CardContent>
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                    <FormField
+                      control={loginForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter your username" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
+                      {loginForm.formState.isSubmitting ? "Logging in..." : "Log in"}
+                    </Button>
+                  </form>
+                </Form>
+                
+                <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <Separator />
+                    <Separator className="w-full" />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                  <div className="relative flex justify-center">
+                    <span className="bg-background px-2 text-sm text-muted-foreground">or continue with</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <Web3Button provider="ethereum" onConnect={connectEthereumWallet} />
-                <BaseButton onConnect={() => loginWithWallet('base', '0xDummyAddress')} />
-                <SolanaButton onConnect={() => loginWithWallet('solana', '0xDummyAddress')} />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="register">
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <LucideAlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                  <FormField
-                    control={registerForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Choose a username" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={registerForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Create a password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={registerForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Confirm your password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button type="submit" className="w-full" disabled={registerForm.formState.isSubmitting}>
-                    <LucideUserPlus className="mr-2 h-4 w-4" />
-                    Register
+                
+                <div className="grid grid-cols-3 gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleWalletConnect("Ethereum")}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <SiEthereum className="h-5 w-5" />
+                    <span className="sr-only md:not-sr-only md:text-sm">Ethereum</span>
                   </Button>
-                </form>
-              </Form>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleWalletConnect("Solana")}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <SiSolana className="h-5 w-5" />
+                    <span className="sr-only md:not-sr-only md:text-sm">Solana</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleWalletConnect("Base")}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <SiBase className="h-5 w-5" />
+                    <span className="sr-only md:not-sr-only md:text-sm">Base</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </TabsContent>
+            
+            <TabsContent value="register">
+              <CardHeader>
+                <CardTitle>Create an account</CardTitle>
+                <CardDescription>Sign up to manage your crypto portfolio</CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <Form {...registerForm}>
+                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Choose a username" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Create a password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Confirm your password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button type="submit" className="w-full" disabled={registerForm.formState.isSubmitting}>
+                      {registerForm.formState.isSubmitting ? "Creating account..." : "Create account"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
             </TabsContent>
           </Tabs>
-        </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-          </p>
-        </CardFooter>
-      </Card>
+          
+          <CardFooter className="flex justify-center border-t px-6 py-4">
+            <p className="text-xs text-muted-foreground">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

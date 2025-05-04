@@ -4,7 +4,7 @@ import {
   type Token, type Portfolio, type PortfolioToken, type Transaction as SchemaTransaction
 } from "@shared/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { v4 as uuidv4 } from 'uuid';
 
 // Define interfaces for our application to maintain backward compatibility
@@ -692,67 +692,88 @@ export class DatabaseStorage implements IStorage {
     // Get the default user
     let defaultUser: User;
     try {
-      const [existingUser] = await db.select().from(users).where(eq(users.username, 'demo'));
-      if (existingUser) {
-        defaultUser = existingUser;
+      // Use direct SQL query to avoid schema mismatch issues
+      const userResult = await pool.query(
+        `SELECT * FROM users WHERE username = $1 LIMIT 1`,
+        ['demo']
+      );
+      
+      if (userResult.rows && userResult.rows.length > 0) {
+        defaultUser = userResult.rows[0] as User;
       } else {
-        const [newUser] = await db.insert(users)
-          .values({
-            username: 'demo',
-            password: 'password'
-          })
-          .returning();
-        defaultUser = newUser;
+        // Create a new default user
+        const newUserResult = await pool.query(
+          `INSERT INTO users (username, password, created_at, updated_at) 
+           VALUES ($1, $2, NOW(), NOW()) 
+           RETURNING *`,
+          ['demo', 'password']
+        );
+        
+        if (newUserResult.rows && newUserResult.rows.length > 0) {
+          defaultUser = newUserResult.rows[0] as User;
+        } else {
+          throw new Error("Failed to create default user");
+        }
       }
     } catch (error) {
       console.error('Error getting/creating default user:', error);
-      // Create a new user if there was an error
-      const [newUser] = await db.insert(users)
-        .values({
-          username: 'demo',
-          password: 'password'
-        })
-        .returning();
-      defaultUser = newUser;
+      // Try one more time as a fallback
+      const newUserResult = await pool.query(
+        `INSERT INTO users (username, password, created_at, updated_at) 
+         VALUES ($1, $2, NOW(), NOW()) 
+         RETURNING *`,
+        ['demo' + Math.floor(Math.random() * 1000), 'password']
+      );
+      
+      if (newUserResult.rows && newUserResult.rows.length > 0) {
+        defaultUser = newUserResult.rows[0] as User;
+      } else {
+        throw new Error("Failed to create default user after multiple attempts");
+      }
     }
     
     // Now get or create the default portfolio
     let defaultPortfolio: Portfolio;
     try {
-      const [existingPortfolio] = await db.select()
-        .from(portfolios)
-        .where(
-          and(
-            eq(portfolios.userId, defaultUser.id),
-            eq(portfolios.name, 'Default Portfolio')
-          )
-        );
+      const portfolioResult = await pool.query(
+        `SELECT * FROM portfolios 
+         WHERE user_id = $1 AND name = $2 
+         LIMIT 1`,
+        [defaultUser.id, 'Default Portfolio']
+      );
       
-      if (existingPortfolio) {
-        defaultPortfolio = existingPortfolio;
+      if (portfolioResult.rows && portfolioResult.rows.length > 0) {
+        defaultPortfolio = portfolioResult.rows[0] as Portfolio;
       } else {
-        const [newPortfolio] = await db.insert(portfolios)
-          .values({
-            userId: defaultUser.id,
-            name: 'Default Portfolio',
-            description: 'Your default portfolio',
-            isDefault: true
-          })
-          .returning();
-        defaultPortfolio = newPortfolio;
+        // Create a new default portfolio
+        const newPortfolioResult = await pool.query(
+          `INSERT INTO portfolios (id, user_id, name, description, is_default, created_at, updated_at) 
+           VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) 
+           RETURNING *`,
+          [uuidv4(), defaultUser.id, 'Default Portfolio', 'Your default portfolio', true]
+        );
+        
+        if (newPortfolioResult.rows && newPortfolioResult.rows.length > 0) {
+          defaultPortfolio = newPortfolioResult.rows[0] as Portfolio;
+        } else {
+          throw new Error("Failed to create default portfolio");
+        }
       }
     } catch (error) {
       console.error('Error getting/creating default portfolio:', error);
-      // Create a new portfolio if there was an error
-      const [newPortfolio] = await db.insert(portfolios)
-        .values({
-          userId: defaultUser.id,
-          name: 'Default Portfolio',
-          description: 'Your default portfolio',
-          isDefault: true
-        })
-        .returning();
-      defaultPortfolio = newPortfolio;
+      // Try one more time as a fallback
+      const newPortfolioResult = await pool.query(
+        `INSERT INTO portfolios (id, user_id, name, description, is_default, created_at, updated_at) 
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) 
+         RETURNING *`,
+        [uuidv4(), defaultUser.id, 'Default Portfolio', 'Your default portfolio', true]
+      );
+      
+      if (newPortfolioResult.rows && newPortfolioResult.rows.length > 0) {
+        defaultPortfolio = newPortfolioResult.rows[0] as Portfolio;
+      } else {
+        throw new Error("Failed to create default portfolio after multiple attempts");
+      }
     }
     
     return defaultPortfolio;
@@ -808,10 +829,15 @@ export class DatabaseStorage implements IStorage {
   async seedInitialDataIfNeeded() {
     // Check if we already have users
     try {
-      const userCount = await db.select().from(users);
+      // Use a direct query to check if users exist
+      const userCountResult = await pool.query(
+        `SELECT COUNT(*) FROM users`
+      );
+      
+      const userCount = parseInt(userCountResult.rows[0].count);
       
       // If we have users, don't seed
-      if (userCount && userCount.length > 0) {
+      if (userCount > 0) {
         return;
       }
       
@@ -820,6 +846,9 @@ export class DatabaseStorage implements IStorage {
         username: 'demo',
         password: 'password'
       });
+      
+      // Get the default portfolio for the newly created user
+      const defaultPortfolio = await this.getDefaultPortfolio();
       
       // Seed some portfolio assets
       const seedAssets = [
@@ -855,7 +884,8 @@ export class DatabaseStorage implements IStorage {
 
       for (const asset of seedAssets) {
         await this.addPortfolioAsset({
-          userId: (await this.getDefaultPortfolio()).userId,
+          userId: defaultPortfolio.userId,
+          portfolioId: defaultPortfolio.id,
           symbol: asset.symbol,
           name: asset.name,
           quantity: asset.quantity,

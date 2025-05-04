@@ -1,37 +1,73 @@
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { SiEthereum } from "react-icons/si";
 
 interface Web3ButtonProps {
-  provider: "ethereum" | "polygon" | "avalanche";
-  onConnect: () => Promise<void>;
+  onConnect: (address: string) => void;
+  onError?: (error: Error) => void;
+  className?: string;
 }
 
-export function Web3Button({ provider, onConnect }: Web3ButtonProps) {
+export const Web3Button = ({ onConnect, onError, className = "" }: Web3ButtonProps) => {
   const [isConnecting, setIsConnecting] = useState(false);
-  
-  const handleConnect = async () => {
+  const { toast } = useToast();
+
+  const connectWallet = async () => {
+    setIsConnecting(true);
+    
     try {
-      setIsConnecting(true);
-      await onConnect();
-    } catch (error) {
-      console.error(`Error connecting to ${provider}:`, error);
+      // Check if Ethereum provider exists
+      if (typeof window !== 'undefined' && 'ethereum' in window) {
+        const ethereum = (window as any).ethereum;
+        
+        try {
+          // Request account access
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          
+          if (accounts && accounts.length > 0) {
+            const address = accounts[0];
+            toast({
+              title: "Ethereum wallet connected",
+              description: `Connected to ${address.substring(0, 6)}...${address.substring(address.length - 4)}`,
+            });
+            onConnect(address);
+          } else {
+            throw new Error("No accounts found");
+          }
+        } catch (error) {
+          toast({
+            title: "Connection failed",
+            description: "Failed to connect to Ethereum wallet",
+            variant: "destructive",
+          });
+          if (onError) onError(error as Error);
+        }
+      } else {
+        // Wallet not found, suggest installing MetaMask
+        toast({
+          title: "Wallet not found",
+          description: "Please install MetaMask or another Ethereum wallet to continue",
+          variant: "destructive",
+        });
+        if (onError) onError(new Error("Ethereum provider not found"));
+      }
     } finally {
       setIsConnecting(false);
     }
   };
-  
+
   return (
-    <Button 
-      variant="outline" 
-      onClick={handleConnect} 
+    <Button
+      variant="outline"
+      onClick={connectWallet}
       disabled={isConnecting}
-      className="flex items-center justify-center gap-2"
+      className={`flex items-center gap-2 ${className}`}
     >
-      <SiEthereum className="h-4 w-4" />
-      <span className="sr-only md:not-sr-only md:inline-block">
-        {isConnecting ? "Connecting..." : "Ethereum"}
-      </span>
+      <SiEthereum className="h-5 w-5" />
+      <span>{isConnecting ? "Connecting..." : "Ethereum"}</span>
     </Button>
   );
-}
+};
+
+export default Web3Button;
