@@ -21,9 +21,13 @@ type ApiWallet = {
   updated_at: string;
 };
 
-// Add TypeScript definitions for Solana wallet
+// Add TypeScript definitions for crypto wallets
 declare global {
   interface Window {
+    ethereum?: {
+      isMetaMask?: boolean;
+      request: (request: { method: string; params?: Array<any> }) => Promise<any>;
+    };
     solana?: {
       isPhantom?: boolean;
       connect: () => Promise<{ publicKey: { toString: () => string } }>;
