@@ -17,12 +17,15 @@ import BudgetPlanner from "@/pages/budget-planner";
 import LearningPage from "@/pages/learning";
 import QuizPage from "@/pages/learning/quiz";
 import GlossaryPage from "@/pages/learning/glossary";
+import CryptoConceptsPage from "@/pages/learning/crypto-concepts";
 import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import Achievements from "@/pages/achievements";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
+import { CryptoConceptsProvider } from "@/contexts/CryptoConceptsContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
+import CryptoConceptPopup from "@/components/tutorial/CryptoConceptPopup";
 
 function Router() {
   return (
@@ -56,6 +59,7 @@ function Router() {
         {params => <QuizPage params={params} />}
       </Route>
       <Route path="/learning/glossary" component={GlossaryPage} />
+      <Route path="/learning/crypto-concepts" component={CryptoConceptsPage} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/achievements" component={Achievements} />
       <Route component={NotFound} />
@@ -67,14 +71,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TutorialProvider>
-        <TooltipProvider>
-          <Toaster />
-          <AppLayout>
-            <Router />
-          </AppLayout>
-          <Tutorial />
-          <TutorialButton />
-        </TooltipProvider>
+        <CryptoConceptsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppLayout>
+              <Router />
+            </AppLayout>
+            <Tutorial />
+            <TutorialButton />
+          </TooltipProvider>
+        </CryptoConceptsProvider>
       </TutorialProvider>
     </QueryClientProvider>
   );
