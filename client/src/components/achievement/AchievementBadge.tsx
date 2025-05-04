@@ -246,7 +246,7 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
                           className="h-8 w-8 p-0 rounded-full" 
                           onClick={() => handleShare('twitter')}
                         >
-                          <Twitter className="h-4 w-4" />
+                          {renderIcon('twitter', 'h-4 w-4')}
                           <span className="sr-only">Share on Twitter</span>
                         </Button>
                       </TooltipTrigger>
@@ -265,7 +265,7 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
                           className="h-8 w-8 p-0 rounded-full" 
                           onClick={() => handleShare('facebook')}
                         >
-                          <Facebook className="h-4 w-4" />
+                          {renderIcon('facebook', 'h-4 w-4')}
                           <span className="sr-only">Share on Facebook</span>
                         </Button>
                       </TooltipTrigger>
@@ -284,7 +284,7 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
                           className="h-8 w-8 p-0 rounded-full" 
                           onClick={() => handleShare('linkedin')}
                         >
-                          <Linkedin className="h-4 w-4" />
+                          {renderIcon('linkedin', 'h-4 w-4')}
                           <span className="sr-only">Share on LinkedIn</span>
                         </Button>
                       </TooltipTrigger>
@@ -317,9 +317,13 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
             )}
             <div className={cn(dimensions[size], getBadgeColors(achievement.color, achievement.earned))}>
               {achievement.earned ? (
-                <span className={iconSize[size]}>{achievement.icon}</span>
+                <span className={iconSize[size]}>
+                  {renderIcon(achievement.icon, iconSize[size])}
+                </span>
               ) : (
-                <Lock className={iconSize[size]} />
+                <span className={iconSize[size]}>
+                  {renderIcon('lock', iconSize[size])}
+                </span>
               )}
             </div>
             {achievement.earned && achievement.earnedDate && (
