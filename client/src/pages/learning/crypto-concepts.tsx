@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Container } from "@/components/ui/container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "wouter";
@@ -29,8 +28,8 @@ const CryptoConceptsPage: React.FC = () => {
   const categories = getCategories();
 
   return (
-    <Container>
-      <div className="py-8">
+    <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+      <div>
         {/* Back button and title */}
         <div className="flex items-center mb-2">
           <Button variant="ghost" size="sm" asChild className="mr-2">
@@ -80,7 +79,7 @@ const CryptoConceptsPage: React.FC = () => {
 
       {/* Popup for displaying concept details */}
       <CryptoConceptPopup />
-    </Container>
+    </div>
   );
 };
 

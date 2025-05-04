@@ -1,5 +1,10 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -12,36 +17,39 @@ import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const { toast } = useToast();
-  
+
   // Dashboard tour
-  const dashboardTour = useOnboarding('dashboard');
+  const dashboardTour = useOnboarding("dashboard");
   // Portfolio tour
-  const portfolioTour = useOnboarding('portfolio');
+  const portfolioTour = useOnboarding("portfolio");
   // Learning tour
-  const learningTour = useOnboarding('learning');
+  const learningTour = useOnboarding("learning");
   // Transactions tour
-  const transactionsTour = useOnboarding('transactions');
+  const transactionsTour = useOnboarding("transactions");
   // Markets tour
-  const marketsTour = useOnboarding('markets');
+  const marketsTour = useOnboarding("markets");
   // Alerts tour
-  const alertsTour = useOnboarding('alerts');
-  
+  const alertsTour = useOnboarding("alerts");
+
   const resetAllTours = () => {
     dashboardTour.resetAllTours();
     toast({
       title: "Tours Reset",
-      description: "All feature tours have been reset. You'll see them on your next visit to each page.",
+      description:
+        "All feature tours have been reset. You'll see them on your next visit to each page.",
     });
   };
-  
+
   return (
     <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
       {/* Page Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold">Settings</h2>
-        <p className="text-neutral-mid mt-1">Manage your account and application preferences</p>
+        <p className="text-neutral-mid mt-1">
+          Manage your account and application preferences
+        </p>
       </div>
-      
+
       <Tabs defaultValue="account" className="space-y-6">
         <TabsList>
           <TabsTrigger value="account">Account</TabsTrigger>
@@ -49,7 +57,7 @@ const Settings = () => {
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="tours">Feature Tours</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="account">
           <Card>
             <CardHeader>
@@ -67,10 +75,14 @@ const Settings = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" defaultValue="alex@example.com" />
+                    <Input
+                      id="email"
+                      type="email"
+                      defaultValue="alex@example.com"
+                    />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
@@ -82,9 +94,9 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Change Password</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -99,12 +111,14 @@ const Settings = () => {
                     <Input id="new-password" type="password" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Label htmlFor="confirm-password">
+                      Confirm New Password
+                    </Label>
                     <Input id="confirm-password" type="password" />
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button variant="outline">Cancel</Button>
                 <Button>Save Changes</Button>
@@ -112,7 +126,7 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="preferences">
           <Card>
             <CardHeader>
@@ -126,15 +140,19 @@ const Settings = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-medium">Dark Mode</h3>
-                    <p className="text-sm text-neutral-mid">Switch between light and dark themes</p>
+                    <p className="text-sm text-neutral-mid">
+                      Switch between light and dark themes
+                    </p>
                   </div>
                   <ThemeToggle />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-medium">Currency</h3>
-                    <p className="text-sm text-neutral-mid">Choose your preferred currency</p>
+                    <p className="text-sm text-neutral-mid">
+                      Choose your preferred currency
+                    </p>
                   </div>
                   <div className="w-32">
                     <select className="w-full rounded-md border border-gray-300 dark:border-gray-700 p-2 bg-white dark:bg-zinc-800 text-black dark:text-white">
@@ -145,11 +163,13 @@ const Settings = () => {
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-medium">Refresh Rate</h3>
-                    <p className="text-sm text-neutral-mid">How often to update prices</p>
+                    <p className="text-sm text-neutral-mid">
+                      How often to update prices
+                    </p>
                   </div>
                   <div className="w-32">
                     <select className="w-full rounded-md border border-gray-300 dark:border-gray-700 p-2 bg-white dark:bg-zinc-800 text-black dark:text-white">
@@ -161,7 +181,7 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button variant="outline">Reset to Default</Button>
                 <Button>Save Preferences</Button>
@@ -169,7 +189,7 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="notifications">
           <Card>
             <CardHeader>
@@ -181,48 +201,58 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Email Notifications</h3>
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Price Alerts</p>
-                      <p className="text-xs text-neutral-mid">Receive alerts when prices change significantly</p>
+                      <p className="text-xs text-neutral-mid">
+                        Receive alerts when prices change significantly
+                      </p>
                     </div>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Portfolio Summary</p>
-                      <p className="text-xs text-neutral-mid">Daily or weekly summary of your portfolio</p>
+                      <p className="text-xs text-neutral-mid">
+                        Daily or weekly summary of your portfolio
+                      </p>
                     </div>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">News Digests</p>
-                      <p className="text-xs text-neutral-mid">News related to cryptocurrencies you own</p>
+                      <p className="text-xs text-neutral-mid">
+                        News related to cryptocurrencies you own
+                      </p>
                     </div>
                     <Switch />
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <h3 className="text-lg font-medium">Push Notifications</h3>
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">Enable Push Notifications</p>
-                      <p className="text-xs text-neutral-mid">Receive notifications on your device</p>
+                      <p className="text-sm font-medium">
+                        Enable Push Notifications
+                      </p>
+                      <p className="text-xs text-neutral-mid">
+                        Receive notifications on your device
+                      </p>
                     </div>
                     <Switch defaultChecked />
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button variant="outline">Cancel</Button>
                 <Button>Save Settings</Button>
@@ -230,97 +260,114 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="tours">
           <Card>
             <CardHeader>
               <CardTitle>Feature Tours Management</CardTitle>
               <CardDescription>
-                Reset or restart guided tours for different sections of the application
+                Reset or restart guided tours for different sections of the
+                application
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Individual Feature Tours</h3>
-                
+                <h3 className="text-lg font-medium">
+                  Individual Feature Tours
+                </h3>
+
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Dashboard Tour</p>
-                      <p className="text-xs text-neutral-mid">Learn the basics of your portfolio dashboard</p>
+                      <p className="text-xs text-neutral-mid">
+                        Learn the basics of your portfolio dashboard
+                      </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={dashboardTour.resetTour}
                       disabled={!dashboardTour.hasTourBeenCompleted}
                     >
                       Reset Tour
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Portfolio Tour</p>
-                      <p className="text-xs text-neutral-mid">Learn about portfolio details and management</p>
+                      <p className="text-xs text-neutral-mid">
+                        Learn about portfolio details and management
+                      </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={portfolioTour.resetTour}
                       disabled={!portfolioTour.hasTourBeenCompleted}
                     >
                       Reset Tour
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">Learning Center Tour</p>
-                      <p className="text-xs text-neutral-mid">Learn how to use the educational resources</p>
+                      <p className="text-sm font-medium">
+                        Learning Center Tour
+                      </p>
+                      <p className="text-xs text-neutral-mid">
+                        Learn how to use the educational resources
+                      </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={learningTour.resetTour}
                       disabled={!learningTour.hasTourBeenCompleted}
                     >
                       Reset Tour
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Transactions Tour</p>
-                      <p className="text-xs text-neutral-mid">Learn about transaction management</p>
+                      <p className="text-xs text-neutral-mid">
+                        Learn about transaction management
+                      </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={transactionsTour.resetTour}
                       disabled={!transactionsTour.hasTourBeenCompleted}
                     >
                       Reset Tour
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Markets Tour</p>
-                      <p className="text-xs text-neutral-mid">Learn how to use the market data section</p>
+                      <p className="text-xs text-neutral-mid">
+                        Learn how to use the market data section
+                      </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={marketsTour.resetTour}
                       disabled={!marketsTour.hasTourBeenCompleted}
                     >
                       Reset Tour
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">Alerts Tour</p>
-                      <p className="text-xs text-neutral-mid">Learn how to set up and manage price alerts</p>
+                      <p className="text-xs text-neutral-mid">
+                        Learn how to set up and manage price alerts
+                      </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={alertsTour.resetTour}
                       disabled={!alertsTour.hasTourBeenCompleted}
                     >
@@ -328,13 +375,15 @@ const Settings = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-medium">Reset All Tours</h3>
-                    <p className="text-sm text-neutral-mid">Reset all feature tours to see them again</p>
+                    <p className="text-sm text-neutral-mid">
+                      Reset all feature tours to see them again
+                    </p>
                   </div>
                   <Button onClick={resetAllTours}>Reset All Tours</Button>
                 </div>

@@ -1,44 +1,65 @@
 import { useState, useEffect } from "react";
-import { Calculator, Landmark, CreditCard, Coins, DollarSign } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Calculator,
+  Landmark,
+  CreditCard,
+  Coins,
+  DollarSign,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 import BudgetAllocationEngine from "@/components/budget/BudgetAllocationEngine";
-import PortfolioSelector, { Portfolio } from "@/components/dashboard/PortfolioSelector";
+import PortfolioSelector, {
+  Portfolio,
+} from "@/components/dashboard/PortfolioSelector";
 
 const BudgetPlanner = () => {
-  const { toast } = useToast();
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | undefined>(undefined);
-  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(null);
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<
+    string | undefined
+  >(undefined);
+  const [currentPortfolio, setCurrentPortfolio] = useState<Portfolio | null>(
+    null,
+  );
   const [firstLoad, setFirstLoad] = useState(true);
-  const [activeTab, setActiveTab] = useState("allocation");
 
   // Fetch sentiment data for the budget engine
-  const { data: sentimentData } = useQuery<{ sentiment?: { score: number; mood: string } }>({
-    queryKey: ['/api/crypto/sentiment'],
+  const { data: sentimentData } = useQuery<{
+    sentiment?: { score: number; mood: string };
+  }>({
+    queryKey: ["/api/crypto/sentiment"],
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 
   // Fetch all portfolios
-  const { data: portfolios, isLoading: loadingPortfolios } = useQuery({
-    queryKey: ['/api/portfolios'],
+  const { data: portfolios } = useQuery({
+    queryKey: ["/api/portfolios"],
     queryFn: async () => {
-      const response = await fetch('/api/portfolios');
+      const response = await fetch("/api/portfolios");
       if (!response.ok) {
-        throw new Error('Failed to fetch portfolios');
+        throw new Error("Failed to fetch portfolios");
       }
       return response.json();
-    }
+    },
   });
 
   // Set default portfolio on first load
   useEffect(() => {
-    if (firstLoad && portfolios && portfolios.length > 0 && !selectedPortfolioId) {
+    if (
+      firstLoad &&
+      portfolios &&
+      portfolios.length > 0 &&
+      !selectedPortfolioId
+    ) {
       // Find default portfolio or use the first one
-      const defaultPortfolio = portfolios.find((p: Portfolio) => p.isDefault) || portfolios[0];
+      const defaultPortfolio =
+        portfolios.find((p: Portfolio) => p.isDefault) || portfolios[0];
       if (defaultPortfolio) {
         setSelectedPortfolioId(defaultPortfolio.id);
         setCurrentPortfolio(defaultPortfolio);
@@ -50,13 +71,15 @@ const BudgetPlanner = () => {
   // Update current portfolio when it changes
   useEffect(() => {
     if (selectedPortfolioId && portfolios) {
-      const portfolio = portfolios.find((p: Portfolio) => p.id === selectedPortfolioId);
+      const portfolio = portfolios.find(
+        (p: Portfolio) => p.id === selectedPortfolioId,
+      );
       if (portfolio) {
         setCurrentPortfolio(portfolio);
       }
     }
   }, [selectedPortfolioId, portfolios]);
-  
+
   const handlePortfolioChange = (portfolioId: string) => {
     setSelectedPortfolioId(portfolioId);
   };
@@ -70,9 +93,12 @@ const BudgetPlanner = () => {
           <p className="text-muted-foreground mt-1">
             {currentPortfolio ? (
               <span>
-                Planning for: <span className="font-medium">{currentPortfolio.name}</span>
+                Planning for:{" "}
+                <span className="font-medium">{currentPortfolio.name}</span>
                 {currentPortfolio.description && (
-                  <span className="text-sm italic ml-2">({currentPortfolio.description})</span>
+                  <span className="text-sm italic ml-2">
+                    ({currentPortfolio.description})
+                  </span>
                 )}
               </span>
             ) : (
@@ -81,8 +107,8 @@ const BudgetPlanner = () => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <PortfolioSelector 
-            onPortfolioChange={handlePortfolioChange} 
+          <PortfolioSelector
+            onPortfolioChange={handlePortfolioChange}
             currentPortfolioId={selectedPortfolioId}
           />
         </div>
@@ -92,12 +118,12 @@ const BudgetPlanner = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Budget Engine */}
         <div className="lg:col-span-2">
-          <BudgetAllocationEngine 
+          <BudgetAllocationEngine
             portfolioId={selectedPortfolioId}
             marketSentiment={sentimentData?.sentiment}
           />
         </div>
-        
+
         {/* Sidebar Info */}
         <div className="space-y-6">
           <Card>
@@ -106,30 +132,44 @@ const BudgetPlanner = () => {
                 <Landmark className="mr-2 h-4 w-4" />
                 Investment Tips
               </CardTitle>
-              <CardDescription>Smart crypto investing practices</CardDescription>
+              <CardDescription>
+                Smart crypto investing practices
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
                   <DollarSign className="mr-2 h-4 w-4 mt-0.5 text-muted-foreground" />
-                  <span>Only invest money you can afford to lose. Cryptocurrencies are high-risk investments.</span>
+                  <span>
+                    Only invest money you can afford to lose. Cryptocurrencies
+                    are high-risk investments.
+                  </span>
                 </li>
                 <li className="flex items-start">
                   <CreditCard className="mr-2 h-4 w-4 mt-0.5 text-muted-foreground" />
-                  <span>Build an emergency fund before allocating significant amounts to crypto investments.</span>
+                  <span>
+                    Build an emergency fund before allocating significant
+                    amounts to crypto investments.
+                  </span>
                 </li>
                 <li className="flex items-start">
                   <Coins className="mr-2 h-4 w-4 mt-0.5 text-muted-foreground" />
-                  <span>Diversify your crypto portfolio across multiple assets to reduce risk.</span>
+                  <span>
+                    Diversify your crypto portfolio across multiple assets to
+                    reduce risk.
+                  </span>
                 </li>
                 <li className="flex items-start">
                   <Calculator className="mr-2 h-4 w-4 mt-0.5 text-muted-foreground" />
-                  <span>Consider dollar-cost averaging by investing a fixed amount regularly rather than all at once.</span>
+                  <span>
+                    Consider dollar-cost averaging by investing a fixed amount
+                    regularly rather than all at once.
+                  </span>
                 </li>
               </ul>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -140,7 +180,8 @@ const BudgetPlanner = () => {
             </CardHeader>
             <CardContent className="text-sm">
               <p className="mb-2">
-                The Budget Allocation Engine helps you determine how much of your monthly surplus to allocate to crypto investments based on:
+                The Budget Allocation Engine helps you determine how much of
+                your monthly surplus to allocate to crypto investments based on:
               </p>
               <ul className="space-y-1 list-disc pl-5 text-muted-foreground">
                 <li>Your financial situation</li>
@@ -150,7 +191,8 @@ const BudgetPlanner = () => {
                 <li>Current market conditions</li>
               </ul>
               <p className="mt-3">
-                The recommendations are personalized suggestions, not financial advice. Always do your own research before investing.
+                The recommendations are personalized suggestions, not financial
+                advice. Always do your own research before investing.
               </p>
             </CardContent>
           </Card>

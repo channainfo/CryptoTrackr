@@ -5,10 +5,7 @@ import {
   Plus,
   Trash2,
   Edit,
-  Check,
-  X,
   AlertTriangle,
-  Info,
   Loader2,
   RefreshCw,
 } from "lucide-react";
@@ -17,10 +14,8 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,12 +24,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +38,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { CreateAlertForm } from "@/components/alerts/CreateAlertForm";
 import { EditAlertForm } from "@/components/alerts/EditAlertForm";
@@ -293,8 +286,8 @@ const AlertsPage = () => {
             <CardTitle className="text-xl mb-2">No alerts yet</CardTitle>
             <CardDescription className="text-center max-w-md mb-6">
               Create your first alert to get notified when specific market
-              conditions are met. Set alerts for price changes, market cap thresholds,
-              and more.
+              conditions are met. Set alerts for price changes, market cap
+              thresholds, and more.
             </CardDescription>
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />

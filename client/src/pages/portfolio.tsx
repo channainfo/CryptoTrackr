@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { PlusIcon, FolderPlus, BookOpen, Filter, TrendingUp, TrendingDown, Star, Clock } from "lucide-react";
+import {
+  FolderPlus,
+  BookOpen,
+  Filter,
+  TrendingUp,
+  TrendingDown,
+  Star,
+  Clock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import PortfolioCard from "@/components/portfolio/PortfolioCard";
 import { usePortfolios } from "@/hooks/usePortfolios";
@@ -31,7 +38,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectLabel
+  SelectLabel,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PortfolioWithAssets } from "@/hooks/usePortfolios";
@@ -48,54 +55,66 @@ const sortOptions = [
 ];
 
 const Portfolio = () => {
-  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("all");
-  
+
   // With our optimized approach, we're getting ALL portfolios once and filtering client-side
   // We're not passing any type to usePortfolios so it doesn't need to conditionally fetch
   const { allPortfoliosWithAssets, isLoading } = usePortfolios();
-  console.log(`Active tab: ${activeTab}, using client-side filtering from ${allPortfoliosWithAssets?.length || 0} portfolios`);
-  
+  console.log(
+    `Active tab: ${activeTab}, using client-side filtering from ${allPortfoliosWithAssets?.length || 0} portfolios`,
+  );
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newPortfolioName, setNewPortfolioName] = useState('');
-  const [newPortfolioDescription, setNewPortfolioDescription] = useState('');
+  const [newPortfolioName, setNewPortfolioName] = useState("");
+  const [newPortfolioDescription, setNewPortfolioDescription] = useState("");
   const [isDefaultPortfolio, setIsDefaultPortfolio] = useState(false);
   const [sortBy, setSortBy] = useState("newest");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Apply client-side filtering based on the active tab
-  const filteredPortfolios = allPortfoliosWithAssets?.filter((item: PortfolioWithAssets) => {
-    // Convert isWatchlist to a boolean to handle any possible type issues
-    const isWatchlist = Boolean(item.portfolio.isWatchlist);
-    
-    console.log(`Filtering portfolio "${item.portfolio.name}" in "${activeTab}" tab (isWatchlist: ${isWatchlist})`);
-    
-    if (activeTab === "all") {
-      // For "all" tab, show all portfolios EXCEPT watchlists
-      return !isWatchlist;
-    } 
-    else if (activeTab === "active") {
-      // For "active" tab, only show portfolios with assets and NOT watchlists
-      const hasAssets = item.assets.length > 0;
-      const notWatchlist = !isWatchlist;
-      console.log(`Portfolio ${item.portfolio.name}: hasAssets=${hasAssets}, notWatchlist=${notWatchlist}`);
-      return hasAssets && notWatchlist;
-    }
-    else if (activeTab === "watchlist") {
-      // For "watchlist" tab, show ONLY watchlist portfolios
-      console.log(`Watchlist filter for ${item.portfolio.name}, isWatchlist=${isWatchlist}`);
-      return isWatchlist === true;
-    }
-    return false;
-  }) || [];
-  
+  const filteredPortfolios =
+    allPortfoliosWithAssets?.filter((item: PortfolioWithAssets) => {
+      // Convert isWatchlist to a boolean to handle any possible type issues
+      const isWatchlist = Boolean(item.portfolio.isWatchlist);
+
+      console.log(
+        `Filtering portfolio "${item.portfolio.name}" in "${activeTab}" tab (isWatchlist: ${isWatchlist})`,
+      );
+
+      if (activeTab === "all") {
+        // For "all" tab, show all portfolios EXCEPT watchlists
+        return !isWatchlist;
+      } else if (activeTab === "active") {
+        // For "active" tab, only show portfolios with assets and NOT watchlists
+        const hasAssets = item.assets.length > 0;
+        const notWatchlist = !isWatchlist;
+        console.log(
+          `Portfolio ${item.portfolio.name}: hasAssets=${hasAssets}, notWatchlist=${notWatchlist}`,
+        );
+        return hasAssets && notWatchlist;
+      } else if (activeTab === "watchlist") {
+        // For "watchlist" tab, show ONLY watchlist portfolios
+        console.log(
+          `Watchlist filter for ${item.portfolio.name}, isWatchlist=${isWatchlist}`,
+        );
+        return isWatchlist === true;
+      }
+      return false;
+    }) || [];
+
   const sortedPortfolios = [...filteredPortfolios].sort((a, b) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.portfolio.createdAt).getTime() - new Date(a.portfolio.createdAt).getTime();
+        return (
+          new Date(b.portfolio.createdAt).getTime() -
+          new Date(a.portfolio.createdAt).getTime()
+        );
       case "oldest":
-        return new Date(a.portfolio.createdAt).getTime() - new Date(b.portfolio.createdAt).getTime();
+        return (
+          new Date(a.portfolio.createdAt).getTime() -
+          new Date(b.portfolio.createdAt).getTime()
+        );
       case "value-high":
         return b.totalValue - a.totalValue;
       case "value-low":
@@ -115,55 +134,61 @@ const Portfolio = () => {
 
   // Mutation to create a new portfolio
   const createPortfolioMutation = useMutation({
-    mutationFn: async (data: { name: string, description?: string, isDefault?: boolean, isWatchlist?: boolean }) => {
+    mutationFn: async (data: {
+      name: string;
+      description?: string;
+      isDefault?: boolean;
+      isWatchlist?: boolean;
+    }) => {
       return apiRequest({
-        url: '/api/portfolios',
-        method: 'POST',
-        data
+        url: "/api/portfolios",
+        method: "POST",
+        data,
       });
     },
     onSuccess: (data) => {
       // With our new approach, we only need to invalidate the main portfolio query
       // This will refetch all portfolios and assets in a single request
       console.log("Created portfolio, invalidating portfolio queries");
-      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolios"] });
+
       setIsCreateOpen(false);
       resetForm();
-      
+
       toast({
         title: data.isWatchlist ? "Watchlist created" : "Portfolio created",
-        description: `Your new ${data.isWatchlist ? 'watchlist' : 'portfolio'} has been created successfully.`,
+        description: `Your new ${data.isWatchlist ? "watchlist" : "portfolio"} has been created successfully.`,
       });
     },
     onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Failed to create portfolio",
-        description: error.message || "There was an error creating your portfolio.",
+        description:
+          error.message || "There was an error creating your portfolio.",
       });
-    }
+    },
   });
 
   // Reset form state
   const resetForm = () => {
-    setNewPortfolioName('');
-    setNewPortfolioDescription('');
+    setNewPortfolioName("");
+    setNewPortfolioDescription("");
     setIsDefaultPortfolio(false);
   };
 
   // Handle creating a new portfolio
   const handleCreatePortfolio = () => {
     if (!newPortfolioName.trim()) return;
-    
+
     // Set isWatchlist to true when creating from watchlist tab
     const isWatchlist = activeTab === "watchlist";
     console.log("Creating portfolio:", {
-      name: newPortfolioName, 
-      isWatchlist, 
-      activeTab
+      name: newPortfolioName,
+      isWatchlist,
+      activeTab,
     });
-    
+
     // Make sure isWatchlist is explicitly set as a boolean to avoid type conversion issues
     const requestData = {
       name: newPortfolioName,
@@ -172,19 +197,29 @@ const Portfolio = () => {
       // Explicitly use Boolean constructor to force true/false value
       isWatchlist: Boolean(isWatchlist),
       // CRITICAL: Send the activeTab so the server knows which tab we're creating from
-      activeTab: activeTab
+      activeTab: activeTab,
     };
-    
+
     console.log("Sending portfolio creation request:", requestData);
-    
+
     createPortfolioMutation.mutate(requestData);
   };
 
   // Get portfolio count by type for badges using allPortfoliosWithAssets
   const portfolioCounts = {
-    all: allPortfoliosWithAssets?.filter((p: PortfolioWithAssets) => !Boolean(p.portfolio.isWatchlist)).length || 0,
-    active: allPortfoliosWithAssets?.filter((p: PortfolioWithAssets) => p.assets.length > 0 && !Boolean(p.portfolio.isWatchlist)).length || 0,
-    watchlist: allPortfoliosWithAssets?.filter((p: PortfolioWithAssets) => Boolean(p.portfolio.isWatchlist)).length || 0
+    all:
+      allPortfoliosWithAssets?.filter(
+        (p: PortfolioWithAssets) => !Boolean(p.portfolio.isWatchlist),
+      ).length || 0,
+    active:
+      allPortfoliosWithAssets?.filter(
+        (p: PortfolioWithAssets) =>
+          p.assets.length > 0 && !Boolean(p.portfolio.isWatchlist),
+      ).length || 0,
+    watchlist:
+      allPortfoliosWithAssets?.filter((p: PortfolioWithAssets) =>
+        Boolean(p.portfolio.isWatchlist),
+      ).length || 0,
   };
 
   // Select the appropriate icon for sort option
@@ -206,7 +241,7 @@ const Portfolio = () => {
         return <Filter className="h-4 w-4 mr-1" />;
     }
   };
-  
+
   return (
     <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
       {/* Page Header */}
@@ -214,7 +249,11 @@ const Portfolio = () => {
         <div>
           <h2 className="text-2xl font-bold dark:text-white">My Portfolios</h2>
           <p className="text-neutral-mid dark:text-gray-400 mt-1">
-            View and manage your <CryptoTerm termKey="portfolio-diversification">diversified</CryptoTerm> cryptocurrency portfolios
+            View and manage your{" "}
+            <CryptoTerm termKey="portfolio-diversification">
+              diversified
+            </CryptoTerm>{" "}
+            cryptocurrency portfolios
           </p>
         </div>
         <div className="mt-4 sm:mt-0 space-x-2">
@@ -230,37 +269,44 @@ const Portfolio = () => {
           </Button>
         </div>
       </div>
-      
-      <Tabs 
-        defaultValue="all" 
-        className="w-full" 
+
+      <Tabs
+        defaultValue="all"
+        className="w-full"
         onValueChange={(value) => {
           // Just update the active tab state - no need to refetch
           setActiveTab(value);
           console.log(`Tab changed to ${value} - using client-side filtering`);
-        }}>
+        }}
+      >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <TabsList className="mb-4 md:mb-0">
             <TabsTrigger value="all" className="relative">
               All Portfolios
               {portfolioCounts.all > 0 && (
-                <Badge variant="secondary" className="ml-2">{portfolioCounts.all}</Badge>
+                <Badge variant="secondary" className="ml-2">
+                  {portfolioCounts.all}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="active" className="relative">
               Active
               {portfolioCounts.active > 0 && (
-                <Badge variant="secondary" className="ml-2">{portfolioCounts.active}</Badge>
+                <Badge variant="secondary" className="ml-2">
+                  {portfolioCounts.active}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="watchlist" className="relative">
               Watchlist
               {portfolioCounts.watchlist > 0 && (
-                <Badge variant="secondary" className="ml-2">{portfolioCounts.watchlist}</Badge>
+                <Badge variant="secondary" className="ml-2">
+                  {portfolioCounts.watchlist}
+                </Badge>
               )}
             </TabsTrigger>
           </TabsList>
-          
+
           {/* Sort options */}
           <div className="flex items-center">
             <Select value={sortBy} onValueChange={setSortBy}>
@@ -273,7 +319,7 @@ const Portfolio = () => {
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Sort By</SelectLabel>
-                  {sortOptions.map(option => (
+                  {sortOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -283,15 +329,15 @@ const Portfolio = () => {
             </Select>
           </div>
         </div>
-        
+
         <TabsContent value="all" className="space-y-6">
           {renderPortfolioContent()}
         </TabsContent>
-        
+
         <TabsContent value="active" className="space-y-6">
           {renderPortfolioContent()}
         </TabsContent>
-        
+
         <TabsContent value="watchlist" className="space-y-6">
           {renderPortfolioContent()}
         </TabsContent>
@@ -302,10 +348,12 @@ const Portfolio = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {activeTab === "watchlist" ? "Create New Watchlist" : "Create New Portfolio"}
+              {activeTab === "watchlist"
+                ? "Create New Watchlist"
+                : "Create New Portfolio"}
             </DialogTitle>
             <DialogDescription>
-              {activeTab === "watchlist" 
+              {activeTab === "watchlist"
                 ? "Create a watchlist to monitor cryptocurrencies you're interested in without owning them."
                 : "Add a new portfolio to track different sets of cryptocurrency assets you own."}
             </DialogDescription>
@@ -313,48 +361,63 @@ const Portfolio = () => {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="portfolio-name">
-                {activeTab === "watchlist" ? "Watchlist Name" : "Portfolio Name"}
+                {activeTab === "watchlist"
+                  ? "Watchlist Name"
+                  : "Portfolio Name"}
               </Label>
-              <Input 
-                id="portfolio-name" 
+              <Input
+                id="portfolio-name"
                 value={newPortfolioName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPortfolioName(e.target.value)}
-                placeholder={activeTab === "watchlist" ? "My Bitcoin Watchlist" : "My Investment Portfolio"}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNewPortfolioName(e.target.value)
+                }
+                placeholder={
+                  activeTab === "watchlist"
+                    ? "My Bitcoin Watchlist"
+                    : "My Investment Portfolio"
+                }
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="portfolio-description">Description (Optional)</Label>
-              <Textarea 
-                id="portfolio-description" 
+              <Label htmlFor="portfolio-description">
+                Description (Optional)
+              </Label>
+              <Textarea
+                id="portfolio-description"
                 value={newPortfolioDescription}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewPortfolioDescription(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setNewPortfolioDescription(e.target.value)
+                }
                 placeholder={
-                  activeTab === "watchlist" 
-                    ? "Tokens I'm interested in for future investment" 
+                  activeTab === "watchlist"
+                    ? "Tokens I'm interested in for future investment"
                     : "Long-term investments focused on large-cap tokens"
                 }
                 className="resize-none h-20"
               />
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="default-portfolio" 
+              <Checkbox
+                id="default-portfolio"
                 checked={isDefaultPortfolio}
-                onCheckedChange={(checked) => setIsDefaultPortfolio(checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setIsDefaultPortfolio(checked as boolean)
+                }
               />
               <div className="grid gap-1.5">
                 <Label htmlFor="default-portfolio">
                   Set as default portfolio
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  The default portfolio will be loaded automatically on the dashboard.
+                  The default portfolio will be loaded automatically on the
+                  dashboard.
                 </p>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsCreateOpen(false);
                 resetForm();
@@ -363,15 +426,17 @@ const Portfolio = () => {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleCreatePortfolio}
-              disabled={!newPortfolioName.trim() || createPortfolioMutation.isPending}
+              disabled={
+                !newPortfolioName.trim() || createPortfolioMutation.isPending
+              }
             >
-              {createPortfolioMutation.isPending 
-                ? 'Creating...' 
-                : activeTab === "watchlist" 
-                  ? 'Create Watchlist' 
-                  : 'Create Portfolio'}
+              {createPortfolioMutation.isPending
+                ? "Creating..."
+                : activeTab === "watchlist"
+                  ? "Create Watchlist"
+                  : "Create Portfolio"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -386,7 +451,10 @@ const Portfolio = () => {
         // Loading skeleton
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((item) => (
-            <div key={item} className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+            <div
+              key={item}
+              className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800"
+            >
               <Skeleton className="h-8 w-1/3 mb-2" />
               <Skeleton className="h-4 w-2/3 mb-6" />
               <div className="grid grid-cols-3 gap-4 mb-6">
@@ -408,8 +476,8 @@ const Portfolio = () => {
           ))}
         </div>
       );
-    } 
-    
+    }
+
     if (sortedPortfolios.length === 0) {
       return (
         // Empty state
@@ -417,14 +485,14 @@ const Portfolio = () => {
           <div className="max-w-md mx-auto">
             <FolderPlus className="h-12 w-12 text-neutral-mid mx-auto mb-4" />
             <h3 className="text-xl font-medium mb-2 dark:text-white">
-              {activeTab === "all" 
-                ? "No Portfolios Found" 
-                : activeTab === "active" 
-                  ? "No Active Portfolios" 
+              {activeTab === "all"
+                ? "No Portfolios Found"
+                : activeTab === "active"
+                  ? "No Active Portfolios"
                   : "No Watchlist Portfolios"}
             </h3>
             <p className="text-neutral-mid dark:text-gray-400 mb-6">
-              {activeTab === "all" 
+              {activeTab === "all"
                 ? "Create your first portfolio to start tracking your crypto assets."
                 : activeTab === "active"
                   ? "Add assets to your portfolios to see them here."
@@ -438,15 +506,15 @@ const Portfolio = () => {
         </div>
       );
     }
-    
+
     return (
       // Portfolio grid
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedPortfolios.map((item) => (
-          <PortfolioCard 
-            key={item.portfolio.id} 
-            portfolio={item.portfolio} 
-            assets={item.assets} 
+          <PortfolioCard
+            key={item.portfolio.id}
+            portfolio={item.portfolio}
+            assets={item.assets}
           />
         ))}
       </div>
