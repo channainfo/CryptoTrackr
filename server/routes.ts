@@ -19,6 +19,7 @@ import { AlertService } from "./services/AlertService";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import learningRoutes from "./routes/learningRoutes";
+import authRoutes from "./routes/auth";
 import { OpenAIService } from "./services/openai";
 import { RiskAssessmentService } from "./services/riskAssessment";
 
@@ -93,6 +94,9 @@ function calculateSentimentFromMarket(marketData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register auth routes
+  app.use('/api/auth', authRoutes);
+  
   // Register learning routes
   app.use('/api/learning', learningRoutes);
   
