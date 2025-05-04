@@ -1,97 +1,74 @@
 import React, { useEffect } from 'react';
 import { useCryptoConcepts } from '@/contexts/CryptoConceptsContext';
-import CryptoConceptPopup from './CryptoConceptPopup';
+import { Button } from '@/components/ui/button';
+import { HelpCircle } from 'lucide-react';
 
 interface ConceptTriggerProps {
   conceptId: string;
-  trigger?: string; // Optional specific trigger to match
+  trigger?: 'dashboard' | 'portfolio' | 'token-detail' | 'market' | string;
+  autoShow?: boolean;
   children?: React.ReactNode;
-  autoShow?: boolean; // Whether to show the concept automatically when the component mounts
+  showIcon?: boolean;
+  label?: string;
 }
 
+/**
+ * Component that triggers a crypto concept popup
+ * Can be used in three ways:
+ * 1. As a trigger button with a label
+ * 2. As a wrapper around existing content
+ * 3. With autoShow=true to automatically show concepts on page load (for first-time users)
+ */
 const ConceptTrigger: React.FC<ConceptTriggerProps> = ({
   conceptId,
   trigger,
+  autoShow = false,
   children,
-  autoShow = false
+  showIcon = true,
+  label
 }) => {
-  const {
-    concepts,
-    showConcept,
-    hideConcept,
-    currentConcept,
-    isConceptVisible,
-    markConceptSeen,
-    hasSeenConcept
-  } = useCryptoConcepts();
-
-  // Find the concept
-  const concept = concepts.find(c => c.id === conceptId);
-
-  // Show the concept when component mounts if autoShow is true and concept hasn't been seen
+  const { showConcept, hasSeenConcept } = useCryptoConcepts();
+  
+  // Auto-show the concept when component mounts if autoShow is true
+  // and the user hasn't seen it before
   useEffect(() => {
-    if (autoShow && concept && !hasSeenConcept(conceptId)) {
-      // Small delay to not show immediately on page load
+    if (autoShow && !hasSeenConcept(conceptId)) {
+      // Add a small delay so the page loads first
       const timer = setTimeout(() => {
         showConcept(conceptId);
       }, 1000);
       
       return () => clearTimeout(timer);
     }
-  }, [autoShow, concept, conceptId, hasSeenConcept, showConcept]);
-
-  // Check if the trigger matches any of the concept's triggers
-  const shouldTrigger = concept?.triggers.includes(trigger || '') || !trigger;
-
-  const handleClick = () => {
-    if (concept && shouldTrigger && !hasSeenConcept(conceptId)) {
-      showConcept(conceptId);
-    }
-  };
-
-  const handleClose = () => {
-    hideConcept();
-    if (concept) {
-      markConceptSeen(concept.id);
-    }
-  };
-
-  // If this component is wrapping children, add onClick handler
+  }, [autoShow, conceptId, hasSeenConcept, showConcept]);
+  
+  // If used as a wrapper component
   if (children) {
     return (
-      <>
-        <div onClick={handleClick}>
-          {children}
-        </div>
-        
-        {concept && isConceptVisible && currentConcept?.id === conceptId && (
-          <CryptoConceptPopup
-            id={concept.id}
-            title={concept.title}
-            description={concept.description}
-            icon={concept.icon}
-            isOpen={isConceptVisible}
-            onClose={handleClose}
+      <div 
+        className="inline-block cursor-help" 
+        onClick={() => showConcept(conceptId)}
+      >
+        {children}
+        {showIcon && (
+          <HelpCircle 
+            className="inline ml-1 text-blue-500 dark:text-blue-400 h-4 w-4" 
           />
         )}
-      </>
+      </div>
     );
   }
-
-  // If no children, just render the popup when triggered
+  
+  // If used as a standalone button/link
   return (
-    <>
-      {concept && isConceptVisible && currentConcept?.id === conceptId && (
-        <CryptoConceptPopup
-          id={concept.id}
-          title={concept.title}
-          description={concept.description}
-          icon={concept.icon}
-          isOpen={isConceptVisible}
-          onClose={handleClose}
-        />
-      )}
-    </>
+    <Button
+      variant="link"
+      className="text-blue-500 dark:text-blue-400 p-0 h-auto"
+      onClick={() => showConcept(conceptId)}
+    >
+      {label || conceptId}
+      {showIcon && <HelpCircle className="ml-1 h-4 w-4" />}
+    </Button>
   );
 };
 

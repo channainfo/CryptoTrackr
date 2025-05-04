@@ -1,95 +1,93 @@
 import React from 'react';
-import { useCryptoConcepts } from '@/contexts/CryptoConceptsContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Book } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useCryptoConcepts } from '@/contexts/CryptoConceptsContext';
+import { conceptData } from '../../data/crypto-concepts';
+import { Eye, EyeOff, ExternalLink } from 'lucide-react';
 
 interface CryptoConceptsListProps {
-  className?: string;
-  showAllConcepts?: boolean; // Whether to show all concepts or just unseen ones
+  category?: string;
+  limit?: number;
+  showStatus?: boolean;
 }
 
-const CryptoConceptsList: React.FC<CryptoConceptsListProps> = ({
-  className,
-  showAllConcepts = false
+const CryptoConceptsList: React.FC<CryptoConceptsListProps> = ({ 
+  category, 
+  limit,
+  showStatus = true
 }) => {
-  const { concepts, showConcept, hasSeenConcept } = useCryptoConcepts();
+  const { hasSeenConcept, showConcept } = useCryptoConcepts();
   
-  // Filter concepts based on whether they've been seen
-  const filteredConcepts = showAllConcepts 
-    ? concepts 
-    : concepts.filter(concept => !hasSeenConcept(concept.id));
+  // Get all concepts and convert to array
+  const allConcepts = Object.values(conceptData);
   
-  if (filteredConcepts.length === 0) {
-    return (
-      <Card className={cn("w-full", className)}>
-        <CardHeader>
-          <CardTitle className="text-xl">Crypto Concepts</CardTitle>
-          <CardDescription>
-            {showAllConcepts
-              ? "No crypto concepts are available right now"
-              : "You've seen all available crypto concepts!"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <Check className="h-12 w-12 text-primary mb-2" />
-            <p className="text-muted-foreground">
-              {showAllConcepts
-                ? "Check back later for new crypto concepts"
-                : "Browse all concepts to refresh your knowledge"}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
+  // Filter by category if specified
+  const filteredConcepts = category 
+    ? allConcepts.filter(concept => concept.category === category)
+    : allConcepts;
+    
+  // Limit the number of concepts if specified
+  const conceptsToDisplay = limit 
+    ? filteredConcepts.slice(0, limit) 
+    : filteredConcepts;
+    
   return (
-    <div className={cn("space-y-4", className)}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">
-          {showAllConcepts ? "All Crypto Concepts" : "New Crypto Concepts"}
-        </h3>
-        <Badge variant="outline" className="px-2 py-1">
-          <Book className="h-3.5 w-3.5 mr-1" />
-          {filteredConcepts.length} concept{filteredConcepts.length !== 1 ? 's' : ''}
-        </Badge>
-      </div>
-      
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredConcepts.map((concept) => (
-          <Card key={concept.id} className="group hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="text-primary">{concept.icon}</div>
-                  <CardTitle className="text-base">{concept.title}</CardTitle>
-                </div>
-                {hasSeenConcept(concept.id) && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Check className="h-3 w-3 mr-1" />
-                    Viewed
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{concept.description}</p>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {conceptsToDisplay.map(concept => (
+        <Card key={concept.id} className="h-full flex flex-col">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <CardTitle className="text-lg">{concept.title}</CardTitle>
+              {showStatus && (
+                <Badge variant={hasSeenConcept(concept.id) ? "outline" : "secondary"}>
+                  {hasSeenConcept(concept.id) ? (
+                    <><Eye className="mr-1 h-3 w-3" /> Viewed</>
+                  ) : (
+                    <><EyeOff className="mr-1 h-3 w-3" /> New</>
+                  )}
+                </Badge>
+              )}
+            </div>
+            {concept.category && (
+              <CardDescription>
+                <Badge variant="outline" className="bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                  {concept.category}
+                </Badge>
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="pb-2 flex-grow">
+            <p className="text-sm text-muted-foreground line-clamp-3">
+              {concept.definition}
+            </p>
+          </CardContent>
+          <CardFooter className="pt-2">
+            <div className="flex gap-2 w-full">
               <Button 
+                variant="default" 
                 size="sm" 
-                variant="outline" 
-                className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                className="flex-grow"
                 onClick={() => showConcept(concept.id)}
               >
-                Read More
+                View Concept
               </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              {concept.learnMoreUrl && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-shrink-0"
+                  asChild
+                >
+                  <a href={concept.learnMoreUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
+            </div>
+          </CardFooter>
+        </Card>
+      ))}
     </div>
   );
 };
