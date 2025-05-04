@@ -72,6 +72,7 @@ export const CryptoConceptsProvider: React.FC<CryptoConceptsProviderProps> = ({ 
 
   // Show a specific concept
   const showConcept = (conceptId: ConceptId): void => {
+    console.log("CryptoConceptsContext: Setting current concept to:", conceptId);
     setCurrentConcept(conceptId);
   };
 

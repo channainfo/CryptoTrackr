@@ -68,7 +68,10 @@ const CryptoConceptsList: React.FC<CryptoConceptsListProps> = ({
                 variant="default" 
                 size="sm" 
                 className="flex-grow"
-                onClick={() => showConcept(concept.id)}
+                onClick={() => {
+                  console.log("CryptoConceptsList: Showing concept:", concept.id);
+                  showConcept(concept.id);
+                }}
               >
                 View Concept
               </Button>
