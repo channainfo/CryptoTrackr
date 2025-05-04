@@ -79,6 +79,7 @@ function App() {
             </AppLayout>
             <Tutorial />
             <TutorialButton />
+            <CryptoConceptPopup />
           </TooltipProvider>
         </CryptoConceptsProvider>
       </TutorialProvider>
