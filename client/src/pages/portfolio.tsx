@@ -8,6 +8,7 @@ import PortfolioCard from "@/components/portfolio/PortfolioCard";
 import { usePortfolios } from "@/hooks/usePortfolios";
 import { CryptoTerm } from "@/components/education/CryptoTerm";
 import { Link } from "wouter";
+import PortfolioCryptoConceptsProvider from "@/components/portfolio/CryptoConceptsProvider";
 import {
   Dialog,
   DialogContent,
@@ -453,4 +454,12 @@ const Portfolio = () => {
   }
 };
 
-export default Portfolio;
+const PortfolioWithCryptoConceptsProvider = () => {
+  return (
+    <PortfolioCryptoConceptsProvider>
+      <Portfolio />
+    </PortfolioCryptoConceptsProvider>
+  );
+};
+
+export default PortfolioWithCryptoConceptsProvider;
