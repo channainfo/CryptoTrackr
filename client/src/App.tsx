@@ -12,6 +12,7 @@ import TokenDetailWithCryptoConceptsProvider from "@/pages/token-detail";
 import Transactions from "@/pages/transactions";
 import Markets from "@/pages/markets";
 import Settings from "@/pages/settings";
+import Profile from "@/pages/profile";
 import TaxReport from "@/pages/tax-report";
 import BudgetPlanner from "@/pages/budget-planner";
 import LearningPage from "@/pages/learning";
@@ -25,6 +26,7 @@ import Login from "@/pages/login";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { CryptoConceptsProvider } from "@/contexts/CryptoConceptsContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
 import CryptoConceptPopup from "@/components/tutorial/CryptoConceptPopup";
 
@@ -39,6 +41,7 @@ function Router() {
       <Route path="/transactions" component={Transactions} />
       <Route path="/markets" component={Markets} />
       <Route path="/settings" component={Settings} />
+      <Route path="/profile" component={Profile} />
       <Route path="/tax-report" component={TaxReport} />
       <Route path="/budget-planner" component={BudgetPlanner} />
       <Route path="/analytics" component={Analytics} />
@@ -74,27 +77,29 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <TutorialProvider>
-        <CryptoConceptsProvider>
-          <TooltipProvider>
-            <Toaster />
-            {isLoginPage ? (
-              <Login />
-            ) : (
-              <AppLayout>
-                <Router />
-              </AppLayout>
-            )}
-            {!isLoginPage && (
-              <>
-                <Tutorial />
-                <TutorialButton />
-                <CryptoConceptPopup />
-              </>
-            )}
-          </TooltipProvider>
-        </CryptoConceptsProvider>
-      </TutorialProvider>
+      <UserProvider>
+        <TutorialProvider>
+          <CryptoConceptsProvider>
+            <TooltipProvider>
+              <Toaster />
+              {isLoginPage ? (
+                <Login />
+              ) : (
+                <AppLayout>
+                  <Router />
+                </AppLayout>
+              )}
+              {!isLoginPage && (
+                <>
+                  <Tutorial />
+                  <TutorialButton />
+                  <CryptoConceptPopup />
+                </>
+              )}
+            </TooltipProvider>
+          </CryptoConceptsProvider>
+        </TutorialProvider>
+      </UserProvider>
     </QueryClientProvider>
   );
 }
