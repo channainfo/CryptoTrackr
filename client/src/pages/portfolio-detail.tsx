@@ -25,6 +25,27 @@ const PortfolioDetail = () => {
   // Setup onboarding tour for portfolio page
   const { showTour, handleTourComplete } = useOnboarding('portfolio');
   
+  // Define tour steps for portfolio page
+  const tourSteps = [
+    {
+      target: '.portfolio-chart',
+      content: 'This chart shows the performance of your portfolio over time.',
+      disableBeacon: true,
+    },
+    {
+      target: '.portfolio-assets',
+      content: 'Here you can see all the assets in your portfolio.',
+    },
+    {
+      target: '.portfolio-tabs',
+      content: 'Use these tabs to view different aspects of your portfolio.',
+    },
+    {
+      target: '.add-asset-button',
+      content: 'Click here to add new assets to your portfolio.',
+    },
+  ];
+  
   const handleBack = () => {
     setLocation("/portfolio");
   };
@@ -165,9 +186,10 @@ const PortfolioDetail = () => {
       
       {/* Onboarding wizard */}
       <OnboardingWizard
-        type="portfolio"
-        isEnabled={true}
+        tourId="portfolio"
+        showTour={showTour}
         onComplete={handleTourComplete}
+        steps={tourSteps}
       />
     </>
   );
