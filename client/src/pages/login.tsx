@@ -16,9 +16,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { LucideAlertCircle, LucideLogIn, LucideUserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ethers } from "ethers";
-import { Web3Button } from "../components/crypto/Web3Button";
-import { SolanaButton } from "../components/crypto/SolanaButton";
-import { BaseButton } from "../components/crypto/BaseButton";
+import { Web3Button } from "@/components/crypto/Web3Button";
+import { SolanaButton } from "@/components/crypto/SolanaButton";
+import { BaseButton } from "@/components/crypto/BaseButton";
 
 // Login form schema
 const loginSchema = z.object({
@@ -121,14 +121,18 @@ export default function LoginPage() {
   const connectEthereumWallet = async () => {
     try {
       // Check if MetaMask is installed
-      if (window.ethereum) {
+      if (typeof window !== 'undefined' && 'ethereum' in window) {
+        // Use any to handle ethereum window object
+        const ethereum = (window as any).ethereum;
+        
         // Request account access
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
         const address = accounts[0];
         
         // Sign message to verify ownership
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
+        // Use BrowserProvider which is the replacement for Web3Provider in ethers v6
+        const provider = new ethers.BrowserProvider(ethereum);
+        const signer = await provider.getSigner();
         const message = `Login to Trailer with address: ${address}`;
         const signature = await signer.signMessage(message);
         

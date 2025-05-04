@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,6 +21,7 @@ import CryptoConceptsPage from "@/pages/learning/crypto-concepts";
 import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import Achievements from "@/pages/achievements";
+import Login from "@/pages/login";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { CryptoConceptsProvider } from "@/contexts/CryptoConceptsContext";
@@ -68,18 +69,29 @@ function Router() {
 }
 
 function App() {
+  const [location] = useLocation();
+  const isLoginPage = location === '/login';
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TutorialProvider>
         <CryptoConceptsProvider>
           <TooltipProvider>
             <Toaster />
-            <AppLayout>
-              <Router />
-            </AppLayout>
-            <Tutorial />
-            <TutorialButton />
-            <CryptoConceptPopup />
+            {isLoginPage ? (
+              <Login />
+            ) : (
+              <AppLayout>
+                <Router />
+              </AppLayout>
+            )}
+            {!isLoginPage && (
+              <>
+                <Tutorial />
+                <TutorialButton />
+                <CryptoConceptPopup />
+              </>
+            )}
           </TooltipProvider>
         </CryptoConceptsProvider>
       </TutorialProvider>
