@@ -245,6 +245,52 @@ export class DatabaseStorage implements IStorage {
         .where(eq(userWallets.userId, userId))
         .orderBy(desc(userWallets.isDefault), asc(userWallets.createdAt));
       
+      // For demonstration - if this user has no wallets, add some demo wallets
+      if (wallets.length === 0) {
+        console.log(`Seeding demo wallets for user ${userId}`);
+        
+        // Create demo wallets with fixed IDs for demonstration
+        const demoWallets: UserWallet[] = [];
+        
+        // Ethereum wallet (default)
+        const ethWallet = await this.addUserWallet({
+          userId,
+          address: "0x1234567890abcdef1234567890abcdef12345678",
+          chainType: "ethereum",
+          isDefault: true
+        });
+        demoWallets.push(ethWallet);
+        
+        // Solana wallet
+        const solWallet = await this.addUserWallet({
+          userId,
+          address: "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsVLcUvcB4",
+          chainType: "solana",
+          isDefault: false
+        });
+        demoWallets.push(solWallet);
+        
+        // Base wallet
+        const baseWallet = await this.addUserWallet({
+          userId,
+          address: "0xabcdef1234567890abcdef1234567890abcdef12",
+          chainType: "base",
+          isDefault: false
+        });
+        demoWallets.push(baseWallet);
+        
+        // Sui wallet
+        const suiWallet = await this.addUserWallet({
+          userId,
+          address: "0x7890abcdef1234567890abcdef1234567890abcd",
+          chainType: "sui",
+          isDefault: false
+        });
+        demoWallets.push(suiWallet);
+        
+        return demoWallets;
+      }
+      
       return wallets;
     } catch (error) {
       console.error("Error getting user wallets:", error);
