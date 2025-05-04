@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Award,
-  Lock,
-  Share2,
-  Twitter,
-  Facebook,
-  Linkedin
-} from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { ProgressCircle } from '@/components/ui/progress-circle';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -47,7 +40,7 @@ export interface Achievement {
   type: AchievementType;
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: string;
   color: string;
   earned: boolean;
   earnedDate?: string;
@@ -71,6 +64,25 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   className
 }) => {
   const { toast } = useToast();
+  
+  // Helper function to render icons from string names
+  const renderIcon = (iconName: string, className: string) => {
+    // Convert kebab-case to PascalCase for Lucide icons
+    const iconKey = iconName
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('');
+    
+    // Get the icon component from Lucide
+    const IconComponent = (LucideIcons as any)[iconKey];
+    
+    if (IconComponent) {
+      return React.createElement(IconComponent, { className });
+    }
+    
+    // Fallback to Award icon if not found
+    return React.createElement(LucideIcons.Award, { className });
+  };
 
   // Badge dimensions based on size
   const dimensions = {
@@ -186,9 +198,13 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           )}
           <div className={cn(dimensions[size], getBadgeColors(achievement.color, achievement.earned))}>
             {achievement.earned ? (
-              <span className={iconSize[size]}>{achievement.icon}</span>
+              <span className={iconSize[size]}>
+                {renderIcon(achievement.icon, iconSize[size])}
+              </span>
             ) : (
-              <Lock className={iconSize[size]} />
+              <span className={iconSize[size]}>
+                {renderIcon('lock', iconSize[size])}
+              </span>
             )}
           </div>
           {achievement.earned && achievement.earnedDate && (
@@ -215,7 +231,7 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="mt-2 h-7 w-7 p-0 rounded-full">
-                  <Share2 className="h-4 w-4" />
+                  {renderIcon('share-2', 'h-4 w-4')}
                   <span className="sr-only">Share</span>
                 </Button>
               </PopoverTrigger>
