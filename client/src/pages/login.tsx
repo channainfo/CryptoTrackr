@@ -14,6 +14,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 
 import { SiEthereum, SiSolana } from "react-icons/si";
+import Web3Button from "@/components/crypto/Web3Button";
+import SolanaButton from "@/components/crypto/SolanaButton";
+import BaseButton from "@/components/crypto/BaseButton";
 
 // Login form schema
 const loginSchema = z.object({
@@ -38,7 +41,7 @@ type RegistrationFormValues = z.infer<typeof registrationSchema>;
 export default function Login() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [_, setLocation] = useLocation();
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -71,7 +74,7 @@ export default function Login() {
           title: "Login successful",
           description: "Welcome back!",
         });
-        navigate("/dashboard");
+        setLocation("/dashboard");
       }
     } catch (error) {
       toast({
@@ -124,7 +127,7 @@ export default function Login() {
         title: "Demo mode",
         description: "Logged in as demo user",
       });
-      navigate("/dashboard");
+      setLocation("/dashboard");
     }, 1500);
   };
 
@@ -198,32 +201,32 @@ export default function Login() {
                 </div>
                 
                 <div className="grid grid-cols-3 gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleWalletConnect("Ethereum")}
-                    className="flex items-center justify-center gap-2"
-                  >
-                    <SiEthereum className="h-5 w-5" />
-                    <span className="sr-only md:not-sr-only md:text-sm">Ethereum</span>
-                  </Button>
+                  <Web3Button 
+                    onConnect={(address) => {
+                      console.log("Ethereum wallet connected:", address);
+                      // For demo purposes, navigate to dashboard
+                      setTimeout(() => setLocation("/dashboard"), 1500);
+                    }}
+                    onError={(error) => console.error("Ethereum connection error:", error)}
+                  />
                   
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleWalletConnect("Solana")}
-                    className="flex items-center justify-center gap-2"
-                  >
-                    <SiSolana className="h-5 w-5" />
-                    <span className="sr-only md:not-sr-only md:text-sm">Solana</span>
-                  </Button>
+                  <SolanaButton 
+                    onConnect={(address) => {
+                      console.log("Solana wallet connected:", address);
+                      // For demo purposes, navigate to dashboard
+                      setTimeout(() => setLocation("/dashboard"), 1500);
+                    }}
+                    onError={(error) => console.error("Solana connection error:", error)}
+                  />
                   
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleWalletConnect("Base")}
-                    className="flex items-center justify-center gap-2"
-                  >
-                    <SiBase className="h-5 w-5" />
-                    <span className="sr-only md:not-sr-only md:text-sm">Base</span>
-                  </Button>
+                  <BaseButton 
+                    onConnect={(address) => {
+                      console.log("Base wallet connected:", address);
+                      // For demo purposes, navigate to dashboard
+                      setTimeout(() => setLocation("/dashboard"), 1500);
+                    }}
+                    onError={(error) => console.error("Base connection error:", error)}
+                  />
                 </div>
               </CardContent>
             </TabsContent>
