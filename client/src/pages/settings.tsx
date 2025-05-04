@@ -15,6 +15,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useToast } from "@/hooks/use-toast";
 import { ConnectedWallets } from "@/components/wallet/ConnectedWallets";
+import { UserInformation } from "@/components/account/UserInformation";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -61,72 +62,77 @@ const Settings = () => {
         </TabsList>
 
         <TabsContent value="account">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Information</CardTitle>
-              <CardDescription>
-                Update your account details and personal information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue="Alex Morgan" />
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Information</CardTitle>
+                <CardDescription>
+                  Update your account details and personal information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input id="name" defaultValue="Alex Morgan" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        defaultValue="alex@example.com"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      defaultValue="alex@example.com"
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input id="username" defaultValue="alexmorgan" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input id="phone" defaultValue="+1 (555) 123-4567" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input id="username" defaultValue="alexmorgan" />
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Change Password</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Current Password</Label>
+                      <Input id="current-password" type="password" />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" defaultValue="+1 (555) 123-4567" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <Input id="new-password" type="password" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">
+                        Confirm New Password
+                      </Label>
+                      <Input id="confirm-password" type="password" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Separator />
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Change Password</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline">Cancel</Button>
+                  <Button>Save Changes</Button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">
-                      Confirm New Password
-                    </Label>
-                    <Input id="confirm-password" type="password" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline">Cancel</Button>
-                <Button>Save Changes</Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            {/* User Support Information Card */}
+            <UserInformation />
+          </div>
         </TabsContent>
 
         <TabsContent value="wallets">
