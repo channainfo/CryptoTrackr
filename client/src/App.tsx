@@ -26,29 +26,53 @@ import Login from "@/pages/login";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { CryptoConceptsProvider } from "@/contexts/CryptoConceptsContext";
-import { UserProvider } from "@/contexts/UserContext";
+import { UserProvider, useUser } from "@/contexts/UserContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
 import CryptoConceptPopup from "@/components/tutorial/CryptoConceptPopup";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/portfolio" component={Portfolio} />
-      <Route path="/portfolio/:id" component={PortfolioDetail} />
-      <Route path="/token/:portfolioTokenId" component={TokenDetailWithCryptoConceptsProvider} />
-      <Route path="/transactions" component={Transactions} />
-      <Route path="/markets" component={Markets} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/tax-report" component={TaxReport} />
-      <Route path="/budget-planner" component={BudgetPlanner} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/learning" component={LearningPage} />
+      {/* Public route for the login page */}
+      <Route path="/login" component={Login} />
+      
+      {/* Protected routes that require authentication */}
+      <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/portfolio" component={Portfolio} />
+      <ProtectedRoute path="/portfolio/:id" component={PortfolioDetail} />
+      <ProtectedRoute path="/token/:portfolioTokenId" component={TokenDetailWithCryptoConceptsProvider} />
+      <ProtectedRoute path="/transactions" component={Transactions} />
+      <ProtectedRoute path="/markets" component={Markets} />
+      <ProtectedRoute path="/settings" component={Settings} />
+      <ProtectedRoute path="/profile" component={Profile} />
+      <ProtectedRoute path="/tax-report" component={TaxReport} />
+      <ProtectedRoute path="/budget-planner" component={BudgetPlanner} />
+      <ProtectedRoute path="/analytics" component={Analytics} />
+      <ProtectedRoute path="/learning" component={LearningPage} />
+      
+      {/* Protected route with dynamic parameters using render prop pattern */}
       <Route path="/learning/module/:id">
         {params => {
-          // Import directly to avoid dynamic import issues
+          // First check auth through our protected route logic
+          const { user, isLoading } = useUser();
+          const [, setLocation] = useLocation();
+          
+          if (isLoading) {
+            return (
+              <div className="p-8 flex justify-center items-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            );
+          }
+          
+          if (!user) {
+            setLocation('/login');
+            return null;
+          }
+          
+          // User is authenticated, load the module detail
           const ModuleDetail = React.lazy(() => import("@/pages/learning/module/[id].tsx"));
           return (
             <React.Suspense fallback={<div className="p-8 flex justify-center items-center min-h-[50vh]">
@@ -59,14 +83,39 @@ function Router() {
           );
         }}
       </Route>
+      
+      {/* Protected route with dynamic parameters */}
       <Route path="/learning/quiz/:id">
-        {params => <QuizPage params={params} />}
+        {params => {
+          // First check auth
+          const { user, isLoading } = useUser();
+          const [, setLocation] = useLocation();
+          
+          if (isLoading) {
+            return (
+              <div className="p-8 flex justify-center items-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            );
+          }
+          
+          if (!user) {
+            setLocation('/login');
+            return null;
+          }
+          
+          // User is authenticated, render quiz page
+          return <QuizPage params={params} />;
+        }}
       </Route>
-      <Route path="/learning/glossary" component={GlossaryPage} />
-      <Route path="/learning/crypto-concepts" component={CryptoConceptsPage} />
-      <Route path="/alerts" component={Alerts} />
-      <Route path="/achievements" component={Achievements} />
-      <Route component={NotFound} />
+      
+      <ProtectedRoute path="/learning/glossary" component={GlossaryPage} />
+      <ProtectedRoute path="/learning/crypto-concepts" component={CryptoConceptsPage} />
+      <ProtectedRoute path="/alerts" component={Alerts} />
+      <ProtectedRoute path="/achievements" component={Achievements} />
+      
+      {/* Fallback route */}
+      <Route path="*" component={NotFound} />
     </Switch>
   );
 }
@@ -83,7 +132,9 @@ function App() {
             <TooltipProvider>
               <Toaster />
               {isLoginPage ? (
-                <Login />
+                <div className="min-h-screen bg-background flex flex-col">
+                  <Router />
+                </div>
               ) : (
                 <AppLayout>
                   <Router />
