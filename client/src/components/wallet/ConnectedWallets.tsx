@@ -45,6 +45,12 @@ const getChainIcon = (chainType: string) => {
       return <SiSolana className="h-5 w-5 text-[#9945FF]" />;
     case "base":
       return <FaDatabase className="h-5 w-5 text-[#0052FF]" />;
+    case "sui":
+      return <svg className="h-5 w-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 32C24.8366 32 32 24.8366 32 16C32 7.16344 24.8366 0 16 0C7.16344 0 0 7.16344 0 16C0 24.8366 7.16344 32 16 32Z" fill="#6FBCF0"/>
+        <path d="M16.5 9C18.8217 9 21.0483 9.92179 22.6709 11.5695C24.2935 13.2172 25.2 15.4939 25.2 17.8889C25.2 20.2839 24.2935 22.5606 22.6709 24.2083C21.0483 25.856 18.8217 26.7778 16.5 26.7778" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+        <path d="M14.7 23C12.3783 23 10.1517 22.0782 8.52909 20.4305C6.9065 18.7828 6 16.5061 6 14.1111C6 11.7161 6.9065 9.43944 8.52909 7.7917C10.1517 6.14397 12.3783 5.22222 14.7 5.22222" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+      </svg>;
     default:
       return null;
   }
@@ -59,6 +65,8 @@ const getChainName = (chainType: string) => {
       return "Solana";
     case "base":
       return "Base";
+    case "sui":
+      return "Sui";
     default:
       return chainType.charAt(0).toUpperCase() + chainType.slice(1);
   }
