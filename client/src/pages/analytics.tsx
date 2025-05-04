@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, ChevronDown, ListFilter } from 'lucide-react';
+import { BarChart3, ChevronDown, ListFilter, Award } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,27 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import PageHeader from '@/components/layout/PageHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import PortfolioAnalyticsTab from '@/components/portfolio/PortfolioAnalyticsTab';
+import AchievementGrid from '@/components/achievement/AchievementGrid';
+import { useAchievements } from '@/hooks/useAchievements';
 import { portfolioApi } from '@/lib/api';
+
+// Achievement section for the analytics page
+const AchievementSection: React.FC<{ portfolioId: string }> = ({ portfolioId }) => {
+  const { achievements, isLoading } = useAchievements(portfolioId);
+  
+  return (
+    <div className="space-y-6">
+      <AchievementGrid 
+        achievements={achievements}
+        isLoading={isLoading}
+      />
+    </div>
+  );
+};
 
 const AnalyticsPage = () => {
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
@@ -78,7 +95,26 @@ const AnalyticsPage = () => {
       
       {/* Analytics Content */}
       {selectedPortfolioId ? (
-        <PortfolioAnalyticsTab portfolioId={selectedPortfolioId} />
+        <Tabs defaultValue="performance" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="performance" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Performance
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Achievements
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="performance">
+            <PortfolioAnalyticsTab portfolioId={selectedPortfolioId} />
+          </TabsContent>
+          
+          <TabsContent value="achievements">
+            <AchievementSection portfolioId={selectedPortfolioId} />
+          </TabsContent>
+        </Tabs>
       ) : (
         <div className="text-center py-12 bg-muted rounded-xl">
           <p className="text-muted-foreground">
