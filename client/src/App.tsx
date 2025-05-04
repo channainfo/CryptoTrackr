@@ -5,7 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
+import DashboardWithCryptoConceptsProvider from "@/pages/dashboard";
 import Portfolio from "@/pages/portfolio";
 import PortfolioDetail from "@/pages/portfolio-detail";
 import TokenDetailWithCryptoConceptsProvider from "@/pages/token-detail";
@@ -30,8 +30,8 @@ import CryptoConceptPopup from "@/components/tutorial/CryptoConceptPopup";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/" component={DashboardWithCryptoConceptsProvider} />
+      <Route path="/dashboard" component={DashboardWithCryptoConceptsProvider} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/portfolio/:id" component={PortfolioDetail} />
       <Route path="/token/:portfolioTokenId" component={TokenDetailWithCryptoConceptsProvider} />
