@@ -4,6 +4,9 @@ import crypto from "crypto";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { ethers } from "ethers";
+import { db } from "../db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 const router = Router();
 
@@ -364,6 +367,36 @@ router.get("/session", (req: Request, res: Response) => {
     });
   } else {
     res.status(401).json({ message: "Not authenticated" });
+  }
+});
+
+// Get current user details
+router.get("/me", async (req: Request, res: Response) => {
+  try {
+    // For demonstration, we'll use our test user ID
+    const userId = req.session?.userId || 'e29739a6-0e80-4233-8d10-94d06d00e55b';
+
+    // Get user from the database
+    const [user] = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.id, userId));
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email || 'Not provided',
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ message: "Failed to fetch user details" });
   }
 });
 
