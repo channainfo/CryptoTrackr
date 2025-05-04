@@ -15,6 +15,7 @@ import MarketSentiment from "@/components/dashboard/MarketSentiment";
 import { NewsWidget } from "@/components/dashboard/NewsWidget";
 import PortfolioSelector, { Portfolio } from "@/components/dashboard/PortfolioSelector";
 import AddCryptoModal from "@/components/modals/AddCryptoModal";
+import DashboardCryptoConceptsProvider from "@/components/dashboard/CryptoConceptsProvider";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useQuery } from "@tanstack/react-query";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
@@ -96,7 +97,7 @@ const Dashboard = () => {
   };
   
   return (
-    <>
+    <DashboardCryptoConceptsProvider>
       <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8 dashboard-overview">
         {/* Dashboard Header */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -308,7 +309,7 @@ const Dashboard = () => {
           }
         ]}
       />
-    </>
+    </DashboardCryptoConceptsProvider>
   );
 };
 

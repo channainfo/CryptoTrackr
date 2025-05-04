@@ -327,9 +327,14 @@ const LearningPage = () => {
       <div className="py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Learning Center</h1>
-          <Button variant="outline" asChild>
-            <Link to="/learning/glossary">Crypto Glossary</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/learning/crypto-concepts">Crypto Concepts</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/learning/glossary">Crypto Glossary</Link>
+            </Button>
+          </div>
         </div>
         
         {effectiveStats && (
