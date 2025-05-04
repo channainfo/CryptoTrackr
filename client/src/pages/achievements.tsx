@@ -3,12 +3,11 @@ import { useAchievements } from '@/hooks/useAchievements';
 import AchievementGrid from '@/components/achievement/AchievementGrid';
 import PageHeader from '@/components/layout/PageHeader';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import * as LucideIcons from 'lucide-react';
+import { Trophy, Home, Briefcase, BarChart2, BookOpen, Clock, Award } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const AchievementsPage: React.FC = () => {
@@ -18,86 +17,95 @@ const AchievementsPage: React.FC = () => {
   const totalAchievements = achievements.length;
   const earnedAchievements = achievements.filter(a => a.earned).length;
   const inProgressAchievements = achievements.filter(a => !a.earned && a.progress !== undefined).length;
-  const lockedAchievements = achievements.filter(a => !a.earned && a.progress === undefined).length;
   
-  const completionPercentage = Math.round((earnedAchievements / totalAchievements) * 100);
+  const completionPercentage = totalAchievements > 0 
+    ? Math.round((earnedAchievements / totalAchievements) * 100) 
+    : 0;
   
-  // Group achievements by category to show in the summary
-  type AchievementCategory = 'investment' | 'trading' | 'learning' | 'hodling' | 'other';
+  // Group achievements by category
+  const investmentAchievements = achievements.filter(a => 
+    ['first_investment', 'diversified_portfolio', 'elite_investor'].includes(a.type)
+  );
   
-  const categories: Record<AchievementCategory, {
-    title: string;
-    description: string;
-    icon: string;
-    color: string;
-    achievements: typeof achievements;
-  }> = {
-    investment: {
+  const tradingAchievements = achievements.filter(a => 
+    ['trading_volume', 'smart_investor', 'power_trader', 'market_timing'].includes(a.type)
+  );
+  
+  const learningAchievements = achievements.filter(a => 
+    ['learner'].includes(a.type)
+  );
+  
+  const holdingAchievements = achievements.filter(a => 
+    ['consistent_dca', 'long_term_holder', 'diamond_hands'].includes(a.type)
+  );
+  
+  const otherAchievements = achievements.filter(a => 
+    ['profit_milestone', 'risk_manager', 'global_investor', 'goal_achiever'].includes(a.type)
+  );
+  
+  // Category definitions with simpler structure
+  const categories = [
+    {
+      id: 'investment',
       title: 'Investment',
       description: 'Portfolio building and diversification',
-      icon: 'briefcase',
+      icon: <Briefcase className="h-5 w-5" />,
       color: 'blue',
-      achievements: achievements.filter(a => 
-        ['first_investment', 'diversified_portfolio', 'elite_investor'].includes(a.type)
-      ),
+      achievements: investmentAchievements,
     },
-    trading: {
+    {
+      id: 'trading',
       title: 'Trading',
       description: 'Trading activities and volume',
-      icon: 'bar-chart-2',
+      icon: <BarChart2 className="h-5 w-5" />,
       color: 'amber',
-      achievements: achievements.filter(a => 
-        ['trading_volume', 'smart_investor', 'power_trader', 'market_timing'].includes(a.type)
-      ),
+      achievements: tradingAchievements,
     },
-    learning: {
+    {
+      id: 'learning',
       title: 'Education',
       description: 'Learning about crypto and finance',
-      icon: 'book-open',
+      icon: <BookOpen className="h-5 w-5" />,
       color: 'violet',
-      achievements: achievements.filter(a => 
-        ['learner'].includes(a.type)
-      ),
+      achievements: learningAchievements,
     },
-    hodling: {
+    {
+      id: 'hodling',
       title: 'Holding',
       description: 'Long-term investment strategy',
-      icon: 'clock',
+      icon: <Clock className="h-5 w-5" />,
       color: 'purple',
-      achievements: achievements.filter(a => 
-        ['consistent_dca', 'long_term_holder', 'diamond_hands'].includes(a.type)
-      ),
+      achievements: holdingAchievements,
     },
-    other: {
+    {
+      id: 'other',
       title: 'Others',
       description: 'Miscellaneous achievements',
-      icon: 'award',
+      icon: <Award className="h-5 w-5" />,
       color: 'green',
-      achievements: achievements.filter(a => 
-        ['profit_milestone', 'risk_manager', 'global_investor', 'goal_achiever'].includes(a.type)
-      ),
-    },
-  };
+      achievements: otherAchievements,
+    }
+  ];
   
   return (
     <div className="container py-6 space-y-6">
       <PageHeader
         title="Investment Achievements"
         description="Track your progress and earn badges for investment milestones"
-        icon={<LucideIcons.Trophy className="h-6 w-6" />}
+        icon={<Trophy className="h-6 w-6" />}
       />
       
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink href="/">
-              <LucideIcons.Home className="h-4 w-4 mr-1" />
+              <Home className="h-4 w-4 mr-1" />
               Home
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/achievements" current>
+            <BreadcrumbLink href="/achievements">
               Achievements
             </BreadcrumbLink>
           </BreadcrumbItem>
@@ -133,14 +141,14 @@ const AchievementsPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {Object.entries(categories).map(([key, category]) => {
+        {categories.map((category) => {
           const categoryAchievements = category.achievements;
           const earned = categoryAchievements.filter(a => a.earned).length;
           const total = categoryAchievements.length;
           const percentage = total ? Math.round((earned / total) * 100) : 0;
           
           return (
-            <Card key={key} className={cn("border-l-4", {
+            <Card key={category.id} className={cn("border-l-4", {
               "border-l-blue-500": category.color === 'blue',
               "border-l-amber-500": category.color === 'amber',
               "border-l-violet-500": category.color === 'violet',
@@ -150,17 +158,7 @@ const AchievementsPage: React.FC = () => {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    {React.createElement(
-                      (category.icon as any in LucideIcons)
-                        ? (LucideIcons as any)[
-                            category.icon
-                              .split('-')
-                              .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-                              .join('')
-                          ]
-                        : LucideIcons.Award,
-                      { className: "h-5 w-5" }
-                    )}
+                    {category.icon}
                     {category.title}
                   </CardTitle>
                   <span className="text-sm font-medium">{earned}/{total}</span>
@@ -194,21 +192,13 @@ const AchievementsPage: React.FC = () => {
         
         <TabsContent value="categories">
           <div className="space-y-8">
-            {Object.entries(categories).map(([key, category]) => (
-              category.achievements.length > 0 && (
-                <div key={key} className="space-y-4">
+            {categories.map((category) => {
+              if (category.achievements.length === 0) return null;
+              
+              return (
+                <div key={category.id} className="space-y-4">
                   <div className="flex items-center gap-2">
-                    {React.createElement(
-                      (category.icon as any in LucideIcons)
-                        ? (LucideIcons as any)[
-                            category.icon
-                              .split('-')
-                              .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-                              .join('')
-                          ]
-                        : LucideIcons.Award,
-                      { className: "h-5 w-5" }
-                    )}
+                    {category.icon}
                     <h3 className="text-xl font-semibold">{category.title}</h3>
                   </div>
                   <AchievementGrid 
@@ -217,8 +207,8 @@ const AchievementsPage: React.FC = () => {
                     className="mt-2"
                   />
                 </div>
-              )
-            ))}
+              );
+            })}
           </div>
         </TabsContent>
       </Tabs>
