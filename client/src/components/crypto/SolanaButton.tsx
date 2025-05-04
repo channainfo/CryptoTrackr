@@ -50,10 +50,10 @@ export default function SolanaButton({ onConnect, onError }: SolanaButtonProps) 
       // In a real implementation, we would get a message to sign
       const authResponse = await apiRequest('/api/auth/wallet/solana', {
         method: "POST",
-        body: JSON.stringify({
+        data: {
           address,
           signature: "demo_signature" // In real app, would be actual signature
-        }),
+        }
       });
 
       if (authResponse && authResponse.id) {

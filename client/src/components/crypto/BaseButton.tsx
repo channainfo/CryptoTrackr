@@ -56,10 +56,10 @@ export default function BaseButton({ onConnect, onError }: BaseButtonProps) {
       // Verify signature on server for Base
       const authResponse = await apiRequest('/api/auth/wallet/base', {
         method: "POST",
-        body: JSON.stringify({
+        data: {
           address,
           signature
-        }),
+        }
       });
 
       if (authResponse && authResponse.id) {

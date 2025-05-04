@@ -56,10 +56,10 @@ export default function Web3Button({ onConnect, onError }: Web3ButtonProps) {
       // Verify signature on server
       const authResponse = await apiRequest('/api/auth/wallet/ethereum', {
         method: "POST",
-        body: JSON.stringify({
+        data: {
           address,
           signature
-        }),
+        }
       });
 
       if (authResponse && authResponse.id) {
