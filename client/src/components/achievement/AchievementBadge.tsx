@@ -66,18 +66,26 @@ const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   const { toast } = useToast();
   
   // Helper function to render icons from string names
-  const renderIcon = (iconName: string, className: string) => {
-    // Convert kebab-case to PascalCase for Lucide icons
-    const iconKey = iconName
-      .split('-')
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join('');
+  const renderIcon = (iconName: string | React.ReactNode, className: string) => {
+    // If iconName is already a React element, return it
+    if (React.isValidElement(iconName)) {
+      return React.cloneElement(iconName as React.ReactElement, { className });
+    }
     
-    // Get the icon component from Lucide
-    const IconComponent = (LucideIcons as any)[iconKey];
-    
-    if (IconComponent) {
-      return React.createElement(IconComponent, { className });
+    // Handle string icon names
+    if (typeof iconName === 'string') {
+      // Convert kebab-case to PascalCase for Lucide icons
+      const iconKey = iconName
+        .split('-')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('');
+      
+      // Get the icon component from Lucide
+      const IconComponent = (LucideIcons as any)[iconKey];
+      
+      if (IconComponent) {
+        return React.createElement(IconComponent, { className });
+      }
     }
     
     // Fallback to Award icon if not found

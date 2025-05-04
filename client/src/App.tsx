@@ -19,6 +19,7 @@ import QuizPage from "@/pages/learning/quiz";
 import GlossaryPage from "@/pages/learning/glossary";
 import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
+import Achievements from "@/pages/achievements";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
@@ -56,6 +57,7 @@ function Router() {
       </Route>
       <Route path="/learning/glossary" component={GlossaryPage} />
       <Route path="/alerts" component={Alerts} />
+      <Route path="/achievements" component={Achievements} />
       <Route component={NotFound} />
     </Switch>
   );
