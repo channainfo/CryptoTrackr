@@ -19,12 +19,24 @@ export const users = pgTable("users", {
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }),
   email: varchar("email", { length: 255 }).unique(),
+  // Keep walletAddress and walletType for backward compatibility
   walletAddress: varchar("wallet_address", { length: 255 }).unique(),
   walletType: walletTypeEnum("wallet_type"),
   provider: authProviderEnum("provider").notNull().default('email'),
   providerUserId: varchar("provider_user_id", { length: 255 }),
   profileImage: varchar("profile_image", { length: 255 }),
   displayName: varchar("display_name", { length: 255 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// Wallet addresses table - to store multiple wallet addresses for a user
+export const userWallets = pgTable("user_wallets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  address: varchar("address", { length: 255 }).notNull(),
+  chainType: walletTypeEnum("chain_type").notNull(),
+  isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
@@ -76,10 +88,18 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   email: true,
   walletAddress: true,
+  walletType: true,
   provider: true,
   providerUserId: true,
   profileImage: true,
   displayName: true,
+});
+
+export const insertUserWalletSchema = createInsertSchema(userWallets).pick({
+  userId: true,
+  address: true,
+  chainType: true,
+  isDefault: true,
 });
 
 // Tokens table based on the provided schema
@@ -302,6 +322,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   tokenHistoricalValues: many(tokenHistoricalValues),
   alerts: many(alerts),
   learningProgress: many(userLearningProgress),
+  wallets: many(userWallets),
+}));
+
+export const userWalletsRelations = relations(userWallets, ({ one }) => ({
+  user: one(users, {
+    fields: [userWallets.userId],
+    references: [users.id],
+  }),
 }));
 
 export const tokensRelations = relations(tokens, ({ one, many }) => ({
@@ -453,6 +481,9 @@ export const userLearningProgressRelations = relations(userLearningProgress, ({ 
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type UserWallet = typeof userWallets.$inferSelect;
+export type InsertUserWallet = z.infer<typeof insertUserWalletSchema>;
 
 export type Token = typeof tokens.$inferSelect;
 export type InsertToken = z.infer<typeof insertTokenSchema>;

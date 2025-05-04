@@ -1,5 +1,5 @@
 import { 
-  users, type User, type InsertUser, 
+  users, userWallets, type User, type InsertUser, type UserWallet, type InsertUserWallet,
   portfolios, tokens, portfolioTokens, transactions, tokenMarketDatas, 
   type Token, type Portfolio, type PortfolioToken, type Transaction as SchemaTransaction
 } from "@shared/schema";
@@ -40,6 +40,13 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByWalletAddress(address: string, walletType: string): Promise<User | undefined>;
   createUser(user: InsertUser & { walletAddress?: string, walletType?: string }): Promise<User>;
+  
+  // User wallet methods
+  getUserWallets(userId: string): Promise<UserWallet[]>;
+  getUserWalletByAddress(address: string, chainType: string): Promise<UserWallet | undefined>;
+  addUserWallet(wallet: InsertUserWallet): Promise<UserWallet>;
+  updateUserWallet(id: string, data: Partial<UserWallet>): Promise<UserWallet | undefined>;
+  removeUserWallet(id: string): Promise<boolean>;
   
   // Portfolio methods
   getUserPortfolios(userId: string): Promise<Portfolio[]>;
@@ -202,6 +209,198 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error in createUser:", error);
       throw error;
+    }
+  }
+  
+  // USER WALLET METHODS
+  async getUserWallets(userId: string): Promise<UserWallet[]> {
+    try {
+      // Check if the user_wallets table exists
+      const tableCheck = await pool.query(
+        `SELECT EXISTS (
+           SELECT FROM information_schema.tables 
+           WHERE table_name = 'user_wallets'
+        ) AS table_exists`
+      );
+      
+      if (!tableCheck.rows[0].table_exists) {
+        // If the table doesn't exist yet, create it
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS user_wallets (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES users(id),
+            address VARCHAR(255) NOT NULL,
+            chain_type VARCHAR(50) NOT NULL,
+            is_default BOOLEAN DEFAULT false,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+          )
+        `);
+        return [];
+      }
+      
+      const wallets = await db
+        .select()
+        .from(userWallets)
+        .where(eq(userWallets.userId, userId))
+        .orderBy(desc(userWallets.isDefault), asc(userWallets.createdAt));
+      
+      return wallets;
+    } catch (error) {
+      console.error("Error getting user wallets:", error);
+      return [];
+    }
+  }
+  
+  async getUserWalletByAddress(address: string, chainType: string): Promise<UserWallet | undefined> {
+    try {
+      const [wallet] = await db
+        .select()
+        .from(userWallets)
+        .where(and(
+          eq(userWallets.address, address.toLowerCase()),
+          eq(userWallets.chainType, chainType)
+        ));
+      
+      return wallet;
+    } catch (error) {
+      console.error("Error getting wallet by address:", error);
+      return undefined;
+    }
+  }
+  
+  async addUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
+    try {
+      // Check if this wallet address already exists for this user
+      const existingWallet = await this.getUserWalletByAddress(wallet.address, wallet.chainType);
+      
+      if (existingWallet) {
+        throw new Error("Wallet address already exists for this chain type");
+      }
+      
+      // If this is the first wallet or marked as default, reset any other default wallet
+      if (wallet.isDefault) {
+        await db
+          .update(userWallets)
+          .set({ isDefault: false })
+          .where(eq(userWallets.userId, wallet.userId));
+      }
+      
+      // If no wallets exist for this user, make this the default
+      const userWalletsCount = await db
+        .select({ count: db.fn.count() })
+        .from(userWallets)
+        .where(eq(userWallets.userId, wallet.userId));
+      
+      const isFirstWallet = userWalletsCount[0].count === 0;
+      
+      const [newWallet] = await db.insert(userWallets)
+        .values({
+          userId: wallet.userId,
+          address: wallet.address.toLowerCase(),
+          chainType: wallet.chainType,
+          isDefault: isFirstWallet || wallet.isDefault || false,
+        })
+        .returning();
+      
+      return newWallet;
+    } catch (error) {
+      console.error("Error adding user wallet:", error);
+      throw error;
+    }
+  }
+  
+  async updateUserWallet(id: string, data: Partial<UserWallet>): Promise<UserWallet | undefined> {
+    try {
+      const updateData: Partial<typeof userWallets.$inferInsert> = {};
+      
+      if (data.isDefault !== undefined) {
+        updateData.isDefault = data.isDefault;
+        
+        // If setting this wallet as default, unset any other default wallets for this user
+        if (data.isDefault) {
+          const wallet = await db
+            .select()
+            .from(userWallets)
+            .where(eq(userWallets.id, id))
+            .limit(1);
+          
+          if (wallet.length > 0) {
+            await db
+              .update(userWallets)
+              .set({ isDefault: false })
+              .where(and(
+                eq(userWallets.userId, wallet[0].userId),
+                eq(userWallets.isDefault, true),
+                eq(userWallets.id, id, true) // Not the current wallet
+              ));
+          }
+        }
+      }
+      
+      updateData.updatedAt = new Date();
+      
+      if (Object.keys(updateData).length === 0) {
+        const wallet = await db
+          .select()
+          .from(userWallets)
+          .where(eq(userWallets.id, id))
+          .limit(1);
+          
+        return wallet[0];
+      }
+      
+      const [updatedWallet] = await db
+        .update(userWallets)
+        .set(updateData)
+        .where(eq(userWallets.id, id))
+        .returning();
+      
+      return updatedWallet;
+    } catch (error) {
+      console.error("Error updating user wallet:", error);
+      return undefined;
+    }
+  }
+  
+  async removeUserWallet(id: string): Promise<boolean> {
+    try {
+      // Get the wallet first to check if it's default
+      const wallet = await db
+        .select()
+        .from(userWallets)
+        .where(eq(userWallets.id, id))
+        .limit(1);
+      
+      if (wallet.length === 0) {
+        return false;
+      }
+      
+      // Delete the wallet
+      await db
+        .delete(userWallets)
+        .where(eq(userWallets.id, id));
+      
+      // If this was the default wallet, set another one as default if available
+      if (wallet[0].isDefault) {
+        const remainingWallets = await db
+          .select()
+          .from(userWallets)
+          .where(eq(userWallets.userId, wallet[0].userId))
+          .limit(1);
+        
+        if (remainingWallets.length > 0) {
+          await db
+            .update(userWallets)
+            .set({ isDefault: true })
+            .where(eq(userWallets.id, remainingWallets[0].id));
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error removing user wallet:", error);
+      return false;
     }
   }
 
