@@ -109,33 +109,110 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByWalletAddress(address: string, walletType: string): Promise<User | undefined> {
     try {
-      // Check if the wallet_address column exists in the users table
+      // Check if the user_wallets table exists
       try {
-        const columnCheck = await pool.query(
-          `SELECT column_name FROM information_schema.columns
-           WHERE table_name = 'users' AND column_name = 'wallet_address'`
+        const tableCheck = await pool.query(
+          `SELECT EXISTS (
+             SELECT FROM information_schema.tables 
+             WHERE table_name = 'user_wallets'
+          ) AS table_exists`
         );
         
-        // If the column doesn't exist, return undefined - we can't query by wallet address
-        if (!columnCheck.rows || columnCheck.rows.length === 0) {
-          console.log("Wallet address column doesn't exist in users table");
+        // If the table doesn't exist, fall back to checking the users table
+        if (!tableCheck.rows[0].table_exists) {
+          console.log("user_wallets table doesn't exist, falling back to users table");
+          
+          // Check if the wallet_address column exists in the users table
+          const columnCheck = await pool.query(
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_name = 'users' AND column_name = 'wallet_address'`
+          );
+          
+          // If the column doesn't exist, return undefined - we can't query by wallet address
+          if (!columnCheck.rows || columnCheck.rows.length === 0) {
+            return undefined;
+          }
+          
+          // Use direct SQL query to find user by wallet address and type
+          const result = await pool.query(
+            `SELECT * FROM users 
+             WHERE wallet_address = $1 AND wallet_type = $2 
+             LIMIT 1`,
+            [address.toLowerCase(), walletType]
+          );
+          
+          if (result.rows && result.rows.length > 0) {
+            return result.rows[0] as User;
+          }
+          
           return undefined;
         }
       } catch (error) {
-        console.error("Error checking for wallet_address column:", error);
+        console.error("Error checking for user_wallets table:", error);
         return undefined;
       }
       
-      // Use direct SQL query to find user by wallet address and type
-      const result = await pool.query(
+      // First find the wallet in user_wallets
+      const walletResult = await pool.query(
+        `SELECT * FROM user_wallets 
+         WHERE address = $1 AND chain_type = $2 
+         LIMIT 1`,
+        [address.toLowerCase(), walletType]
+      );
+      
+      // If we found a wallet, get the associated user
+      if (walletResult.rows && walletResult.rows.length > 0) {
+        const wallet = walletResult.rows[0];
+        
+        const userResult = await pool.query(
+          `SELECT * FROM users 
+           WHERE id = $1 
+           LIMIT 1`,
+          [wallet.user_id]
+        );
+        
+        if (userResult.rows && userResult.rows.length > 0) {
+          return userResult.rows[0] as User;
+        }
+      }
+      
+      // If we didn't find the wallet in user_wallets, try the legacy path with users table
+      // This handles the migration period
+      const legacyResult = await pool.query(
         `SELECT * FROM users 
          WHERE wallet_address = $1 AND wallet_type = $2 
          LIMIT 1`,
         [address.toLowerCase(), walletType]
       );
       
-      if (result.rows && result.rows.length > 0) {
-        return result.rows[0] as User;
+      if (legacyResult.rows && legacyResult.rows.length > 0) {
+        const user = legacyResult.rows[0] as User;
+        
+        // Migrate this wallet to the user_wallets table
+        console.log(`Migrating wallet ${address} from users table to user_wallets table for user ${user.id}`);
+        
+        try {
+          // Add the wallet to user_wallets
+          await this.addUserWallet({
+            userId: user.id,
+            address: address.toLowerCase(),
+            chainType: walletType,
+            isDefault: true
+          });
+          
+          // Clear the wallet data from the users table to prevent duplication
+          await pool.query(
+            `UPDATE users 
+             SET wallet_address = NULL, wallet_type = NULL 
+             WHERE id = $1`,
+            [user.id]
+          );
+        } catch (error) {
+          console.error("Error migrating wallet to user_wallets:", error);
+          // Continue with authentication even if migration fails
+        }
+        
+        return user;
       }
       
       return undefined;
@@ -147,62 +224,36 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser & { walletAddress?: string, walletType?: string }): Promise<User> {
     try {
-      // Check if wallet columns exist in users table
-      let hasWalletColumns = false;
-      try {
-        const columnCheck = await pool.query(
-          `SELECT COUNT(*) AS count FROM information_schema.columns
-           WHERE table_name = 'users' 
-           AND column_name IN ('wallet_address', 'wallet_type')`
-        );
-        
-        hasWalletColumns = columnCheck.rows[0].count === 2;
-        
-        // If columns don't exist but wallet data is provided, add the columns
-        if (!hasWalletColumns && (insertUser.walletAddress || insertUser.walletType)) {
-          await pool.query(
-            `ALTER TABLE users 
-             ADD COLUMN IF NOT EXISTS wallet_address VARCHAR(255),
-             ADD COLUMN IF NOT EXISTS wallet_type VARCHAR(50)`
-          );
-          hasWalletColumns = true;
-        }
-      } catch (error) {
-        console.error("Error checking/adding wallet columns:", error);
-      }
-      
       // Extract fields from insertUser
       const { username, password } = insertUser;
       
-      // If wallet data is provided and columns exist, include them in the query
-      if (hasWalletColumns && insertUser.walletAddress && insertUser.walletType) {
-        const result = await pool.query(
-          `INSERT INTO users (username, password, wallet_address, wallet_type, created_at, updated_at) 
-           VALUES ($1, $2, $3, $4, NOW(), NOW()) 
-           RETURNING *`,
-          [
-            username, 
-            password, 
-            insertUser.walletAddress.toLowerCase(), 
-            insertUser.walletType
-          ]
-        );
+      // Create user without wallet data
+      const result = await pool.query(
+        `INSERT INTO users (username, password, created_at, updated_at) 
+         VALUES ($1, $2, NOW(), NOW()) 
+         RETURNING *`,
+        [username, password]
+      );
+      
+      if (result.rows && result.rows.length > 0) {
+        const user = result.rows[0] as User;
         
-        if (result.rows && result.rows.length > 0) {
-          return result.rows[0] as User;
+        // If wallet data is provided, add it to the user_wallets table
+        if (insertUser.walletAddress && insertUser.walletType) {
+          try {
+            await this.addUserWallet({
+              userId: user.id,
+              address: insertUser.walletAddress.toLowerCase(),
+              chainType: insertUser.walletType,
+              isDefault: true // First wallet added is default
+            });
+          } catch (error) {
+            console.error("Error adding wallet during user creation:", error);
+            // Continue with user creation even if adding wallet fails
+          }
         }
-      } else {
-        // Standard user creation without wallet data
-        const result = await pool.query(
-          `INSERT INTO users (username, password, created_at, updated_at) 
-           VALUES ($1, $2, NOW(), NOW()) 
-           RETURNING *`,
-          [username, password]
-        );
         
-        if (result.rows && result.rows.length > 0) {
-          return result.rows[0] as User;
-        }
+        return user;
       }
       
       throw new Error("Failed to create user");
@@ -300,15 +351,19 @@ export class DatabaseStorage implements IStorage {
   
   async getUserWalletByAddress(address: string, chainType: string): Promise<UserWallet | undefined> {
     try {
-      const [wallet] = await db
-        .select()
-        .from(userWallets)
-        .where(and(
-          eq(userWallets.address, address.toLowerCase()),
-          eq(userWallets.chainType, chainType)
-        ));
+      // Use a direct SQL query to avoid TypeScript issues with chainType enum
+      const result = await pool.query(
+        `SELECT * FROM user_wallets 
+         WHERE address = $1 AND chain_type = $2 
+         LIMIT 1`,
+        [address.toLowerCase(), chainType]
+      );
       
-      return wallet;
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0] as UserWallet;
+      }
+      
+      return undefined;
     } catch (error) {
       console.error("Error getting wallet by address:", error);
       return undefined;
