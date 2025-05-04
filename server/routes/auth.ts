@@ -113,6 +113,29 @@ router.post("/wallet/ethereum", async (req: Request, res: Response) => {
       });
     }
     
+    // Add wallet address to the userWallets table if it doesn't exist
+    try {
+      // Check if this wallet is already registered for this user
+      const userWallets = await storage.getUserWallets(user.id);
+      const existingWallet = userWallets.find(w => 
+        w.address.toLowerCase() === addressLower && 
+        w.chainType === "ethereum"
+      );
+      
+      if (!existingWallet) {
+        // Add the wallet to the user_wallets table
+        await storage.addUserWallet({
+          userId: user.id,
+          address: addressLower,
+          chainType: "ethereum",
+          isDefault: userWallets.length === 0 // Make it default if it's the first wallet
+        });
+      }
+    } catch (error) {
+      console.error("Error adding wallet to user_wallets:", error);
+      // Continue with authentication even if adding wallet fails
+    }
+    
     // Set up session
     if (req.session) {
       req.session.userId = user.id;
@@ -163,6 +186,29 @@ router.post("/wallet/solana", async (req: Request, res: Response) => {
         walletAddress: address,
         walletType: "solana"
       });
+    }
+    
+    // Add wallet address to the userWallets table if it doesn't exist
+    try {
+      // Check if this wallet is already registered for this user
+      const userWallets = await storage.getUserWallets(user.id);
+      const existingWallet = userWallets.find(w => 
+        w.address.toLowerCase() === address.toLowerCase() && 
+        w.chainType === "solana"
+      );
+      
+      if (!existingWallet) {
+        // Add the wallet to the user_wallets table
+        await storage.addUserWallet({
+          userId: user.id,
+          address: address,
+          chainType: "solana",
+          isDefault: userWallets.length === 0 // Make it default if it's the first wallet
+        });
+      }
+    } catch (error) {
+      console.error("Error adding wallet to user_wallets:", error);
+      // Continue with authentication even if adding wallet fails
     }
     
     // Set up session
@@ -247,6 +293,29 @@ router.post("/wallet/base", async (req: Request, res: Response) => {
       });
     }
     
+    // Add wallet address to the userWallets table if it doesn't exist
+    try {
+      // Check if this wallet is already registered for this user
+      const userWallets = await storage.getUserWallets(user.id);
+      const existingWallet = userWallets.find(w => 
+        w.address.toLowerCase() === addressLower && 
+        w.chainType === "base"
+      );
+      
+      if (!existingWallet) {
+        // Add the wallet to the user_wallets table
+        await storage.addUserWallet({
+          userId: user.id,
+          address: addressLower,
+          chainType: "base",
+          isDefault: userWallets.length === 0 // Make it default if it's the first wallet
+        });
+      }
+    } catch (error) {
+      console.error("Error adding wallet to user_wallets:", error);
+      // Continue with authentication even if adding wallet fails
+    }
+    
     // Set up session
     if (req.session) {
       req.session.userId = user.id;
@@ -296,6 +365,22 @@ router.get("/session", (req: Request, res: Response) => {
   } else {
     res.status(401).json({ message: "Not authenticated" });
   }
+});
+
+// Get user wallet addresses
+router.get("/wallets", (req: Request, res: Response) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  
+  storage.getUserWallets(req.session.userId)
+    .then(wallets => {
+      res.json(wallets);
+    })
+    .catch(error => {
+      console.error("Error fetching user wallets:", error);
+      res.status(500).json({ message: "Failed to fetch wallet addresses" });
+    });
 });
 
 export default router;
