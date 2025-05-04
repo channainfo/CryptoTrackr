@@ -148,11 +148,11 @@ const PortfolioDetail = () => {
           </TabsContent>
           
           <TabsContent value="risk" className="risk-analysis-tab">
-            <PortfolioRiskTab portfolioId={portfolioId} />
+            {portfolioId && <PortfolioRiskTab portfolioId={portfolioId} />}
           </TabsContent>
           
           <TabsContent value="analytics">
-            <PortfolioAnalyticsTab portfolioId={portfolioId} />
+            {portfolioId && <PortfolioAnalyticsTab portfolioId={portfolioId} />}
           </TabsContent>
         </Tabs>
       </div>
