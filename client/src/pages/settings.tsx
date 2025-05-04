@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useToast } from "@/hooks/use-toast";
+import { ConnectedWallets } from "@/components/wallet/ConnectedWallets";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -53,6 +54,7 @@ const Settings = () => {
       <Tabs defaultValue="account" className="space-y-6">
         <TabsList>
           <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="wallets">Wallets</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="tours">Feature Tours</TabsTrigger>
@@ -125,6 +127,10 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="wallets">
+          <ConnectedWallets />
         </TabsContent>
 
         <TabsContent value="preferences">
