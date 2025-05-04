@@ -18,6 +18,7 @@ import LearningPage from "@/pages/learning";
 import QuizPage from "@/pages/learning/quiz";
 import GlossaryPage from "@/pages/learning/glossary";
 import Alerts from "@/pages/alerts";
+import Analytics from "@/pages/analytics";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/tax-report" component={TaxReport} />
       <Route path="/budget-planner" component={BudgetPlanner} />
+      <Route path="/analytics" component={Analytics} />
       <Route path="/learning" component={LearningPage} />
       <Route path="/learning/module/:id">
         {params => {
