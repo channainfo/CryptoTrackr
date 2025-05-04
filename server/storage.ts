@@ -64,18 +64,63 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // USER METHODS
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      // Use direct SQL query to avoid schema mismatch issues
+      const result = await pool.query(
+        `SELECT * FROM users WHERE id = $1 LIMIT 1`,
+        [id]
+      );
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0] as User;
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error in getUser:", error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    try {
+      // Use direct SQL query to avoid schema mismatch issues
+      const result = await pool.query(
+        `SELECT * FROM users WHERE username = $1 LIMIT 1`,
+        [username]
+      );
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0] as User;
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error in getUserByUsername:", error);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    try {
+      // Extract only the fields that exist in the current database
+      const { username, password } = insertUser;
+      
+      // Use direct SQL query to avoid schema mismatch issues
+      const result = await pool.query(
+        `INSERT INTO users (username, password, created_at, updated_at) 
+         VALUES ($1, $2, NOW(), NOW()) 
+         RETURNING *`,
+        [username, password]
+      );
+      
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0] as User;
+      }
+      
+      throw new Error("Failed to create user");
+    } catch (error) {
+      console.error("Error in createUser:", error);
+      throw error;
+    }
   }
 
   // PORTFOLIO MANAGEMENT METHODS
