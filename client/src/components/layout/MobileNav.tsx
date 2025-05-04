@@ -7,7 +7,8 @@ import {
   FileText,
   Calculator,
   GraduationCap,
-  BellRing
+  BellRing,
+  BarChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,8 @@ const MobileNav = () => {
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
+    { href: '/analytics', label: 'Analytics', icon: BarChart },
     { href: '/markets', label: 'Markets', icon: LineChart },
-    { href: '/alerts', label: 'Alerts', icon: BellRing },
     { href: '/learning', label: 'Learn', icon: GraduationCap },
   ];
   

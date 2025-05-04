@@ -13,6 +13,7 @@ import { usePortfolio } from "@/hooks/usePortfolio";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import PortfolioRiskTab from "@/components/portfolio/PortfolioRiskTab";
+import PortfolioAnalyticsTab from "@/components/portfolio/PortfolioAnalyticsTab";
 
 const PortfolioDetail = () => {
   const [, setLocation] = useLocation();
@@ -151,11 +152,7 @@ const PortfolioDetail = () => {
           </TabsContent>
           
           <TabsContent value="analytics">
-            <div className="text-center py-12 bg-neutral-lighter dark:bg-zinc-800 rounded-xl">
-              <p className="text-neutral-mid dark:text-gray-400">
-                Advanced analytics will be available soon.
-              </p>
-            </div>
+            <PortfolioAnalyticsTab portfolioId={portfolioId} />
           </TabsContent>
         </Tabs>
       </div>
