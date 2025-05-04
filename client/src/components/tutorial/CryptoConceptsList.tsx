@@ -68,9 +68,15 @@ const CryptoConceptsList: React.FC<CryptoConceptsListProps> = ({
                 variant="default" 
                 size="sm" 
                 className="flex-grow"
-                onClick={() => {
-                  console.log("CryptoConceptsList: Showing concept:", concept.id);
-                  showConcept(concept.id);
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log("CryptoConceptsList: Button clicked for concept:", concept.id);
+                  // Ensure the concept ID is valid before showing it
+                  if (concept.id && conceptData[concept.id]) {
+                    showConcept(concept.id);
+                  } else {
+                    console.error("Invalid concept ID or concept not found:", concept.id);
+                  }
                 }}
               >
                 View Concept

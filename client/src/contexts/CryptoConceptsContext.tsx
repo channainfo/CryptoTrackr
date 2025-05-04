@@ -73,11 +73,19 @@ export const CryptoConceptsProvider: React.FC<CryptoConceptsProviderProps> = ({ 
   // Show a specific concept
   const showConcept = (conceptId: ConceptId): void => {
     console.log("CryptoConceptsContext: Setting current concept to:", conceptId);
-    setCurrentConcept(conceptId);
+    if (conceptId && typeof conceptId === 'string') {
+      // Use setTimeout to ensure the state update happens after the current execution context
+      setTimeout(() => {
+        setCurrentConcept(conceptId);
+      }, 0);
+    } else {
+      console.error("Invalid concept ID passed to showConcept:", conceptId);
+    }
   };
 
   // Close the current concept
   const closeConcept = (): void => {
+    console.log("CryptoConceptsContext: Closing current concept");
     setCurrentConcept(null);
   };
 
