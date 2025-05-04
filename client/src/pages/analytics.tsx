@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import PageHeader from '@/components/layout/PageHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import PortfolioAnalyticsTab from '@/components/portfolio/PortfolioAnalyticsTab';
 import AchievementGrid from '@/components/achievement/AchievementGrid';
@@ -35,6 +34,7 @@ const AchievementSection: React.FC<{ portfolioId: string }> = ({ portfolioId }) 
 
 const AnalyticsPage = () => {
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
+  const [currentPortfolio, setCurrentPortfolio] = useState<any>(null);
   
   // Fetch all portfolios
   const { data: portfolios, isLoading: isLoadingPortfolios } = useQuery({
@@ -47,8 +47,19 @@ const AnalyticsPage = () => {
     if (portfolios && portfolios.length > 0 && !selectedPortfolioId) {
       const defaultPortfolio = portfolios.find((p: any) => p.isDefault) || portfolios[0];
       setSelectedPortfolioId(defaultPortfolio.id);
+      setCurrentPortfolio(defaultPortfolio);
     }
   }, [portfolios, selectedPortfolioId]);
+  
+  // Update current portfolio when it changes
+  useEffect(() => {
+    if (selectedPortfolioId && portfolios) {
+      const portfolio = portfolios.find((p: any) => p.id === selectedPortfolioId);
+      if (portfolio) {
+        setCurrentPortfolio(portfolio);
+      }
+    }
+  }, [selectedPortfolioId, portfolios]);
   
   return (
     <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
@@ -59,25 +70,33 @@ const AnalyticsPage = () => {
         ]}
       />
       
-      <PageHeader
-        title="Portfolio Analytics"
-        description="Track and analyze your portfolio performance over time"
-        icon={<BarChart3 className="h-6 w-6" />}
-      />
-      
-      {/* Portfolio Selector */}
-      <Card className="p-4 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="text-sm font-medium">Select Portfolio:</div>
-          <div className="flex-1 max-w-xs">
+      {/* Dashboard Header */}
+      <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Portfolio Analytics</h2>
+          <p className="text-muted-foreground mt-1">
+            {currentPortfolio ? (
+              <span>
+                Track and analyze performance for: <span className="font-medium">{currentPortfolio.name}</span>
+                {currentPortfolio.description && (
+                  <span className="text-sm italic ml-2">({currentPortfolio.description})</span>
+                )}
+              </span>
+            ) : (
+              "Select a portfolio to view analytics"
+            )}
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="portfolio-selector">
             {isLoadingPortfolios ? (
-              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-[180px]" />
             ) : (
               <Select
                 value={selectedPortfolioId || undefined}
                 onValueChange={(value) => setSelectedPortfolioId(value)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select a portfolio" />
                 </SelectTrigger>
                 <SelectContent>
@@ -91,7 +110,7 @@ const AnalyticsPage = () => {
             )}
           </div>
         </div>
-      </Card>
+      </div>
       
       {/* Analytics Content */}
       {selectedPortfolioId ? (

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAchievements } from '@/hooks/useAchievements';
 import AchievementGrid from '@/components/achievement/AchievementGrid';
-import PageHeader from '@/components/layout/PageHeader';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import { Trophy, Briefcase, BarChart2, BookOpen, Clock, Award } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -96,13 +95,24 @@ const AchievementsPage: React.FC = () => {
         ]}
       />
       
-      <PageHeader
-        title="Investment Achievements"
-        description="Track your progress and earn badges for investment milestones"
-        icon={<Trophy className="h-6 w-6" />}
-      />
+      {/* Dashboard Header */}
+      <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Investment Achievements</h2>
+          <p className="text-muted-foreground mt-1">
+            Track your progress and earn badges for investment milestones
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center text-sm">
+            <Trophy className="h-5 w-5 mr-2 text-amber-500" />
+            <span className="font-medium">{earnedAchievements}</span>
+            <span className="text-muted-foreground ml-1">/{totalAchievements} achieved</span>
+          </div>
+        </div>
+      </div>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Achievement Progress</CardTitle>
