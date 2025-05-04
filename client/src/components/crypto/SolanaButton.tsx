@@ -1,53 +1,89 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { SiSolana } from "react-icons/si";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface SolanaButtonProps {
   onConnect: (address: string) => void;
-  onError?: (error: Error) => void;
-  className?: string;
+  onError: (error: Error) => void;
 }
 
-export const SolanaButton = ({ onConnect, onError, className = "" }: SolanaButtonProps) => {
+export default function SolanaButton({ onConnect, onError }: SolanaButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
 
   const connectWallet = async () => {
     setIsConnecting(true);
+
+    // Check if Phantom wallet is installed
+    const isPhantomInstalled = window.phantom?.solana?.isPhantom;
     
+    if (!isPhantomInstalled) {
+      toast({
+        title: "Phantom wallet not found",
+        description: "Please install the Phantom wallet extension to connect your Solana wallet",
+        variant: "destructive",
+      });
+      setIsConnecting(false);
+      onError(new Error("Phantom wallet not installed"));
+      return;
+    }
+
     try {
-      // Check if Solana provider exists (Phantom, Solflare, etc.)
-      if (typeof window !== 'undefined' && 'solana' in window) {
-        const solana = (window as any).solana;
-        
-        try {
-          // Request connection to the wallet
-          const response = await solana.connect();
-          const publicKey = response.publicKey.toString();
-          
-          toast({
-            title: "Solana wallet connected",
-            description: `Connected to ${publicKey.substring(0, 6)}...${publicKey.substring(publicKey.length - 4)}`,
-          });
-          onConnect(publicKey);
-        } catch (error) {
-          toast({
-            title: "Connection failed",
-            description: "Failed to connect to Solana wallet",
-            variant: "destructive",
-          });
-          if (onError) onError(error as Error);
-        }
-      } else {
-        // Wallet not found, suggest installing Phantom
+      // Connect to Phantom
+      const provider = window.phantom?.solana;
+      
+      if (!provider) {
+        throw new Error("Phantom provider not found");
+      }
+      
+      // Request connection to wallet
+      const { publicKey } = await provider.connect();
+      const address = publicKey.toString();
+
+      if (!address) {
+        throw new Error("No account selected");
+      }
+
+      // For Solana, we'll just authenticate with the address for demo
+      // In a real implementation, we would get a message to sign
+      const authResponse = await apiRequest('/api/auth/wallet/solana', {
+        method: "POST",
+        body: JSON.stringify({
+          address,
+          signature: "demo_signature" // In real app, would be actual signature
+        }),
+      });
+
+      if (authResponse && authResponse.id) {
         toast({
-          title: "Wallet not found",
-          description: "Please install Phantom or another Solana wallet to continue",
+          title: "Wallet connected",
+          description: "Successfully authenticated with Solana wallet",
+        });
+        onConnect(address);
+      } else {
+        throw new Error("Authentication failed");
+      }
+    } catch (error: any) {
+      console.error("Solana wallet connection error:", error);
+      
+      // Check if user rejected request
+      if (error.code === 4001) {
+        toast({
+          title: "Connection rejected",
+          description: "You rejected the connection request",
           variant: "destructive",
         });
-        if (onError) onError(new Error("Solana provider not found"));
+      } else {
+        toast({
+          title: "Connection failed",
+          description: error.message || "Failed to connect your Solana wallet",
+          variant: "destructive",
+        });
       }
+      
+      onError(new Error(error.message || "Solana connection failed"));
     } finally {
       setIsConnecting(false);
     }
@@ -56,14 +92,29 @@ export const SolanaButton = ({ onConnect, onError, className = "" }: SolanaButto
   return (
     <Button
       variant="outline"
+      size="lg"
+      className="flex items-center justify-center gap-2"
       onClick={connectWallet}
       disabled={isConnecting}
-      className={`flex items-center gap-2 ${className}`}
     >
-      <SiSolana className="h-5 w-5" />
-      <span>{isConnecting ? "Connecting..." : "Solana"}</span>
+      <SiSolana className="h-5 w-5 text-purple-500" />
+      <span className="sr-only md:not-sr-only md:text-xs">
+        {isConnecting ? "Connecting..." : "Solana"}
+      </span>
     </Button>
   );
-};
+}
 
-export default SolanaButton;
+// Add TypeScript definitions for Phantom wallet
+declare global {
+  interface Window {
+    phantom?: {
+      solana?: {
+        isPhantom: boolean;
+        connect: () => Promise<{ publicKey: { toString: () => string } }>;
+        disconnect: () => Promise<void>;
+        signMessage: (message: Uint8Array, encoding: string) => Promise<{ signature: Uint8Array }>;
+      };
+    };
+  }
+}

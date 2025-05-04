@@ -204,28 +204,49 @@ export default function Login() {
                   <Web3Button 
                     onConnect={(address) => {
                       console.log("Ethereum wallet connected:", address);
-                      // For demo purposes, navigate to dashboard
-                      setTimeout(() => setLocation("/dashboard"), 1500);
+                      // Navigate to dashboard after successful authentication
+                      setLocation("/dashboard");
                     }}
-                    onError={(error) => console.error("Ethereum connection error:", error)}
+                    onError={(error) => {
+                      console.error("Ethereum connection error:", error);
+                      toast({
+                        title: "Connection failed",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    }}
                   />
                   
                   <SolanaButton 
                     onConnect={(address) => {
                       console.log("Solana wallet connected:", address);
-                      // For demo purposes, navigate to dashboard
-                      setTimeout(() => setLocation("/dashboard"), 1500);
+                      // Navigate to dashboard after successful authentication
+                      setLocation("/dashboard");
                     }}
-                    onError={(error) => console.error("Solana connection error:", error)}
+                    onError={(error) => {
+                      console.error("Solana connection error:", error);
+                      toast({
+                        title: "Connection failed",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    }}
                   />
                   
                   <BaseButton 
                     onConnect={(address) => {
                       console.log("Base wallet connected:", address);
-                      // For demo purposes, navigate to dashboard
-                      setTimeout(() => setLocation("/dashboard"), 1500);
+                      // Navigate to dashboard after successful authentication
+                      setLocation("/dashboard");
                     }}
-                    onError={(error) => console.error("Base connection error:", error)}
+                    onError={(error) => {
+                      console.error("Base connection error:", error);
+                      toast({
+                        title: "Connection failed",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    }}
                   />
                 </div>
               </CardContent>
