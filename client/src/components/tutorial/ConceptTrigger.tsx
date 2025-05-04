@@ -64,7 +64,10 @@ const ConceptTrigger: React.FC<ConceptTriggerProps> = ({
     <Button
       variant="link"
       className="text-blue-500 dark:text-blue-400 p-0 h-auto"
-      onClick={() => showConcept(conceptId)}
+      onClick={() => {
+        console.log("ConceptTrigger clicked, showing concept:", conceptId);
+        showConcept(conceptId);
+      }}
     >
       {label || conceptId}
       {showIcon && <HelpCircle className="ml-1 h-4 w-4" />}

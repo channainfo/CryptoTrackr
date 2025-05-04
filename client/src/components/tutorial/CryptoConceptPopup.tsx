@@ -28,6 +28,7 @@ const CryptoConceptPopup: React.FC<CryptoConceptPopupProps> = ({
 
   // Update isOpen state whenever currentConcept changes
   useEffect(() => {
+    console.log("Current concept changed:", currentConcept);
     setIsOpen(!!currentConcept);
   }, [currentConcept]);
 
@@ -51,7 +52,15 @@ const CryptoConceptPopup: React.FC<CryptoConceptPopupProps> = ({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) {
+          closeConcept();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-md" onInteractOutside={handleClose}>
         <DialogHeader>
           <DialogTitle>{conceptInfo.title}</DialogTitle>
