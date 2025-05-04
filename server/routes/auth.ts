@@ -414,6 +414,125 @@ router.get("/wallets", (req: Request, res: Response) => {
     });
 });
 
+// Link a new wallet to an existing user
+router.post("/link-wallet", async (req: Request, res: Response) => {
+  try {
+    // Validate request body
+    const validation = walletAuthSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({ 
+        message: "Invalid request", 
+        errors: validation.error.flatten().fieldErrors 
+      });
+    }
+    
+    // Get current authenticated user ID from session
+    const userId = req.session?.userId || 'e29739a6-0e80-4233-8d10-94d06d00e55b'; // Use demo user for testing
+    
+    // Find the user
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    const { address, signature, walletType } = validation.data as any; // Add walletType to know which blockchain
+    if (!walletType) {
+      return res.status(400).json({ message: "Wallet type is required" });
+    }
+    
+    const addressLower = address.toLowerCase();
+    
+    // Check if we have a nonce for this address
+    if (!nonceStore[addressLower]) {
+      return res.status(400).json({ message: "No authentication request found for this address" });
+    }
+    
+    // Get the nonce and message
+    const { nonce, expiresAt } = nonceStore[addressLower];
+    
+    // Check if nonce is expired
+    if (expiresAt < Date.now()) {
+      delete nonceStore[addressLower];
+      return res.status(400).json({ message: "Authentication request expired" });
+    }
+    
+    // Reconstruct the message that was signed
+    const message = `Sign this message to authenticate with Trailer app: ${nonce}`;
+    
+    // Verify the signature based on wallet type
+    if (walletType === "ethereum" || walletType === "base") {
+      try {
+        const recoveredAddress = ethers.verifyMessage(message, signature);
+        
+        if (recoveredAddress.toLowerCase() !== addressLower) {
+          return res.status(401).json({ message: "Invalid signature" });
+        }
+      } catch (error) {
+        console.error("Signature verification error:", error);
+        return res.status(401).json({ message: "Invalid signature" });
+      }
+    } else if (walletType === "solana") {
+      // For demo, we'll skip verification for Solana
+      // In production, implement proper Solana signature verification
+    } else {
+      return res.status(400).json({ message: "Unsupported wallet type" });
+    }
+    
+    // Clean up the nonce
+    delete nonceStore[addressLower];
+    
+    // Check if this wallet is already registered for this user or another user
+    const existingUserWithWallet = await storage.getUserByWalletAddress(address, walletType);
+    if (existingUserWithWallet && existingUserWithWallet.id !== userId) {
+      return res.status(400).json({ 
+        message: "This wallet address is already linked to another account" 
+      });
+    }
+    
+    // Get user's existing wallets
+    const userWallets = await storage.getUserWallets(userId);
+    
+    // Check if user already has this wallet type
+    const existingWalletWithType = userWallets.find(w => w.chainType === walletType);
+    if (existingWalletWithType) {
+      return res.status(400).json({ 
+        message: `You already have a ${walletType} wallet linked to your account` 
+      });
+    }
+    
+    // Check if this specific wallet is already linked
+    const existingWallet = userWallets.find(w => 
+      w.address.toLowerCase() === addressLower && 
+      w.chainType === walletType
+    );
+    
+    if (existingWallet) {
+      return res.status(400).json({ 
+        message: "This wallet is already linked to your account" 
+      });
+    }
+    
+    // Add the wallet to the user_wallets table
+    const newWallet = await storage.addUserWallet({
+      userId: userId,
+      address: addressLower,
+      chainType: walletType,
+      isDefault: userWallets.length === 0 // Make it default if it's the first wallet
+    });
+    
+    // Return the newly linked wallet
+    res.json({
+      message: "Wallet linked successfully",
+      wallet: newWallet
+    });
+    
+  } catch (error) {
+    console.error("Error linking wallet:", error);
+    res.status(500).json({ message: "Failed to link wallet" });
+  }
+});
+
 // Remove a user wallet
 router.delete("/wallets/:id", async (req: Request, res: Response) => {
   try {

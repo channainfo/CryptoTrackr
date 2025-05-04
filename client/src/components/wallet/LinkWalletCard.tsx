@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SiEthereum, SiSolana } from "react-icons/si";
 import { FaDatabase } from "react-icons/fa";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import Web3Button from "@/components/crypto/Web3Button";
 import SolanaButton from "@/components/crypto/SolanaButton";
 import BaseButton from "@/components/crypto/BaseButton";
@@ -20,6 +20,17 @@ type ApiWallet = {
   created_at: string;
   updated_at: string;
 };
+
+// Add TypeScript definitions for Solana wallet
+declare global {
+  interface Window {
+    solana?: {
+      isPhantom?: boolean;
+      connect: () => Promise<{ publicKey: { toString: () => string } }>;
+      disconnect: () => Promise<void>;
+    };
+  }
+}
 
 export const LinkWalletCard = () => {
   const { toast } = useToast();
@@ -78,17 +89,81 @@ export const LinkWalletCard = () => {
     wallet => !connectedChainTypes.includes(wallet.type)
   );
 
-  const handleWalletConnect = (address: string, chainType: string) => {
-    console.log(`${chainType} wallet connected:`, address);
-    setIsLinking(false);
-    
-    toast({
-      title: "Wallet Linked",
-      description: `Successfully linked your ${chainType} wallet to your account.`,
-    });
-    
-    // Refresh wallet list
-    queryClient.invalidateQueries({ queryKey: ["/api/auth/wallets"] });
+  const handleWalletConnect = async (address: string, walletType: string) => {
+    try {
+      console.log(`Linking ${walletType} wallet:`, address);
+      
+      // Get nonce from server for this address
+      const nonceResponse = await apiRequest(`/api/auth/wallet/nonce/${address}`, {
+        method: "GET",
+      });
+      
+      if (!nonceResponse || !nonceResponse.message) {
+        throw new Error("Failed to get nonce from server");
+      }
+      
+      let signature;
+      
+      // Request signature based on wallet type
+      if (walletType.toLowerCase() === "ethereum" || walletType.toLowerCase() === "base") {
+        // For Ethereum and Base wallets
+        signature = await window.ethereum.request({
+          method: 'personal_sign',
+          params: [nonceResponse.message, address]
+        });
+      } else if (walletType.toLowerCase() === "solana") {
+        // For Solana wallets - simplified for demo
+        // In a real app, implement proper Solana signature process
+        signature = "demo_solana_signature";
+      } else {
+        throw new Error(`Unsupported wallet type: ${walletType}`);
+      }
+      
+      // Link wallet using our new endpoint
+      const linkResponse = await apiRequest('/api/auth/link-wallet', {
+        method: "POST",
+        data: {
+          address,
+          signature,
+          walletType: walletType.toLowerCase() // Send the type of wallet
+        }
+      });
+      
+      console.log("Link wallet response:", linkResponse);
+      
+      if (linkResponse && linkResponse.message) {
+        setIsLinking(false);
+        
+        toast({
+          title: "Wallet Linked",
+          description: `Successfully linked your ${walletType} wallet to your account.`,
+        });
+        
+        // Refresh wallet list
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/wallets"] });
+      } else {
+        throw new Error("Failed to link wallet");
+      }
+    } catch (error: any) {
+      console.error("Error linking wallet:", error);
+      
+      // Check if user rejected request
+      if (error.code === 4001) {
+        toast({
+          title: "Connection Rejected",
+          description: "You rejected the wallet connection request",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Link Failed",
+          description: error.message || `Failed to link your ${walletType} wallet`,
+          variant: "destructive",
+        });
+      }
+      
+      handleWalletError(new Error(error.message || "Failed to link wallet"));
+    }
   };
 
   const handleWalletError = (error: Error) => {
@@ -102,28 +177,123 @@ export const LinkWalletCard = () => {
     });
   };
 
+  // Connect to Ethereum wallet
+  const connectEthereumWallet = async () => {
+    try {
+      // Check if MetaMask is installed
+      if (typeof window.ethereum === 'undefined') {
+        toast({
+          title: "MetaMask not found",
+          description: "Please install MetaMask to connect your Ethereum wallet",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Request account access
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const address = accounts[0];
+      
+      if (!address) {
+        throw new Error("No account selected");
+      }
+      
+      // Link wallet
+      await handleWalletConnect(address, "ethereum");
+    } catch (error: any) {
+      handleWalletError(error);
+    }
+  };
+  
+  // Connect to Solana wallet
+  const connectSolanaWallet = async () => {
+    try {
+      // Check if Phantom is installed
+      if (!window.solana || !window.solana.isPhantom) {
+        toast({
+          title: "Phantom not found",
+          description: "Please install Phantom to connect your Solana wallet",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Connect to wallet
+      const response = await window.solana.connect();
+      const address = response.publicKey.toString();
+      
+      // Link wallet
+      await handleWalletConnect(address, "solana");
+    } catch (error: any) {
+      handleWalletError(error);
+    }
+  };
+  
+  // Connect to Base wallet (similar to Ethereum)
+  const connectBaseWallet = async () => {
+    try {
+      // Base uses the same interface as Ethereum
+      if (typeof window.ethereum === 'undefined') {
+        toast({
+          title: "Compatible wallet not found",
+          description: "Please install a wallet that supports Base",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Request account access
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const address = accounts[0];
+      
+      if (!address) {
+        throw new Error("No account selected");
+      }
+      
+      // Link wallet
+      await handleWalletConnect(address, "base");
+    } catch (error: any) {
+      handleWalletError(error);
+    }
+  };
+  
   const renderWalletButton = (type: string) => {
     switch (type) {
       case "ethereum":
         return (
-          <Web3Button
-            onConnect={(address) => handleWalletConnect(address, "Ethereum")}
-            onError={handleWalletError}
-          />
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-2"
+            onClick={connectEthereumWallet}
+          >
+            <SiEthereum className="h-5 w-5 text-blue-500" />
+            <span className="sr-only md:not-sr-only md:text-xs">Ethereum</span>
+          </Button>
         );
       case "solana":
         return (
-          <SolanaButton
-            onConnect={(address) => handleWalletConnect(address, "Solana")}
-            onError={handleWalletError}
-          />
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-2"
+            onClick={connectSolanaWallet}
+          >
+            <SiSolana className="h-5 w-5 text-purple-500" />
+            <span className="sr-only md:not-sr-only md:text-xs">Solana</span>
+          </Button>
         );
       case "base":
         return (
-          <BaseButton
-            onConnect={(address) => handleWalletConnect(address, "Base")}
-            onError={handleWalletError}
-          />
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-2"
+            onClick={connectBaseWallet}
+          >
+            <FaDatabase className="h-5 w-5 text-blue-500" />
+            <span className="sr-only md:not-sr-only md:text-xs">Base</span>
+          </Button>
         );
       // Additional wallet types can be added here
       default:
