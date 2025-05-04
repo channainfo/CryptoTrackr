@@ -6,6 +6,7 @@ import TokenPerformance from "@/components/dashboard/TokenPerformance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
 import TokenRiskSection from "@/components/token/TokenRiskSection";
+import TokenCryptoConceptsProvider from "@/components/token/CryptoConceptsProvider";
 
 interface TokenDetailParams {
   portfolioTokenId: string;
@@ -29,7 +30,7 @@ interface TokenDetails {
   };
 }
 
-export default function TokenDetailPage() {
+function TokenDetailPage() {
   const [, navigate] = useLocation();
   const params = useParams<TokenDetailParams>();
   const [tokenDetails, setTokenDetails] = useState<TokenDetails | null>(null);
@@ -151,5 +152,14 @@ export default function TokenDetailPage() {
         </>
       )}
     </div>
+  );
+}
+
+// Wrap TokenDetailPage with TokenCryptoConceptsProvider
+export default function TokenDetailPageWithCryptoConceptsProvider() {
+  return (
+    <TokenCryptoConceptsProvider>
+      <TokenDetailPage />
+    </TokenCryptoConceptsProvider>
   );
 }
