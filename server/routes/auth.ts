@@ -383,4 +383,48 @@ router.get("/wallets", (req: Request, res: Response) => {
     });
 });
 
+// Remove a user wallet
+router.delete("/wallets/:id", async (req: Request, res: Response) => {
+  try {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const walletId = req.params.id;
+    if (!walletId) {
+      return res.status(400).json({ message: "Wallet ID is required" });
+    }
+    
+    // Get all user wallets to check if this is the default wallet
+    const userWallets = await storage.getUserWallets(req.session.userId);
+    const walletToRemove = userWallets.find(w => w.id === walletId);
+    
+    if (!walletToRemove) {
+      return res.status(404).json({ message: "Wallet not found" });
+    }
+    
+    // Prevent removal of default wallets
+    if (walletToRemove.isDefault) {
+      return res.status(400).json({ message: "Cannot remove default wallet" });
+    }
+    
+    // Check if wallet belongs to the authenticated user
+    if (walletToRemove.userId !== req.session.userId) {
+      return res.status(403).json({ message: "Not authorized to remove this wallet" });
+    }
+    
+    // Remove the wallet
+    const removed = await storage.removeUserWallet(walletId);
+    
+    if (removed) {
+      res.json({ message: "Wallet removed successfully" });
+    } else {
+      res.status(500).json({ message: "Failed to remove wallet" });
+    }
+  } catch (error) {
+    console.error("Error removing wallet:", error);
+    res.status(500).json({ message: "Failed to remove wallet" });
+  }
+});
+
 export default router;

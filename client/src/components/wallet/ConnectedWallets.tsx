@@ -44,7 +44,7 @@ const getChainIcon = (chainType: string) => {
     case "solana":
       return <SiSolana className="h-5 w-5 text-[#9945FF]" />;
     case "base":
-      return <SiBase className="h-5 w-5 text-[#0052FF]" />;
+      return <FaDatabase className="h-5 w-5 text-[#0052FF]" />;
     default:
       return null;
   }
@@ -68,7 +68,7 @@ export const ConnectedWallets = () => {
   const { toast } = useToast();
 
   // Fetch user wallets
-  const { data: wallets, isLoading } = useQuery({
+  const { data: wallets = [], isLoading } = useQuery<Wallet[]>({
     queryKey: ["/api/auth/wallets"],
     retry: 1,
   });
@@ -76,9 +76,14 @@ export const ConnectedWallets = () => {
   // Function to remove a wallet
   const removeWallet = async (walletId: string) => {
     try {
-      await fetch(`/api/auth/wallets/${walletId}`, {
+      const response = await fetch(`/api/auth/wallets/${walletId}`, {
         method: "DELETE",
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to remove wallet");
+      }
       
       // Show success message
       toast({
@@ -122,7 +127,7 @@ export const ConnectedWallets = () => {
               </div>
             ))}
           </div>
-        ) : wallets && wallets.length > 0 ? (
+        ) : wallets.length > 0 ? (
           // Display wallets
           <div className="space-y-4">
             {wallets.map((wallet: Wallet) => (
