@@ -11,6 +11,7 @@ export const alertStatusEnum = pgEnum('enum_alert_status', ['active', 'triggered
 export const learningModuleStatusEnum = pgEnum('enum_learning_module_status', ['not_started', 'in_progress', 'completed']);
 export const learningCategoryEnum = pgEnum('enum_learning_category', ['basics', 'trading', 'defi', 'security', 'advanced']);
 export const authProviderEnum = pgEnum('enum_authentications_provider', ['email', 'google', 'github', 'ethereum', 'solana', 'base', 'sui']);
+export const walletTypeEnum = pgEnum('enum_wallet_type', ['ethereum', 'solana', 'base', 'sui']);
 
 // User table
 export const users = pgTable("users", {
@@ -19,6 +20,7 @@ export const users = pgTable("users", {
   password: varchar("password", { length: 255 }),
   email: varchar("email", { length: 255 }).unique(),
   walletAddress: varchar("wallet_address", { length: 255 }).unique(),
+  walletType: walletTypeEnum("wallet_type"),
   provider: authProviderEnum("provider").notNull().default('email'),
   providerUserId: varchar("provider_user_id", { length: 255 }),
   profileImage: varchar("profile_image", { length: 255 }),

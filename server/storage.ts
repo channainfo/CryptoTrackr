@@ -99,21 +99,102 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByWalletAddress(address: string, walletType: string): Promise<User | undefined> {
     try {
-      // Extract only the fields that exist in the current database
-      const { username, password } = insertUser;
+      // Check if the wallet_address column exists in the users table
+      try {
+        const columnCheck = await pool.query(
+          `SELECT column_name FROM information_schema.columns
+           WHERE table_name = 'users' AND column_name = 'wallet_address'`
+        );
+        
+        // If the column doesn't exist, return undefined - we can't query by wallet address
+        if (!columnCheck.rows || columnCheck.rows.length === 0) {
+          console.log("Wallet address column doesn't exist in users table");
+          return undefined;
+        }
+      } catch (error) {
+        console.error("Error checking for wallet_address column:", error);
+        return undefined;
+      }
       
-      // Use direct SQL query to avoid schema mismatch issues
+      // Use direct SQL query to find user by wallet address and type
       const result = await pool.query(
-        `INSERT INTO users (username, password, created_at, updated_at) 
-         VALUES ($1, $2, NOW(), NOW()) 
-         RETURNING *`,
-        [username, password]
+        `SELECT * FROM users 
+         WHERE wallet_address = $1 AND wallet_type = $2 
+         LIMIT 1`,
+        [address.toLowerCase(), walletType]
       );
       
       if (result.rows && result.rows.length > 0) {
         return result.rows[0] as User;
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Error getting user by wallet address:', error);
+      return undefined;
+    }
+  }
+
+  async createUser(insertUser: InsertUser & { walletAddress?: string, walletType?: string }): Promise<User> {
+    try {
+      // Check if wallet columns exist in users table
+      let hasWalletColumns = false;
+      try {
+        const columnCheck = await pool.query(
+          `SELECT COUNT(*) AS count FROM information_schema.columns
+           WHERE table_name = 'users' 
+           AND column_name IN ('wallet_address', 'wallet_type')`
+        );
+        
+        hasWalletColumns = columnCheck.rows[0].count === 2;
+        
+        // If columns don't exist but wallet data is provided, add the columns
+        if (!hasWalletColumns && (insertUser.walletAddress || insertUser.walletType)) {
+          await pool.query(
+            `ALTER TABLE users 
+             ADD COLUMN IF NOT EXISTS wallet_address VARCHAR(255),
+             ADD COLUMN IF NOT EXISTS wallet_type VARCHAR(50)`
+          );
+          hasWalletColumns = true;
+        }
+      } catch (error) {
+        console.error("Error checking/adding wallet columns:", error);
+      }
+      
+      // Extract fields from insertUser
+      const { username, password } = insertUser;
+      
+      // If wallet data is provided and columns exist, include them in the query
+      if (hasWalletColumns && insertUser.walletAddress && insertUser.walletType) {
+        const result = await pool.query(
+          `INSERT INTO users (username, password, wallet_address, wallet_type, created_at, updated_at) 
+           VALUES ($1, $2, $3, $4, NOW(), NOW()) 
+           RETURNING *`,
+          [
+            username, 
+            password, 
+            insertUser.walletAddress.toLowerCase(), 
+            insertUser.walletType
+          ]
+        );
+        
+        if (result.rows && result.rows.length > 0) {
+          return result.rows[0] as User;
+        }
+      } else {
+        // Standard user creation without wallet data
+        const result = await pool.query(
+          `INSERT INTO users (username, password, created_at, updated_at) 
+           VALUES ($1, $2, NOW(), NOW()) 
+           RETURNING *`,
+          [username, password]
+        );
+        
+        if (result.rows && result.rows.length > 0) {
+          return result.rows[0] as User;
+        }
       }
       
       throw new Error("Failed to create user");
