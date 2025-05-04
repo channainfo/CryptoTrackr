@@ -8,9 +8,12 @@ import {
   Calculator,
   GraduationCap,
   BellRing,
-  BarChart
+  BarChart,
+  LogOut,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logout } from "@/lib/auth";
 
 const MobileNav = () => {
   const [location] = useLocation();
@@ -18,10 +21,18 @@ const MobileNav = () => {
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
-    { href: '/analytics', label: 'Analytics', icon: BarChart },
     { href: '/markets', label: 'Markets', icon: LineChart },
     { href: '/learning', label: 'Learn', icon: GraduationCap },
+    { href: '/settings', label: 'Settings', icon: Settings },
   ];
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
   
   return (
     <nav className="md:hidden flex items-center justify-around px-4 py-3 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-gray-800 fixed bottom-0 left-0 right-0">
@@ -39,6 +50,15 @@ const MobileNav = () => {
           </span>
         </Link>
       ))}
+      <button 
+        onClick={handleLogout}
+        className="flex flex-col items-center"
+      >
+        <LogOut className="h-5 w-5 text-red-500" />
+        <span className="text-xs mt-1 text-red-500">
+          Logout
+        </span>
+      </button>
     </nav>
   );
 };

@@ -11,10 +11,13 @@ import {
   GraduationCap,
   BellRing,
   BarChart,
-  Trophy
+  Trophy,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { logout } from "@/lib/auth";
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -36,6 +39,14 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
     { href: '/tax-report', label: 'Tax Report', icon: FileText },
     { href: '/settings', label: 'Settings', icon: Settings },
   ];
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
   
   return (
     <aside className={cn(
@@ -62,17 +73,28 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
       </nav>
       
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center dark:bg-primary-dark dark:bg-opacity-20">
-              <span className="text-primary font-medium">AM</span>
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center dark:bg-primary-dark dark:bg-opacity-20">
+                <span className="text-primary font-medium">AM</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium dark:text-white">Alex Morgan</p>
+                <p className="text-xs text-neutral-mid dark:text-neutral-light">alex@example.com</p>
+              </div>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium dark:text-white">Alex Morgan</p>
-              <p className="text-xs text-neutral-mid dark:text-neutral-light">alex@example.com</p>
-            </div>
+            {!isMobile && <ThemeToggle />}
           </div>
-          {!isMobile && <ThemeToggle />}
+          
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Log Out</span>
+          </Button>
         </div>
       </div>
     </aside>
