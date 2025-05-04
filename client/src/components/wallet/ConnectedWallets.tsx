@@ -76,10 +76,15 @@ export const ConnectedWallets = () => {
   const { toast } = useToast();
 
   // Fetch user wallets
-  const { data: wallets = [], isLoading } = useQuery<Wallet[]>({
+  const { data: wallets = [], isLoading, isError, error } = useQuery<Wallet[]>({
     queryKey: ["/api/auth/wallets"],
     retry: 1,
   });
+  
+  // Debug logging
+  console.log("Wallet data:", wallets);
+  console.log("Wallet loading:", isLoading);
+  console.log("Wallet error:", isError, error);
 
   // Function to remove a wallet
   const removeWallet = async (walletId: string) => {

@@ -380,7 +380,6 @@ router.get("/me", async (req: Request, res: Response) => {
     const [user] = await db.select({
       id: users.id,
       username: users.username,
-      displayName: users.displayName,
       createdAt: users.createdAt
     }).from(users).where(eq(users.id, userId));
 
@@ -391,7 +390,6 @@ router.get("/me", async (req: Request, res: Response) => {
     res.json({
       id: user.id,
       username: user.username,
-      displayName: user.displayName || user.username,
       createdAt: user.createdAt
     });
   } catch (error) {
