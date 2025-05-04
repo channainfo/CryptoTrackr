@@ -10,12 +10,19 @@ export const alertTypeEnum = pgEnum('enum_alert_type', ['price_above', 'price_be
 export const alertStatusEnum = pgEnum('enum_alert_status', ['active', 'triggered', 'disabled']);
 export const learningModuleStatusEnum = pgEnum('enum_learning_module_status', ['not_started', 'in_progress', 'completed']);
 export const learningCategoryEnum = pgEnum('enum_learning_category', ['basics', 'trading', 'defi', 'security', 'advanced']);
+export const authProviderEnum = pgEnum('enum_authentications_provider', ['email', 'google', 'github', 'ethereum', 'solana', 'base', 'sui']);
 
 // User table
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   username: varchar("username", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }),
+  email: varchar("email", { length: 255 }).unique(),
+  walletAddress: varchar("wallet_address", { length: 255 }).unique(),
+  provider: authProviderEnum("provider").notNull().default('email'),
+  providerUserId: varchar("provider_user_id", { length: 255 }),
+  profileImage: varchar("profile_image", { length: 255 }),
+  displayName: varchar("display_name", { length: 255 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
 });
