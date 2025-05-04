@@ -290,56 +290,71 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      const wallets = await db
-        .select()
-        .from(userWallets)
-        .where(eq(userWallets.userId, userId))
-        .orderBy(desc(userWallets.isDefault), asc(userWallets.createdAt));
+      // Get user wallets with direct SQL to avoid Drizzle issues
+      const walletsResult = await pool.query(
+        `SELECT * FROM user_wallets 
+         WHERE user_id = $1 
+         ORDER BY is_default DESC, created_at ASC`,
+        [userId]
+      );
+      
+      const wallets = walletsResult.rows || [];
       
       // For demonstration - if this user has no wallets, add some demo wallets
       if (wallets.length === 0) {
         console.log(`Seeding demo wallets for user ${userId}`);
         
-        // Create demo wallets with fixed IDs for demonstration
-        const demoWallets: UserWallet[] = [];
-        
-        // Ethereum wallet (default)
-        const ethWallet = await this.addUserWallet({
-          userId,
-          address: "0x1234567890abcdef1234567890abcdef12345678",
-          chainType: "ethereum",
-          isDefault: true
-        });
-        demoWallets.push(ethWallet);
-        
-        // Solana wallet
-        const solWallet = await this.addUserWallet({
-          userId,
-          address: "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsVLcUvcB4",
-          chainType: "solana",
-          isDefault: false
-        });
-        demoWallets.push(solWallet);
-        
-        // Base wallet
-        const baseWallet = await this.addUserWallet({
-          userId,
-          address: "0xabcdef1234567890abcdef1234567890abcdef12",
-          chainType: "base",
-          isDefault: false
-        });
-        demoWallets.push(baseWallet);
-        
-        // Sui wallet
-        const suiWallet = await this.addUserWallet({
-          userId,
-          address: "0x7890abcdef1234567890abcdef1234567890abcd",
-          chainType: "sui",
-          isDefault: false
-        });
-        demoWallets.push(suiWallet);
-        
-        return demoWallets;
+        try {
+          // Create demo wallets with direct SQL to avoid TypeScript issues
+          // Ethereum wallet (default)
+          await pool.query(
+            `INSERT INTO user_wallets 
+             (id, user_id, address, chain_type, is_default, created_at, updated_at) 
+             VALUES 
+             (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
+            [userId, "0x1234567890abcdef1234567890abcdef12345678", "ethereum", true]
+          );
+          
+          // Solana wallet
+          await pool.query(
+            `INSERT INTO user_wallets 
+             (id, user_id, address, chain_type, is_default, created_at, updated_at) 
+             VALUES 
+             (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
+            [userId, "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsVLcUvcB4", "solana", false]
+          );
+          
+          // Base wallet
+          await pool.query(
+            `INSERT INTO user_wallets 
+             (id, user_id, address, chain_type, is_default, created_at, updated_at) 
+             VALUES 
+             (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
+            [userId, "0xabcdef1234567890abcdef1234567890abcdef12", "base", false]
+          );
+          
+          // Sui wallet
+          await pool.query(
+            `INSERT INTO user_wallets 
+             (id, user_id, address, chain_type, is_default, created_at, updated_at) 
+             VALUES 
+             (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
+            [userId, "0x7890abcdef1234567890abcdef1234567890abcd", "sui", false]
+          );
+          
+          // Get the newly created wallets
+          const newWalletsResult = await pool.query(
+            `SELECT * FROM user_wallets 
+             WHERE user_id = $1 
+             ORDER BY is_default DESC, created_at ASC`,
+            [userId]
+          );
+          
+          return newWalletsResult.rows || [];
+        } catch (error) {
+          console.error("Error creating demo wallets:", error);
+          // Continue and return an empty array
+        }
       }
       
       return wallets;
@@ -349,15 +364,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getUserWalletByAddress(address: string, chainType: string): Promise<UserWallet | undefined> {
+  async getUserWalletByAddress(address: string, chainType: string, userId?: string): Promise<UserWallet | undefined> {
     try {
       // Use a direct SQL query to avoid TypeScript issues with chainType enum
-      const result = await pool.query(
-        `SELECT * FROM user_wallets 
-         WHERE address = $1 AND chain_type = $2 
-         LIMIT 1`,
-        [address.toLowerCase(), chainType]
-      );
+      let query = `SELECT * FROM user_wallets 
+         WHERE address = $1 AND chain_type = $2`;
+      
+      let params = [address.toLowerCase(), chainType];
+      
+      // If userId is provided, add it to the query to find wallets for specific user
+      if (userId) {
+        query += ` AND user_id = $3`;
+        params.push(userId);
+      }
+      
+      query += ` LIMIT 1`;
+      
+      const result = await pool.query(query, params);
       
       if (result.rows && result.rows.length > 0) {
         return result.rows[0] as UserWallet;
@@ -372,39 +395,59 @@ export class DatabaseStorage implements IStorage {
   
   async addUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
     try {
-      // Check if this wallet address already exists for this user
-      const existingWallet = await this.getUserWalletByAddress(wallet.address, wallet.chainType);
+      // Check if this wallet address already exists for this specific user
+      const existingWallet = await this.getUserWalletByAddress(
+        wallet.address, 
+        wallet.chainType,
+        wallet.userId
+      );
       
       if (existingWallet) {
-        throw new Error("Wallet address already exists for this chain type");
+        throw new Error("This wallet is already connected to your account");
       }
+      
+      // Use direct SQL queries for better reliability with enums
       
       // If this is the first wallet or marked as default, reset any other default wallet
       if (wallet.isDefault) {
-        await db
-          .update(userWallets)
-          .set({ isDefault: false })
-          .where(eq(userWallets.userId, wallet.userId));
+        await pool.query(
+          `UPDATE user_wallets
+           SET is_default = false
+           WHERE user_id = $1`,
+          [wallet.userId]
+        );
       }
       
-      // If no wallets exist for this user, make this the default
-      const userWalletsCount = await db
-        .select({ count: db.fn.count() })
-        .from(userWallets)
-        .where(eq(userWallets.userId, wallet.userId));
+      // Check if this is the first wallet for this user
+      const countResult = await pool.query(
+        `SELECT COUNT(*) as count
+         FROM user_wallets
+         WHERE user_id = $1`,
+        [wallet.userId]
+      );
       
-      const isFirstWallet = userWalletsCount[0].count === 0;
+      const isFirstWallet = parseInt(countResult.rows[0].count) === 0;
       
-      const [newWallet] = await db.insert(userWallets)
-        .values({
-          userId: wallet.userId,
-          address: wallet.address.toLowerCase(),
-          chainType: wallet.chainType,
-          isDefault: isFirstWallet || wallet.isDefault || false,
-        })
-        .returning();
+      // Insert the new wallet
+      const result = await pool.query(
+        `INSERT INTO user_wallets
+         (id, user_id, address, chain_type, is_default, created_at, updated_at)
+         VALUES
+         (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
+         RETURNING *`,
+        [
+          wallet.userId, 
+          wallet.address.toLowerCase(), 
+          wallet.chainType,
+          isFirstWallet || wallet.isDefault || false
+        ]
+      );
       
-      return newWallet;
+      if (result.rows && result.rows.length > 0) {
+        return result.rows[0] as UserWallet;
+      }
+      
+      throw new Error("Failed to create wallet");
     } catch (error) {
       console.error("Error adding user wallet:", error);
       throw error;
