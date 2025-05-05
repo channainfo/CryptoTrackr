@@ -106,45 +106,53 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
       
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
         <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <Link href="/profile" className="flex items-center group">
-              <Avatar className={cn("h-10 w-10 transition-all flex-shrink-0", 
-                user ? getAvatarColor(user.username) : "bg-primary bg-opacity-10 dark:bg-primary-dark dark:bg-opacity-20")}>
-                <AvatarFallback className="text-white">
-                  {user ? getUserInitials(user.username) : "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="ml-3 overflow-hidden">
-                <p className="text-sm font-medium dark:text-white truncate group-hover:underline">
-                  {user ? user.username : 'Loading...'}
-                </p>
-                {user?.walletAddress && (
-                  <p className="text-xs text-neutral-mid dark:text-neutral-light truncate">
-                    {user.walletType && `${user.walletType.charAt(0).toUpperCase()}${user.walletType.slice(1)}: `}
-                    {user.walletAddress.substring(0, 6)}...{user.walletAddress.substring(user.walletAddress.length - 4)}
-                  </p>
-                )}
-              </div>
-              <User className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
+          {/* Always show theme toggle */}
+          <div className="flex items-center justify-end">
             {!isMobile && <ThemeToggle />}
           </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            <Link href="/profile" className="flex items-center justify-center gap-2 text-sm font-medium rounded-md border border-input px-3 py-2 shadow-sm hover:bg-accent">
-              <User className="h-4 w-4" />
-              <span>Profile</span>
-            </Link>
-            
-            <Button 
-              variant="outline" 
-              className="w-full flex items-center justify-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Log Out</span>
-            </Button>
-          </div>
+
+          {/* Only show user profile info and buttons if authenticated */}
+          {user && (
+            <>
+              <div className="flex items-center">
+                <Link href="/profile" className="flex items-center group">
+                  <Avatar className={cn("h-10 w-10 transition-all flex-shrink-0", getAvatarColor(user.username))}>
+                    <AvatarFallback className="text-white">
+                      {getUserInitials(user.username)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="ml-3 overflow-hidden">
+                    <p className="text-sm font-medium dark:text-white truncate group-hover:underline">
+                      {user.username}
+                    </p>
+                    {user.walletAddress && (
+                      <p className="text-xs text-neutral-mid dark:text-neutral-light truncate">
+                        {user.walletType && `${user.walletType.charAt(0).toUpperCase()}${user.walletType.slice(1)}: `}
+                        {user.walletAddress.substring(0, 6)}...{user.walletAddress.substring(user.walletAddress.length - 4)}
+                      </p>
+                    )}
+                  </div>
+                  <User className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </Link>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Link href="/profile" className="flex items-center justify-center gap-2 text-sm font-medium rounded-md border border-input px-3 py-2 shadow-sm hover:bg-accent">
+                  <User className="h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Log Out</span>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </aside>

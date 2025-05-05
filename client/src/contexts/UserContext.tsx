@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 // Define user type
@@ -27,7 +27,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error,
   } = useQuery<User>({
     queryKey: ['/api/auth/me'],
-    retry: 1,
+    retry: false, // Don't retry on 401 errors to avoid unnecessary calls
+    // When a 401 is received, immediately consider the user unauthenticated
+    refetchOnWindowFocus: true, // Re-check auth when window regains focus
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
   });
 
   return (
