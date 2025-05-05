@@ -172,79 +172,20 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
       ? ((currentSection + 1) / contentSections.length) * 100
       : 0;
 
-  // Function to save progress to localStorage for demo user
-  const saveProgressToLocalStorage = (
-    status: "in_progress" | "completed",
-    sectionNumber: number,
-    completed = false,
-  ) => {
-    if (DEFAULT_USER_ID !== "demo") return;
 
-    try {
-      const savedProgressStr = localStorage.getItem("demo-learning-progress");
-      let savedProgress = savedProgressStr ? JSON.parse(savedProgressStr) : [];
 
-      const existingProgress = savedProgress.find(
-        (p: any) => p.moduleId === id,
-      );
-      const now = new Date().toISOString();
-
-      if (existingProgress) {
-        existingProgress.lastCompletedSection = sectionNumber;
-        existingProgress.status = status;
-        existingProgress.updatedAt = now;
-        if (completed) {
-          existingProgress.completedAt = now;
-        }
-      } else {
-        const newProgress = {
-          id: `demo-${id}`,
-          userId: DEFAULT_USER_ID,
-          moduleId: id,
-          status: status,
-          lastCompletedSection: sectionNumber,
-          createdAt: now,
-          updatedAt: now,
-        };
-        if (completed) {
-          newProgress.completedAt = now;
-        }
-        savedProgress.push(newProgress);
-      }
-
-      localStorage.setItem(
-        "demo-learning-progress",
-        JSON.stringify(savedProgress),
-      );
-    } catch (e) {
-      console.error("Error saving progress to localStorage:", e);
-    }
-  };
-
-  // Check for locally saved progress on mount
+  // Check for progress on mount and set current section accordingly
   useEffect(() => {
-    if (DEFAULT_USER_ID === "demo" && !progress && !isLoading) {
-      try {
-        const savedProgressStr = localStorage.getItem("demo-learning-progress");
-        if (savedProgressStr) {
-          const savedProgress = JSON.parse(savedProgressStr);
-          const existingProgress = savedProgress.find(
-            (p: any) => p.moduleId === id,
-          );
-
-          if (existingProgress) {
-            setCurrentSection(existingProgress.lastCompletedSection);
-            return; // Skip API call if we have local progress
-          }
-        }
-      } catch (e) {
-        console.error("Error reading progress from localStorage:", e);
-      }
+    if (progress?.status === "in_progress") {
+      setCurrentSection(progress.lastCompletedSection || 0);
     }
-  }, [id, progress, isLoading]);
+  }, [progress]);
 
   // Initialize module when first loaded - if needed and not already loaded
   useEffect(() => {
+    // Only attempt to start the module if we have a logged-in user
+    if (!user || isUserLoading) return;
+    
     const shouldStartModule =
       module &&
       !progress &&
@@ -253,13 +194,13 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
 
     if (shouldStartModule) {
       startModuleMutation.mutate({
-        userId: DEFAULT_USER_ID,
+        userId: user.id, // Use the logged-in user ID
         moduleId: id,
       });
-    } else if (progress?.status === "in_progress") {
-      setCurrentSection(progress.lastCompletedSection || 0);
     }
   }, [
+    user,
+    isUserLoading,
     module,
     progress,
     id,
@@ -277,54 +218,49 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
       // Not the last section - move to next
       const nextSection = currentSection + 1;
 
-      // Update progress via API
-      updateSectionMutation.mutate({
-        userId: DEFAULT_USER_ID,
-        moduleId: id,
-        section: nextSection,
-      });
-
-      // Update local progress
-      saveProgressToLocalStorage("in_progress", nextSection);
+      // Make sure we have a user before updating progress
+      if (user) {
+        // Update progress via API
+        updateSectionMutation.mutate({
+          userId: user.id,
+          moduleId: id,
+          section: nextSection,
+        });
+      }
 
       // Update UI
       setCurrentSection(nextSection);
     } else {
       // Last section - complete the module
-      completeModuleMutation.mutate(
-        {
-          userId: DEFAULT_USER_ID,
-          moduleId: id,
-        },
-        {
-          onSuccess: () => {
-            // Update local progress
-            saveProgressToLocalStorage(
-              "completed",
-              contentSections.length,
-              true,
-            );
-
-            // Show completion UI effects
-            setShowConfetti(true);
-
-            // Notify user
-            toast({
-              title: "Module Completed!",
-              description: "Congratulations on completing this module.",
-            });
-
-            // Navigate after delay
-            setTimeout(() => {
-              if (hasQuizzes) {
-                setLocation(`/learning/quiz/${quizzes[0].id}`);
-              } else {
-                setLocation("/learning");
-              }
-            }, 3000);
+      if (user) {
+        completeModuleMutation.mutate(
+          {
+            userId: user.id,
+            moduleId: id,
           },
-        },
-      );
+          {
+            onSuccess: () => {
+              // Show completion UI effects
+              setShowConfetti(true);
+
+              // Notify user
+              toast({
+                title: "Module Completed!",
+                description: "Congratulations on completing this module.",
+              });
+
+              // Navigate after delay
+              setTimeout(() => {
+                if (hasQuizzes) {
+                  setLocation(`/learning/quiz/${quizzes[0].id}`);
+                } else {
+                  setLocation("/learning");
+                }
+              }, 3000);
+            },
+          }
+        );
+      }
     }
   };
 
