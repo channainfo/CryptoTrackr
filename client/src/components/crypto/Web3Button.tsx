@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SiEthereum } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface Web3ButtonProps {
   onConnect: (address: string) => void;
@@ -63,11 +63,18 @@ export default function Web3Button({ onConnect, onError }: Web3ButtonProps) {
       });
 
       if (authResponse && authResponse.id) {
+        // Force refresh the user data in React Query cache
+        await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+        
         toast({
           title: "Wallet connected",
           description: "Successfully authenticated with Ethereum wallet",
         });
-        onConnect(address);
+        
+        // Wait a small amount of time for the queryClient to refetch the user data
+        setTimeout(() => {
+          onConnect(address);
+        }, 300);
       } else {
         throw new Error("Authentication failed");
       }

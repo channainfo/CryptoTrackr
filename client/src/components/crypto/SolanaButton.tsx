@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SiSolana } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface SolanaButtonProps {
   onConnect: (address: string) => void;
@@ -57,11 +57,18 @@ export default function SolanaButton({ onConnect, onError }: SolanaButtonProps) 
       });
 
       if (authResponse && authResponse.id) {
+        // Force refresh the user data in React Query cache
+        await queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+        
         toast({
           title: "Wallet connected",
           description: "Successfully authenticated with Solana wallet",
         });
-        onConnect(address);
+        
+        // Wait a small amount of time for the queryClient to refetch the user data
+        setTimeout(() => {
+          onConnect(address);
+        }, 300);
       } else {
         throw new Error("Authentication failed");
       }
