@@ -17,9 +17,133 @@ import { useToast } from "@/hooks/use-toast";
 import { ConnectedWallets } from "@/components/wallet/ConnectedWallets";
 import { LinkWalletCard } from "@/components/wallet/LinkWalletCard";
 import { UserInformation } from "@/components/account/UserInformation";
+import { useUser } from "@/contexts/UserContext";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const Settings = () => {
   const { toast } = useToast();
+  const { user, isLoading } = useUser();
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    username: "",
+    email: user?.email || "",
+    name: user?.name || "",
+    phone: user?.phone || "",
+  });
+
+  // Password state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        username: user.username || "",
+        email: user.email || "",
+        name: user.name || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user]);
+  
+  // Handle profile update
+  const handleProfileUpdate = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      // In a real app, you would make an API call here
+      // const response = await apiRequest('/api/auth/update-profile', {
+      //   method: 'POST',
+      //   data: formData
+      // });
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "There was a problem updating your profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Handle password update
+  const handlePasswordUpdate = async () => {
+    if (!passwordData.currentPassword) {
+      toast({
+        title: "Current Password Required",
+        description: "Please enter your current password",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Passwords Don't Match",
+        description: "New password and confirmation must match",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 8) {
+      toast({
+        title: "Password Too Short",
+        description: "New password must be at least 8 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      // In a real app, you would make an API call here
+      // const response = await apiRequest('/api/auth/change-password', {
+      //   method: 'POST',
+      //   data: passwordData
+      // });
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Reset password fields
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      
+      toast({
+        title: "Password Updated",
+        description: "Your password has been changed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "There was a problem updating your password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Dashboard tour
   const dashboardTour = useOnboarding("dashboard");
@@ -72,33 +196,60 @@ const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" defaultValue="Alex Morgan" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        defaultValue="alex@example.com"
-                      />
-                    </div>
+                {isLoading ? (
+                  <div className="h-40 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input 
+                          id="name" 
+                          value={formData.name}
+                          onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          placeholder="Enter your email address"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input id="username" defaultValue="alexmorgan" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" defaultValue="+1 (555) 123-4567" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input 
+                          id="username" 
+                          value={formData.username}
+                          onChange={(e) => setFormData({...formData, username: e.target.value})}
+                          disabled={!!user} // Disable if user exists (username can't be changed)
+                          placeholder="Enter your username"
+                        />
+                        {user && (
+                          <p className="text-xs text-muted-foreground">Username cannot be changed</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input 
+                          id="phone" 
+                          value={formData.phone}
+                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                          placeholder="Enter your phone number"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <Separator />
 
@@ -107,26 +258,67 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="current-password">Current Password</Label>
-                      <Input id="current-password" type="password" />
+                      <Input 
+                        id="current-password" 
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="new-password">New Password</Label>
-                      <Input id="new-password" type="password" />
+                      <Input 
+                        id="new-password" 
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">
                         Confirm New Password
                       </Label>
-                      <Input id="confirm-password" type="password" />
+                      <Input 
+                        id="confirm-password" 
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline">Cancel</Button>
-                  <Button>Save Changes</Button>
+                <div className="flex justify-between space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={handlePasswordUpdate}
+                    disabled={isSaving || !passwordData.currentPassword}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating Password...
+                      </>
+                    ) : (
+                      'Update Password'
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleProfileUpdate}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving Changes...
+                      </>
+                    ) : (
+                      'Save Profile Changes'
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

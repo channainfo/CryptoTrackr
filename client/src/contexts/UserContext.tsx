@@ -8,6 +8,9 @@ export interface User {
   createdAt?: string;
   walletAddress?: string;
   walletType?: string;
+  email?: string;
+  name?: string;
+  phone?: string;
 }
 
 interface UserContextType {
