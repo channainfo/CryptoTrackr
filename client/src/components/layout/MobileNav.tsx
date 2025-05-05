@@ -14,9 +14,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/lib/auth";
+import { useUser } from "@/contexts/UserContext";
 
 const MobileNav = () => {
   const [location] = useLocation();
+  const { user } = useUser();
   
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -50,15 +52,19 @@ const MobileNav = () => {
           </span>
         </Link>
       ))}
-      <button 
-        onClick={handleLogout}
-        className="flex flex-col items-center"
-      >
-        <LogOut className="h-5 w-5 text-red-500" />
-        <span className="text-xs mt-1 text-red-500">
-          Logout
-        </span>
-      </button>
+      
+      {/* Only show logout button if user is authenticated */}
+      {user && (
+        <button 
+          onClick={handleLogout}
+          className="flex flex-col items-center"
+        >
+          <LogOut className="h-5 w-5 text-red-500" />
+          <span className="text-xs mt-1 text-red-500">
+            Logout
+          </span>
+        </button>
+      )}
     </nav>
   );
 };
