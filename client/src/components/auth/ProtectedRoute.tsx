@@ -23,6 +23,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // This will run as soon as authentication status is known
   useEffect(() => {
     if (!isLoading && !user && location !== '/login') {
+      // Save the intended destination
+      if (location !== '/') {
+        localStorage.setItem('lastRoute', location);
+      }
+      
       // Redirect to login page immediately if not authenticated
       setLocation('/login');
     }

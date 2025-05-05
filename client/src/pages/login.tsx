@@ -74,7 +74,15 @@ export default function Login() {
           title: "Login successful",
           description: "Welcome back!",
         });
-        setLocation("/dashboard");
+        
+        // Check if there's a saved route to redirect to
+        const lastRoute = localStorage.getItem('lastRoute');
+        if (lastRoute) {
+          localStorage.removeItem('lastRoute'); // Clear it after use
+          setLocation(lastRoute);
+        } else {
+          setLocation("/dashboard");
+        }
       }
     } catch (error) {
       toast({
@@ -127,7 +135,15 @@ export default function Login() {
         title: "Demo mode",
         description: "Logged in as demo user",
       });
-      setLocation("/dashboard");
+      
+      // Check for saved route
+      const lastRoute = localStorage.getItem('lastRoute');
+      if (lastRoute) {
+        localStorage.removeItem('lastRoute'); // Clear it after use
+        setLocation(lastRoute);
+      } else {
+        setLocation("/dashboard");
+      }
     }, 1500);
   };
 
@@ -204,8 +220,14 @@ export default function Login() {
                   <Web3Button 
                     onConnect={(address) => {
                       console.log("Ethereum wallet connected:", address);
-                      // Navigate to dashboard after successful authentication
-                      setLocation("/dashboard");
+                      // Check for saved route
+                      const lastRoute = localStorage.getItem('lastRoute');
+                      if (lastRoute) {
+                        localStorage.removeItem('lastRoute'); // Clear it after use
+                        setLocation(lastRoute);
+                      } else {
+                        setLocation("/dashboard");
+                      }
                     }}
                     onError={(error) => {
                       console.error("Ethereum connection error:", error);
@@ -220,8 +242,14 @@ export default function Login() {
                   <SolanaButton 
                     onConnect={(address) => {
                       console.log("Solana wallet connected:", address);
-                      // Navigate to dashboard after successful authentication
-                      setLocation("/dashboard");
+                      // Check for saved route
+                      const lastRoute = localStorage.getItem('lastRoute');
+                      if (lastRoute) {
+                        localStorage.removeItem('lastRoute'); // Clear it after use
+                        setLocation(lastRoute);
+                      } else {
+                        setLocation("/dashboard");
+                      }
                     }}
                     onError={(error) => {
                       console.error("Solana connection error:", error);
@@ -236,8 +264,14 @@ export default function Login() {
                   <BaseButton 
                     onConnect={(address) => {
                       console.log("Base wallet connected:", address);
-                      // Navigate to dashboard after successful authentication
-                      setLocation("/dashboard");
+                      // Check for saved route
+                      const lastRoute = localStorage.getItem('lastRoute');
+                      if (lastRoute) {
+                        localStorage.removeItem('lastRoute'); // Clear it after use
+                        setLocation(lastRoute);
+                      } else {
+                        setLocation("/dashboard");
+                      }
                     }}
                     onError={(error) => {
                       console.error("Base connection error:", error);
