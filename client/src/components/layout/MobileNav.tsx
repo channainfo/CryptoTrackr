@@ -25,7 +25,7 @@ const MobileNav = () => {
     { href: '/portfolio', label: 'Portfolio', icon: PieChart },
     { href: '/markets', label: 'Markets', icon: LineChart },
     { href: '/learning', label: 'Learn', icon: GraduationCap },
-    { href: '/settings', label: 'Settings', icon: Settings },
+    { href: '/settings', label: 'Account', icon: Settings },
   ];
   
   const handleLogout = async () => {

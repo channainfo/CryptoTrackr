@@ -46,7 +46,16 @@ function Router() {
       <ProtectedRoute path="/transactions" component={Transactions} />
       <ProtectedRoute path="/markets" component={Markets} />
       <ProtectedRoute path="/settings" component={Settings} />
-      <ProtectedRoute path="/profile" component={Profile} />
+      {/* Redirect /profile to /settings */}
+      <Route path="/profile">
+        {() => {
+          const [, setLocation] = useLocation();
+          React.useEffect(() => {
+            setLocation('/settings');
+          }, [setLocation]);
+          return null;
+        }}
+      </Route>
       <ProtectedRoute path="/tax-report" component={TaxReport} />
       <ProtectedRoute path="/budget-planner" component={BudgetPlanner} />
       <ProtectedRoute path="/analytics" component={Analytics} />

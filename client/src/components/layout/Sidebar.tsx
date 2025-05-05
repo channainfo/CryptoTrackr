@@ -41,7 +41,7 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
     { href: '/achievements', label: 'Achievements', icon: Trophy },
     { href: '/alerts', label: 'Alerts', icon: BellRing },
     { href: '/tax-report', label: 'Tax Report', icon: FileText },
-    { href: '/settings', label: 'Settings', icon: Settings },
+    { href: '/settings', label: 'Account', icon: Settings },
   ];
   
   // Get user initials for avatar
@@ -85,12 +85,42 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
       "flex flex-col bg-white dark:bg-zinc-950 border-r border-gray-200 dark:border-gray-800",
       isMobile ? "w-full h-full" : "hidden md:flex w-64"
     )}>
-      <div className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-        <Ticket className="h-6 w-6 text-primary" />
-        <h1 className="ml-2 text-xl font-bold text-primary">Trailer</h1>
+      {/* App title and user profile at the top */}
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center">
+            <Ticket className="h-6 w-6 text-primary" />
+            <h1 className="ml-2 text-xl font-bold text-primary">Trailer</h1>
+          </div>
+          {!isMobile && <ThemeToggle />}
+        </div>
+        
+        {/* User profile section at the top */}
+        {user && (
+          <Link href="/settings" className="flex items-center py-2 px-1 rounded-lg group hover:bg-primary/5 transition-colors">
+            <Avatar className={cn("h-9 w-9 transition-all flex-shrink-0", getAvatarColor(user.username))}>
+              <AvatarFallback className="text-white">
+                {getUserInitials(user.username)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="ml-3 overflow-hidden flex-1">
+              <p className="text-sm font-medium dark:text-white truncate group-hover:underline flex items-center">
+                {user.username}
+                <User className="ml-1 h-3.5 w-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
+              </p>
+              {user.walletAddress && (
+                <p className="text-xs text-neutral-mid dark:text-neutral-light truncate">
+                  {user.walletType && `${user.walletType.charAt(0).toUpperCase()}${user.walletType.slice(1)}: `}
+                  {user.walletAddress.substring(0, 6)}...{user.walletAddress.substring(user.walletAddress.length - 4)}
+                </p>
+              )}
+            </div>
+          </Link>
+        )}
       </div>
       
-      <nav className="flex-1 p-4 space-y-1">
+      {/* Navigation links in scrollable area */}
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <Link key={item.href} href={item.href} className={cn(
             "flex items-center px-4 py-3 rounded-lg transition-colors",
@@ -104,56 +134,18 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
         ))}
       </nav>
       
+      {/* Logout button at the bottom */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-        <div className="flex flex-col space-y-4">
-          {/* Always show theme toggle */}
-          <div className="flex items-center justify-end">
-            {!isMobile && <ThemeToggle />}
-          </div>
-
-          {/* Only show user profile info and buttons if authenticated */}
-          {user && (
-            <>
-              <div className="flex items-center">
-                <Link href="/profile" className="flex items-center group">
-                  <Avatar className={cn("h-10 w-10 transition-all flex-shrink-0", getAvatarColor(user.username))}>
-                    <AvatarFallback className="text-white">
-                      {getUserInitials(user.username)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="ml-3 overflow-hidden">
-                    <p className="text-sm font-medium dark:text-white truncate group-hover:underline">
-                      {user.username}
-                    </p>
-                    {user.walletAddress && (
-                      <p className="text-xs text-neutral-mid dark:text-neutral-light truncate">
-                        {user.walletType && `${user.walletType.charAt(0).toUpperCase()}${user.walletType.slice(1)}: `}
-                        {user.walletAddress.substring(0, 6)}...{user.walletAddress.substring(user.walletAddress.length - 4)}
-                      </p>
-                    )}
-                  </div>
-                  <User className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <Link href="/profile" className="flex items-center justify-center gap-2 text-sm font-medium rounded-md border border-input px-3 py-2 shadow-sm hover:bg-accent">
-                  <User className="h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full flex items-center justify-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Log Out</span>
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
+        {user && (
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Log Out</span>
+          </Button>
+        )}
       </div>
     </aside>
   );
