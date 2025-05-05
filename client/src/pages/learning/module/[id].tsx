@@ -30,9 +30,7 @@ import {
 } from "@/hooks/use-learning";
 import type { LearningModule, ContentSection } from "@/types/education";
 import ReactConfetti from "react-confetti";
-
-// Default user ID for demo purposes
-const DEFAULT_USER_ID = "demo";
+import { useUser } from "@/contexts/UserContext";
 
 // Separate Confetti component to avoid hooks ordering issues
 const Celebration = ({ show }: { show: boolean }) => {
@@ -138,9 +136,17 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   const [currentSection, setCurrentSection] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
+  const { user, isLoading: isUserLoading } = useUser();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      setLocation('/login');
+    }
+  }, [user, isUserLoading, setLocation]);
 
   // Fetch module details including quizzes and progress
-  const { data: moduleData, isLoading } = useLearningModuleDetails(id);
+  const { data: moduleData, isLoading: isModuleLoading } = useLearningModuleDetails(id);
 
   // Mutations for tracking progress
   const startModuleMutation = useStartModule();
@@ -340,7 +346,7 @@ const ModuleDetail: React.FC<ModuleDetailProps> = ({ id }) => {
   }, [showConfetti]);
 
   // Loading state
-  if (isLoading) {
+  if (isModuleLoading || isUserLoading) {
     return (
       <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
         <div>

@@ -1,8 +1,13 @@
-import React from 'react';
-import { HelpCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTutorial } from '@/contexts/TutorialContext';
+import React from "react";
+import { HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTutorial } from "@/contexts/TutorialContext";
 
 const TutorialButton = () => {
   const { startTutorial, tutorialCompleted } = useTutorial();
@@ -11,13 +16,13 @@ const TutorialButton = () => {
   // This way they can access it again if needed
   if (tutorialCompleted) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-18 right-4 z-50">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="secondary" 
-                size="icon" 
+              <Button
+                variant="secondary"
+                size="icon"
                 className="rounded-full shadow-md"
                 onClick={startTutorial}
               >
