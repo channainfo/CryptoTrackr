@@ -7,7 +7,29 @@ import { ethers } from "ethers";
 import { db } from "../db";
 import { users, insertUserSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "crypto";
+import { promisify } from "util";
+
+// Password hashing functions
+const scryptAsync = promisify(crypto.scrypt);
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const buf = await scryptAsync(password, salt, 64) as Buffer;
+  return `${buf.toString('hex')}.${salt}`;
+}
+
+async function verifyPassword(storedPassword: string, suppliedPassword: string): Promise<boolean> {
+  const [hashedPassword, salt] = storedPassword.split('.');
+  const hashedPasswordBuf = Buffer.from(hashedPassword, 'hex');
+  const suppliedPasswordBuf = await scryptAsync(suppliedPassword, salt, 64) as Buffer;
+  
+  try {
+    return crypto.timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+  } catch (e) {
+    console.error('Error comparing passwords:', e);
+    return false;
+  }
+}
 
 const router = Router();
 
@@ -358,6 +380,115 @@ router.post("/wallet/base", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Base authentication error:", error);
     res.status(500).json({ message: "Authentication failed" });
+  }
+});
+
+// Validation schema for user registration
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+// Validation schema for user login
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// User registration endpoint
+router.post("/register", async (req: Request, res: Response) => {
+  try {
+    console.log('Register request body:', req.body);
+    
+    // Validate request body
+    const validation = registerSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        message: "Invalid registration data",
+        errors: validation.error.flatten().fieldErrors,
+      });
+    }
+    
+    const { username, password } = validation.data;
+    
+    // Check if username already exists
+    const existingUser = await storage.getUserByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Username already exists",
+      });
+    }
+    
+    // Hash the password
+    const hashedPassword = await hashPassword(password);
+    
+    // Create the user
+    const user = await storage.createUser({
+      username,
+      password: hashedPassword,
+    });
+    
+    // Set up session - automatically log in the user
+    if (req.session) {
+      req.session.userId = user.id;
+      req.session.username = user.username;
+    }
+    
+    // Return user info (exclude password)
+    res.status(200).json({
+      id: user.id,
+      username: user.username,
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Registration failed" });
+  }
+});
+
+// User login endpoint
+router.post("/login", async (req: Request, res: Response) => {
+  try {
+    console.log('Login request body:', req.body);
+    
+    // Validate request body
+    const validation = loginSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        message: "Invalid login data",
+        errors: validation.error.flatten().fieldErrors,
+      });
+    }
+    
+    const { username, password } = validation.data;
+    
+    // Find the user
+    const user = await storage.getUserByUsername(username);
+    if (!user) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+    
+    // Verify password
+    const isPasswordValid = await verifyPassword(user.password, password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+    
+    // Set up session
+    if (req.session) {
+      req.session.userId = user.id;
+      req.session.username = user.username;
+    }
+    
+    // Return user info (exclude password)
+    res.status(200).json({
+      id: user.id,
+      username: user.username,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Login failed" });
   }
 });
 
