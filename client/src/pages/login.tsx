@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useEffect } from "react";
 import { useUser } from "@/contexts/UserContext";
 
@@ -72,6 +72,9 @@ export default function Login() {
       });
 
       if (response) {
+        // Invalidate the auth query to force a refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+        
         toast({
           title: "Login successful",
           description: "Welcome back!",
@@ -109,6 +112,9 @@ export default function Login() {
     
     // For demo purposes, log in automatically
     setTimeout(() => {
+      // Invalidate the auth query to force a refresh
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
       toast({
         title: "Demo mode",
         description: "Logged in as demo user",
@@ -204,6 +210,9 @@ export default function Login() {
               <Web3Button 
                 onConnect={(address) => {
                   console.log("Ethereum wallet connected:", address);
+                  // Invalidate the auth query to force a refresh
+                  queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+                  
                   // Check for saved route
                   const lastRoute = localStorage.getItem('lastRoute');
                   if (lastRoute) {
@@ -226,6 +235,9 @@ export default function Login() {
               <SolanaButton 
                 onConnect={(address) => {
                   console.log("Solana wallet connected:", address);
+                  // Invalidate the auth query to force a refresh
+                  queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+                  
                   // Check for saved route
                   const lastRoute = localStorage.getItem('lastRoute');
                   if (lastRoute) {
@@ -248,6 +260,9 @@ export default function Login() {
               <BaseButton 
                 onConnect={(address) => {
                   console.log("Base wallet connected:", address);
+                  // Invalidate the auth query to force a refresh
+                  queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+                  
                   // Check for saved route
                   const lastRoute = localStorage.getItem('lastRoute');
                   if (lastRoute) {
