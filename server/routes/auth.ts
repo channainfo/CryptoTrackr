@@ -5,8 +5,9 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { ethers } from "ethers";
 import { db } from "../db";
-import { users } from "@shared/schema";
+import { users, insertUserSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import bcrypt from "crypto";
 
 const router = Router();
 
