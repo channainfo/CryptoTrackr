@@ -40,9 +40,13 @@ export default function Register() {
   const onRegisterSubmit = async (values: RegistrationFormValues) => {
     try {
       const { confirmPassword, ...userData } = values;
+      console.log('Registering with data:', userData);
+      
+      // The apiRequest function already handles JSON stringification,
+      // so we pass the object directly
       const response = await apiRequest("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify(userData),
+        data: userData, // Change from 'body: JSON.stringify(userData)' to 'data: userData'
       });
 
       if (response) {

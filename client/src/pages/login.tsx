@@ -51,9 +51,13 @@ export default function Login() {
 
   const onLoginSubmit = async (values: LoginFormValues) => {
     try {
+      console.log('Logging in with:', values);
+      
+      // The apiRequest function already handles JSON stringification,
+      // so we pass the object directly
       const response = await apiRequest("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify(values),
+        data: values,
       });
 
       if (response) {
