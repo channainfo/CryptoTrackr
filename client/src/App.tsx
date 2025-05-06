@@ -23,6 +23,7 @@ import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import Achievements from "@/pages/achievements";
 import Login from "@/pages/login";
+import Register from "@/pages/register";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { CryptoConceptsProvider } from "@/contexts/CryptoConceptsContext";
@@ -34,8 +35,9 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 function Router() {
   return (
     <Switch>
-      {/* Public route for the login page */}
+      {/* Public routes for authentication */}
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       
       {/* Protected routes that require authentication */}
       <ProtectedRoute path="/" component={Dashboard} />
@@ -131,7 +133,7 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
-  const isLoginPage = location === '/login';
+  const isAuthPage = location === '/login' || location === '/register';
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -140,7 +142,7 @@ function App() {
           <CryptoConceptsProvider>
             <TooltipProvider>
               <Toaster />
-              {isLoginPage ? (
+              {isAuthPage ? (
                 <div className="min-h-screen bg-background flex flex-col">
                   <Router />
                 </div>
@@ -149,7 +151,7 @@ function App() {
                   <Router />
                 </AppLayout>
               )}
-              {!isLoginPage && (
+              {!isAuthPage && (
                 <>
                   <Tutorial />
                   <TutorialButton />
