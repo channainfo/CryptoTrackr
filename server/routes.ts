@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import axios from "axios";
@@ -20,8 +20,10 @@ import { db } from "./db";
 import { eq } from "drizzle-orm";
 import learningRoutes from "./routes/learningRoutes";
 import authRoutes from "./routes/auth";
+import achievementRoutes from "./routes/achievementRoutes";
 import { OpenAIService } from "./services/openai";
 import { RiskAssessmentService } from "./services/riskAssessment";
+import { authMiddleware, requireAuth } from "./middleware/auth";
 
 // Utility function to calculate market sentiment based on market data
 function calculateSentimentFromMarket(marketData: any[]) {
@@ -94,11 +96,17 @@ function calculateSentimentFromMarket(marketData: any[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply authentication middleware to all routes
+  app.use(authMiddleware);
+  
   // Register auth routes
   app.use('/api/auth', authRoutes);
   
   // Register learning routes
   app.use('/api/learning', learningRoutes);
+  
+  // Register achievement routes
+  app.use('/api/achievements', achievementRoutes);
   
   // Set up API routes
   app.get('/api/crypto/market', async (req, res) => {
@@ -127,17 +135,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Risk assessment for a portfolio
-  app.get('/api/portfolios/:portfolioId/risk-assessment', async (req, res) => {
+  app.get('/api/portfolios/:portfolioId/risk-assessment', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
       }
       
+      // Get the authenticated user
+      const user = (req as any).user;
+      
       // Get portfolio details
       const portfolio = await storage.getPortfolioById(portfolioId);
       if (!portfolio) {
         return res.status(404).json({ message: 'Portfolio not found' });
+      }
+      
+      // Verify the portfolio belongs to the authenticated user
+      if (portfolio.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to access this portfolio' });
       }
       
       // Get portfolio assets
@@ -161,12 +177,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Risk assessment for a specific token
-  app.get('/api/crypto/tokens/:symbol/risk-assessment', async (req, res) => {
+  app.get('/api/crypto/tokens/:symbol/risk-assessment', requireAuth, async (req: Request, res: Response) => {
     try {
       const symbol = req.params.symbol;
       if (!symbol) {
         return res.status(400).json({ message: 'Invalid token symbol' });
       }
+      
+      // Get the authenticated user - not checking ownership here since it's based on the token symbol
+      // but still require authentication to get risk assessment
+      const user = (req as any).user;
       
       // Get market data for context
       const marketData = await services.getMarketData();
@@ -195,20 +215,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get personalized crypto news based on portfolio
-  app.get('/api/crypto/news', async (req, res) => {
+  app.get('/api/crypto/news', requireAuth, async (req: Request, res: Response) => {
     try {
       // Fetch news articles
       const newsArticles = await OpenAIService.fetchCryptoNews();
       
-      // Get the default user
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Get portfolio tokens for personalization
       let portfolioTokens: Array<{symbol: string, name: string}> = [];
       
       // Get user's portfolios
-      const portfolios = await storage.getUserPortfolios(defaultUser.id);
+      const portfolios = await storage.getUserPortfolios(user.id);
       
       // Get all tokens from active portfolios (non-watchlist)
       for (const portfolio of portfolios) {
@@ -295,38 +314,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get portfolio assets (all portfolios)
-  app.get('/api/portfolio', async (req, res) => {
+  app.get('/api/portfolio', requireAuth, async (req: Request, res: Response) => {
     try {
-      const assets = await storage.getPortfolioAssets();
-      res.json(assets);
+      // Get the authenticated user
+      const user = (req as any).user;
+      
+      // Get all portfolios for the authenticated user
+      const portfolios = await storage.getUserPortfolios(user.id);
+      
+      // Get all assets from all portfolios belonging to the user
+      let allAssets: any[] = [];
+      
+      for (const portfolio of portfolios) {
+        const assets = await storage.getPortfolioAssetsById(portfolio.id);
+        allAssets = allAssets.concat(assets);
+      }
+      
+      res.json(allAssets);
     } catch (error) {
       console.error('Error fetching portfolio assets:', error);
       res.status(500).json({ message: 'Failed to fetch portfolio data' });
     }
   });
   
-  // Get assets for a specific portfolio
-  app.get('/api/portfolios/:portfolioId/assets', async (req, res) => {
-    try {
-      const portfolioId = req.params.portfolioId;
-      if (!portfolioId) {
-        return res.status(400).json({ message: 'Invalid portfolio ID' });
-      }
-      
-      const assets = await storage.getPortfolioAssetsById(portfolioId);
-      res.json(assets);
-    } catch (error) {
-      console.error('Error fetching portfolio assets:', error);
-      res.status(500).json({ message: 'Failed to fetch portfolio data' });
-    }
-  });
+  // This endpoint has been moved below with proper auth middleware
 
   // Add asset to portfolio (default portfolio)
-  app.post('/api/portfolio', async (req, res) => {
+  app.post('/api/portfolio', requireAuth, async (req: Request, res: Response) => {
     try {
-      // Get the default user and portfolio first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // We'll automatically handle the userId so user doesn't have to provide it
       const assetData = {
@@ -335,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: req.body.quantity,
         currentPrice: req.body.currentPrice,
         priceChangePercentage24h: req.body.priceChangePercentage24h || 0,
-        userId: defaultUser.id,
+        userId: user.id,
         value: req.body.quantity * req.body.currentPrice
       };
       
@@ -348,20 +365,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Add asset to a specific portfolio
-  app.post('/api/portfolios/:portfolioId/assets', async (req, res) => {
+  app.post('/api/portfolios/:portfolioId/assets', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
       }
       
-      // Get the default user
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Check if portfolio exists and belongs to user
       const portfolio = await storage.getPortfolioById(portfolioId);
-      if (!portfolio || portfolio.userId !== defaultUser.id) {
+      if (!portfolio || portfolio.userId !== user.id) {
         return res.status(404).json({ message: 'Portfolio not found' });
       }
       
@@ -373,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: req.body.quantity,
         currentPrice: req.body.currentPrice,
         priceChangePercentage24h: req.body.priceChangePercentage24h || 0,
-        userId: defaultUser.id,
+        userId: user.id,
         value: req.body.quantity * req.body.currentPrice
       };
       
@@ -386,11 +402,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remove asset from portfolio (default portfolio)
-  app.delete('/api/portfolio/:id', async (req, res) => {
+  app.delete('/api/portfolio/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const id = req.params.id;
       if (!id) {
         return res.status(400).json({ message: 'Invalid asset ID' });
+      }
+      
+      // Get the authenticated user
+      const user = (req as any).user;
+      
+      // Get the asset to verify ownership
+      const asset = await storage.getPortfolioAsset(id);
+      if (!asset) {
+        return res.status(404).json({ message: 'Asset not found' });
+      }
+      
+      // Verify the asset belongs to the authenticated user
+      if (asset.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to remove this asset' });
       }
       
       await storage.removePortfolioAsset(id);
@@ -402,20 +432,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Remove asset from specific portfolio
-  app.delete('/api/portfolios/:portfolioId/assets/:assetId', async (req, res) => {
+  app.delete('/api/portfolios/:portfolioId/assets/:assetId', requireAuth, async (req: Request, res: Response) => {
     try {
       const { portfolioId, assetId } = req.params;
       if (!portfolioId || !assetId) {
         return res.status(400).json({ message: 'Invalid portfolio or asset ID' });
       }
       
-      // Get the default user
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Check if portfolio exists and belongs to user
       const portfolio = await storage.getPortfolioById(portfolioId);
-      if (!portfolio || portfolio.userId !== defaultUser.id) {
+      if (!portfolio || portfolio.userId !== user.id) {
         return res.status(404).json({ message: 'Portfolio not found' });
       }
       
@@ -423,6 +452,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const asset = await storage.getPortfolioAsset(assetId);
       if (!asset) {
         return res.status(404).json({ message: 'Asset not found' });
+      }
+      
+      // Additional validation to ensure the asset belongs to the authenticated user
+      if (asset.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to remove this asset' });
       }
       
       await storage.removePortfolioAsset(assetId);
@@ -434,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update a portfolio asset (for partial sells)
-  app.patch('/api/portfolios/:portfolioId/assets/:assetId', async (req, res) => {
+  app.patch('/api/portfolios/:portfolioId/assets/:assetId', requireAuth, async (req: Request, res: Response) => {
     try {
       const { portfolioId, assetId } = req.params;
       const { quantity } = req.body;
@@ -444,13 +478,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      // Get the default user
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Check if portfolio exists and belongs to user
       const portfolio = await storage.getPortfolioById(portfolioId);
-      if (!portfolio || portfolio.userId !== defaultUser.id) {
+      if (!portfolio || portfolio.userId !== user.id) {
         return res.status(404).json({ message: 'Portfolio not found' });
       }
       
@@ -458,6 +491,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const asset = await storage.getPortfolioAsset(assetId);
       if (!asset) {
         return res.status(404).json({ message: 'Asset not found' });
+      }
+      
+      // Additional validation to ensure the asset belongs to the authenticated user
+      if (asset.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to update this asset' });
       }
       
       const updatedAsset = await storage.updatePortfolioAsset(assetId, { quantity: parseFloat(quantity) });
@@ -474,17 +512,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user portfolios
-  app.get('/api/portfolios', async (req, res) => {
+  app.get('/api/portfolios', requireAuth, async (req: Request, res: Response) => {
     try {
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Get filter parameters
       const type = req.query.type as string;
       
-      // Get all portfolios for this user
-      let portfolios = await storage.getUserPortfolios(defaultUser.id);
+      // Get all portfolios for the authenticated user
+      let portfolios = await storage.getUserPortfolios(user.id);
       
       // Print all portfolios and their isWatchlist value for debugging
       console.log("All portfolios before filtering:");
@@ -516,20 +553,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get portfolio by ID
-  app.get('/api/portfolios/:portfolioId', async (req, res) => {
+  app.get('/api/portfolios/:portfolioId', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
       }
       
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get authenticated user
+      const user = (req as any).user;
       
       const portfolio = await storage.getPortfolioById(portfolioId);
       
-      if (!portfolio || portfolio.userId !== defaultUser.id) {
+      if (!portfolio || portfolio.userId !== user.id) {
         return res.status(404).json({ message: 'Portfolio not found' });
       }
       
@@ -541,20 +577,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get portfolio summary
-  app.get('/api/portfolios/:portfolioId/summary', async (req, res) => {
+  app.get('/api/portfolios/:portfolioId/summary', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
       }
       
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Check if portfolio exists and belongs to user
       const portfolio = await storage.getPortfolioById(portfolioId);
-      if (!portfolio || portfolio.userId !== defaultUser.id) {
+      if (!portfolio || portfolio.userId !== user.id) {
         return res.status(404).json({ message: 'Portfolio not found' });
       }
       
@@ -577,11 +612,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get assets for a specific portfolio
-  app.get('/api/portfolios/:portfolioId/assets', async (req, res) => {
+  app.get('/api/portfolios/:portfolioId/assets', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get authenticated user
+      const user = (req as any).user;
+      
+      // Verify the portfolio belongs to the authenticated user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== user.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
       }
       
       const assets = await storage.getPortfolioAssetsById(portfolioId);
@@ -593,11 +637,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get portfolio performance data
-  app.get('/api/portfolios/:portfolioId/performance', async (req, res) => {
+  app.get('/api/portfolios/:portfolioId/performance', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the authenticated user
+      const user = (req as any).user;
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== user.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
       }
       
       const period = req.query.period as '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL' || '1M';
@@ -622,11 +675,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new portfolio
-  app.post('/api/portfolios', async (req, res) => {
+  app.post('/api/portfolios', requireAuth, async (req: Request, res: Response) => {
     try {
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       console.log("Creating portfolio with data:", JSON.stringify(req.body, null, 2));
       console.log("Is watchlist flag in request:", req.body.isWatchlist);
@@ -658,12 +710,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: req.body.description,
         isDefault: req.body.isDefault || false,
         isWatchlist: isWatchlist,
-        userId: defaultUser.id
+        userId: user.id
       };
       
       // If this portfolio is set as default, update any existing default portfolios
       if (portfolioData.isDefault) {
-        const userPortfolios = await storage.getUserPortfolios(defaultUser.id);
+        const userPortfolios = await storage.getUserPortfolios(user.id);
         for (const p of userPortfolios) {
           if (p.isDefault) {
             // Update this portfolio to not be the default
@@ -681,20 +733,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update portfolio
-  app.patch('/api/portfolios/:portfolioId', async (req, res) => {
+  app.patch('/api/portfolios/:portfolioId', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
       }
       
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get authenticated user
+      const user = (req as any).user;
       
       // Check if portfolio exists and belongs to user
       const portfolio = await storage.getPortfolioById(portfolioId);
-      if (!portfolio || portfolio.userId !== defaultUser.id) {
+      if (!portfolio || portfolio.userId !== user.id) {
         return res.status(404).json({ message: 'Portfolio not found' });
       }
       
@@ -707,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If this portfolio is set as default, update any existing default portfolios
       if (updateData.isDefault) {
-        const userPortfolios = await storage.getUserPortfolios(defaultUser.id);
+        const userPortfolios = await storage.getUserPortfolios(user.id);
         for (const p of userPortfolios) {
           if (p.id !== portfolioId && p.isDefault) {
             // Update this portfolio to not be the default
@@ -725,25 +776,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete portfolio
-  app.delete('/api/portfolios/:portfolioId', async (req, res) => {
+  app.delete('/api/portfolios/:portfolioId', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
       }
       
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Check if portfolio exists and belongs to user
       const portfolio = await storage.getPortfolioById(portfolioId);
-      if (!portfolio || portfolio.userId !== defaultUser.id) {
+      if (!portfolio || portfolio.userId !== user.id) {
         return res.status(404).json({ message: 'Portfolio not found' });
       }
       
       // Make sure we don't delete the only portfolio
-      const userPortfolios = await storage.getUserPortfolios(defaultUser.id);
+      const userPortfolios = await storage.getUserPortfolios(user.id);
       if (userPortfolios.length <= 1) {
         return res.status(400).json({ message: 'Cannot delete the only portfolio' });
       }
@@ -773,9 +823,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get transactions
-  app.get('/api/transactions', async (req, res) => {
+  app.get('/api/transactions', requireAuth, async (req: Request, res: Response) => {
     try {
-      const transactions = await storage.getTransactions();
+      // Get the authenticated user
+      const user = (req as any).user;
+      
+      // Get transactions for the authenticated user
+      const transactions = await storage.getTransactions(user.id);
       res.json(transactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -784,11 +838,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add transaction
-  app.post('/api/transactions', async (req, res) => {
+  app.post('/api/transactions', requireAuth, async (req: Request, res: Response) => {
     try {
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       const txData = {
         cryptoName: req.body.cryptoName,
@@ -797,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity: req.body.quantity,
         price: req.body.price,
         value: req.body.value || (req.body.quantity * req.body.price),
-        userId: defaultUser.id,
+        userId: user.id,
         timestamp: req.body.timestamp || new Date().toISOString()
       };
       
@@ -810,8 +863,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Record historical values for all portfolios and tokens
-  app.post('/api/history/record', async (req, res) => {
+  app.post('/api/history/record', requireAuth, async (req: Request, res: Response) => {
     try {
+      // Get the authenticated user - in a real app only admins should be able to perform this operation
+      const user = (req as any).user;
+      
+      // For now, we'll allow any authenticated user to do this
       const result = await HistoricalValueService.recordTodayValues();
       res.status(200).json(result);
     } catch (error) {
@@ -821,11 +878,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Record historical values for specific portfolio
-  app.post('/api/portfolios/:portfolioId/history/record', async (req, res) => {
+  app.post('/api/portfolios/:portfolioId/history/record', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the authenticated user
+      const user = (req as any).user;
+      
+      // Verify the portfolio belongs to the user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to record history for this portfolio' });
       }
       
       const result = await HistoricalValueService.recordPortfolioValue(portfolioId);
@@ -837,11 +903,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get portfolio performance data
-  app.get('/api/portfolios/:portfolioId/performance', async (req, res) => {
+  app.get('/api/portfolios/:portfolioId/performance', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioId = req.params.portfolioId;
       if (!portfolioId) {
         return res.status(400).json({ message: 'Invalid portfolio ID' });
+      }
+      
+      // Get the authenticated user
+      const user = (req as any).user;
+      
+      // Check if portfolio exists and belongs to user
+      const portfolio = await storage.getPortfolioById(portfolioId);
+      if (!portfolio || portfolio.userId !== user.id) {
+        return res.status(404).json({ message: 'Portfolio not found' });
       }
       
       const period = req.query.period as '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL' || '1M';
@@ -925,12 +1000,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get portfolio token details
-  app.get('/api/portfolio-tokens/:portfolioTokenId', async (req, res) => {
+  app.get('/api/portfolio-tokens/:portfolioTokenId', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioTokenId = req.params.portfolioTokenId;
       if (!portfolioTokenId) {
         return res.status(400).json({ message: 'Invalid portfolio token ID' });
       }
+      
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Get token details
       const token = await db
@@ -958,6 +1036,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Portfolio token not found' });
       }
       
+      // Verify the token belongs to the authenticated user
+      if (token[0].userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to access this token' });
+      }
+      
       res.json(token[0]);
     } catch (error) {
       console.error('Error fetching portfolio token:', error);
@@ -966,11 +1049,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get token performance data
-  app.get('/api/portfolio-tokens/:portfolioTokenId/performance', async (req, res) => {
+  app.get('/api/portfolio-tokens/:portfolioTokenId/performance', requireAuth, async (req: Request, res: Response) => {
     try {
       const portfolioTokenId = req.params.portfolioTokenId;
       if (!portfolioTokenId) {
         return res.status(400).json({ message: 'Invalid portfolio token ID' });
+      }
+      
+      // Get authenticated user
+      const user = (req as any).user;
+      
+      // Verify ownership
+      const token = await db
+        .select({
+          userId: portfolioTokens.userId,
+        })
+        .from(portfolioTokens)
+        .where(eq(portfolioTokens.id, portfolioTokenId))
+        .limit(1);
+      
+      if (!token[0]) {
+        return res.status(404).json({ message: 'Portfolio token not found' });
+      }
+      
+      // Verify the token belongs to the authenticated user
+      if (token[0].userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to access this token performance data' });
       }
       
       const period = req.query.period as '1D' | '1W' | '1M' | '3M' | '6M' | '1Y' | 'ALL' || '1M';
@@ -988,7 +1092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tax calculation endpoints
-  app.get('/api/tax/calculate', async (req, res) => {
+  app.get('/api/tax/calculate', requireAuth, async (req: Request, res: Response) => {
     try {
       // Get query parameters
       const year = req.query.year as string || new Date().getFullYear().toString();
@@ -996,14 +1100,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const income = req.query.income as string || '50000';
       const status = req.query.status as 'single' | 'joint' | 'separate' | 'head' || 'single';
       
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       try {
         // Try to calculate using real transaction data
         const taxData = await TaxCalculationModel.calculateTaxes(
-          defaultUser.id,
+          user.id,
           year,
           method,
           income,
@@ -1012,10 +1115,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.json(taxData);
       } catch (error) {
-        console.warn('Using fallback tax calculation due to error:', error);
-        // Fallback to dummy data if real calculation fails
-        const dummyData = TaxCalculationModel.generateDummyTaxData(year, income, status);
-        res.json(dummyData);
+        console.error('Error calculating taxes:', error);
+        // Return empty data properly scoped to this user
+        res.json({
+          transactions: [],
+          summary: {
+            taxYear: year,
+            totalTransactions: 0,
+            shortTermGains: 0,
+            longTermGains: 0,
+            totalGains: 0,
+            totalTaxableAmount: 0,
+            estimatedTax: 0,
+            costBasis: 0,
+            proceeds: 0,
+            byAsset: {}
+          }
+        });
       }
     } catch (error) {
       console.error('Error calculating tax data:', error);
@@ -1025,13 +1141,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Alert endpoints
   // Get all alerts for a user
-  app.get('/api/alerts', async (req, res) => {
+  app.get('/api/alerts', requireAuth, async (req: Request, res: Response) => {
     try {
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
-      const alerts = await AlertModel.findWithTokenDetailsByUserId(defaultUser.id);
+      const alerts = await AlertModel.findWithTokenDetailsByUserId(user.id);
       res.json(alerts);
     } catch (error) {
       console.error('Error fetching alerts:', error);
@@ -1040,16 +1155,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get alert by ID
-  app.get('/api/alerts/:alertId', async (req, res) => {
+  app.get('/api/alerts/:alertId', requireAuth, async (req: Request, res: Response) => {
     try {
       const alertId = req.params.alertId;
       if (!alertId) {
         return res.status(400).json({ message: 'Invalid alert ID' });
       }
       
+      // Get the authenticated user
+      const user = (req as any).user;
+      
       const alert = await AlertModel.findById(alertId);
       if (!alert) {
         return res.status(404).json({ message: 'Alert not found' });
+      }
+      
+      // Verify this alert belongs to the current user
+      if (alert.userId !== user.id) {
+        return res.status(403).json({ message: 'Not authorized to view this alert' });
       }
       
       res.json(alert);
@@ -1060,16 +1183,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new alert
-  app.post('/api/alerts', async (req, res) => {
+  app.post('/api/alerts', requireAuth, async (req: Request, res: Response) => {
     try {
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Ensure threshold is a string
       const requestData = {
         ...req.body,
-        userId: defaultUser.id,
+        userId: user.id,
         // Convert threshold to string if it's a number
         threshold: typeof req.body.threshold === 'number' 
           ? req.body.threshold.toString() 
@@ -1094,16 +1216,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update alert
-  app.patch('/api/alerts/:alertId', async (req, res) => {
+  app.patch('/api/alerts/:alertId', requireAuth, async (req: Request, res: Response) => {
     try {
       const alertId = req.params.alertId;
       if (!alertId) {
         return res.status(400).json({ message: 'Invalid alert ID' });
       }
       
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Check if alert exists
       const alert = await AlertModel.findById(alertId);
@@ -1112,7 +1233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Make sure this alert belongs to the current user
-      if (alert.userId !== defaultUser.id) {
+      if (alert.userId !== user.id) {
         return res.status(403).json({ message: 'Not authorized to update this alert' });
       }
       
@@ -1148,16 +1269,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete alert
-  app.delete('/api/alerts/:alertId', async (req, res) => {
+  app.delete('/api/alerts/:alertId', requireAuth, async (req: Request, res: Response) => {
     try {
       const alertId = req.params.alertId;
       if (!alertId) {
         return res.status(400).json({ message: 'Invalid alert ID' });
       }
       
-      // Get the default user first
-      const defaultUser = await storage.getUserByUsername('demo') || 
-        await storage.createUser({ username: 'demo', password: 'password' });
+      // Get the authenticated user
+      const user = (req as any).user;
       
       // Check if alert exists
       const alert = await AlertModel.findById(alertId);
@@ -1166,7 +1286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Make sure this alert belongs to the current user
-      if (alert.userId !== defaultUser.id) {
+      if (alert.userId !== user.id) {
         return res.status(403).json({ message: 'Not authorized to delete this alert' });
       }
       
@@ -1179,8 +1299,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check alerts (manual trigger for testing)
-  app.post('/api/alerts/check', async (req, res) => {
+  app.post('/api/alerts/check', requireAuth, async (req: Request, res: Response) => {
     try {
+      // Get the authenticated user - only admins should be able to trigger alert checks
+      const user = (req as any).user;
+      
+      // In a real production environment, we should check if the user is an admin
+      // For now we'll allow any authenticated user to do this
       const results = await AlertService.checkAllAlerts();
       const triggeredAlerts = results.filter(result => result.triggered);
       

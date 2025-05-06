@@ -1,279 +1,121 @@
-import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { Achievement, AchievementType } from '@/components/achievement/AchievementBadge';
-import { usePortfolio } from './usePortfolio';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { Achievement } from '@shared/schema';
+import { useUser } from '@/contexts/UserContext';
 
-interface PortfolioMetrics {
-  totalValue: number;
-  assetCount: number;
-  diversificationScore: number;
-  profitLoss: number;
-  profitLossPercent: number;
-  holdingPeriod: number; // in days
-  tradingVolume: number;
-  riskScore: number;
-}
-
-export const useAchievements = (portfolioId?: string) => {
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { portfolioSummary, isLoading: isPortfolioLoading } = usePortfolio(portfolioId);
+export const useAchievements = () => {
+  const { toast } = useToast();
+  const { user } = useUser();
   
-  useEffect(() => {
-    if (isPortfolioLoading) return;
-    
-    // In a real implementation, you would fetch this from the server
-    // or calculate based on portfolio data
-    const loadAchievements = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Get achievements from localStorage for demo
-        const storedAchievements = localStorage.getItem('portfolio-achievements');
-        
-        if (storedAchievements) {
-          setAchievements(JSON.parse(storedAchievements));
-          setIsLoading(false);
-          return;
-        }
-        
-        // Mock metrics for the achievement calculations
-        const metrics: PortfolioMetrics = {
-          totalValue: portfolioSummary?.totalValue || 0,
-          assetCount: portfolioSummary?.assetCount || 0,
-          diversificationScore: 6.8, // out of 10
-          profitLoss: 2500,
-          profitLossPercent: 12.5,
-          holdingPeriod: 97, // 97 days
-          tradingVolume: 25000,
-          riskScore: 5.2 // out of 10
-        };
-        
-        // Generate achievements based on portfolio metrics
-        const generatedAchievements = generateAchievements(metrics);
-        
-        setAchievements(generatedAchievements);
-        
-        // Save to localStorage for demo
-        localStorage.setItem('portfolio-achievements', JSON.stringify(generatedAchievements));
-        
-      } catch (error) {
-        console.error('Error loading achievements:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadAchievements();
-  }, [isPortfolioLoading, portfolioSummary]);
+  // Fetch achievements from the API
+  const { 
+    data: achievements = [], 
+    isLoading,
+    error,
+    refetch 
+  } = useQuery<Achievement[]>({ 
+    queryKey: ['/api/achievements'],
+    enabled: !!user, // Only fetch if user is authenticated
+  });
+  
+  // Calculate achievements on server
+  const calculateMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/achievements/calculate', { method: 'POST' });
+    },
+    onSuccess: () => {
+      // Invalidate and refetch achievements after calculation
+      queryClient.invalidateQueries({ queryKey: ['/api/achievements'] });
+      toast({
+        title: 'Achievements updated',
+        description: 'Your achievements have been recalculated based on your latest activity.',
+      });
+    },
+    onError: (error) => {
+      console.error('Error calculating achievements:', error);
+      toast({
+        title: 'Achievement update failed',
+        description: 'Unable to update achievements at this time.',
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Calculate achievements when explicitly requested
+  const calculateAchievements = useCallback(() => {
+    if (!user) return;
+    calculateMutation.mutate();
+  }, [user, calculateMutation]);
+  
+  // Mark achievement as earned
+  const earnAchievementMutation = useMutation({
+    mutationFn: async (achievementId: string) => {
+      return await apiRequest(`/api/achievements/${achievementId}/earn`, { method: 'PATCH' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/achievements'] });
+    },
+    onError: (error) => {
+      console.error('Error marking achievement as earned:', error);
+      toast({
+        title: 'Action failed',
+        description: 'Unable to update achievement status.',
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Update achievement progress
+  const updateProgressMutation = useMutation({
+    mutationFn: async ({ id, progress }: { id: string, progress: number }) => {
+      return await apiRequest(`/api/achievements/${id}/progress`, { 
+        method: 'PATCH',
+        data: { progress } 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/achievements'] });
+    },
+    onError: (error) => {
+      console.error('Error updating achievement progress:', error);
+      toast({
+        title: 'Action failed',
+        description: 'Unable to update achievement progress.',
+        variant: 'destructive',
+      });
+    }
+  });
   
   // Function to mark an achievement as earned
-  const earnAchievement = (achievementId: string) => {
-    setAchievements(prev => {
-      const updated = prev.map(a => 
-        a.id === achievementId 
-          ? { ...a, earned: true, earnedDate: new Date().toISOString() } 
-          : a
-      );
-      
-      // Save to localStorage for demo
-      localStorage.setItem('portfolio-achievements', JSON.stringify(updated));
-      
-      return updated;
-    });
-  };
+  const earnAchievement = useCallback((achievementId: string) => {
+    if (!user) return;
+    earnAchievementMutation.mutate(achievementId);
+  }, [user, earnAchievementMutation]);
   
   // Function to update achievement progress
-  const updateAchievementProgress = (achievementId: string, progress: number) => {
-    setAchievements(prev => {
-      const updated = prev.map(a => {
-        if (a.id === achievementId) {
-          const newProgress = Math.min(a.maxProgress || progress, progress);
-          const earned = newProgress >= (a.maxProgress || 0);
-          
-          return { 
-            ...a, 
-            progress: newProgress,
-            earned: earned,
-            earnedDate: earned && !a.earned ? new Date().toISOString() : a.earnedDate
-          };
-        }
-        return a;
-      });
-      
-      // Save to localStorage for demo
-      localStorage.setItem('portfolio-achievements', JSON.stringify(updated));
-      
-      return updated;
-    });
-  };
+  const updateAchievementProgress = useCallback((achievementId: string, progress: number) => {
+    if (!user) return;
+    updateProgressMutation.mutate({ id: achievementId, progress });
+  }, [user, updateProgressMutation]);
+  
+  // Initial calculation when user first logs in
+  useEffect(() => {
+    // This will trigger a calculation if the user is logged in and has no achievements yet
+    if (user && achievements.length === 0 && !isLoading) {
+      calculateAchievements();
+    }
+  }, [user, achievements.length, isLoading, calculateAchievements]);
   
   return { 
     achievements, 
-    isLoading, 
+    isLoading,
+    error,
+    calculateAchievements,
     earnAchievement, 
-    updateAchievementProgress 
+    updateAchievementProgress,
+    calculating: calculateMutation.isPending 
   };
 };
 
-// Function to generate achievements based on portfolio metrics
-const generateAchievements = (metrics: PortfolioMetrics): Achievement[] => {
-  const achievements: Achievement[] = [
-    {
-      id: uuidv4(),
-      type: 'first_investment',
-      title: 'First Steps',
-      description: 'Made your first investment. Welcome to the world of crypto!',
-      icon: "wallet",
-      color: 'green',
-      earned: metrics.totalValue > 0,
-      earnedDate: metrics.totalValue > 0 ? new Date().toISOString() : undefined
-    },
-    {
-      id: uuidv4(),
-      type: 'diversified_portfolio',
-      title: 'Diversification Master',
-      description: 'Built a well-diversified portfolio with at least 5 different assets.',
-      icon: "shield",
-      color: 'blue',
-      earned: metrics.assetCount >= 5,
-      earnedDate: metrics.assetCount >= 5 ? new Date().toISOString() : undefined,
-      progress: Math.min(metrics.assetCount, 5),
-      maxProgress: 5
-    },
-    {
-      id: uuidv4(),
-      type: 'profit_milestone',
-      title: 'Profit Milestone',
-      description: 'Achieved a 10% profit on your investments.',
-      icon: "trending-up",
-      color: 'emerald',
-      earned: metrics.profitLossPercent >= 10,
-      earnedDate: metrics.profitLossPercent >= 10 ? new Date().toISOString() : undefined,
-      progress: Math.min(Math.floor(metrics.profitLossPercent), 10),
-      maxProgress: 10
-    },
-    {
-      id: uuidv4(),
-      type: 'consistent_dca',
-      title: 'Consistent Investor',
-      description: 'Consistently invested through Dollar Cost Averaging for 3 months.',
-      icon: "repeat",
-      color: 'indigo',
-      earned: metrics.holdingPeriod >= 90,
-      earnedDate: metrics.holdingPeriod >= 90 ? new Date().toISOString() : undefined,
-      progress: Math.min(metrics.holdingPeriod, 90),
-      maxProgress: 90
-    },
-    {
-      id: uuidv4(),
-      type: 'long_term_holder',
-      title: 'HODL Champion',
-      description: 'Held your investments for over 6 months, demonstrating patience and long-term thinking.',
-      icon: "clock",
-      color: 'purple',
-      earned: metrics.holdingPeriod >= 180,
-      earnedDate: metrics.holdingPeriod >= 180 ? new Date().toISOString() : undefined,
-      progress: Math.min(metrics.holdingPeriod, 180),
-      maxProgress: 180
-    },
-    {
-      id: uuidv4(),
-      type: 'risk_manager',
-      title: 'Risk Manager',
-      description: 'Maintained a balanced risk profile with an optimal risk score.',
-      icon: "shield",
-      color: 'slate',
-      earned: metrics.riskScore > 3 && metrics.riskScore < 7,
-      earnedDate: (metrics.riskScore > 3 && metrics.riskScore < 7) ? new Date().toISOString() : undefined
-    },
-    {
-      id: uuidv4(),
-      type: 'trading_volume',
-      title: 'Active Trader',
-      description: 'Reached $10,000 in trading volume.',
-      icon: "bar-chart-2",
-      color: 'amber',
-      earned: metrics.tradingVolume >= 10000,
-      earnedDate: metrics.tradingVolume >= 10000 ? new Date().toISOString() : undefined,
-      progress: Math.min(Math.floor(metrics.tradingVolume / 100), 100),
-      maxProgress: 100
-    },
-    {
-      id: uuidv4(),
-      type: 'global_investor',
-      title: 'Global Investor',
-      description: 'Invested in assets from at least 3 different blockchain ecosystems.',
-      icon: "globe",
-      color: 'cyan',
-      earned: false,
-      progress: 1,
-      maxProgress: 3
-    },
-    {
-      id: uuidv4(),
-      type: 'smart_investor',
-      title: 'Smart Investor',
-      description: 'Made 5 profitable trades in a row.',
-      icon: "briefcase",
-      color: 'orange',
-      earned: false,
-      progress: 3,
-      maxProgress: 5
-    },
-    {
-      id: uuidv4(),
-      type: 'power_trader',
-      title: 'Power Trader',
-      description: 'Executed 10 trades in a single day.',
-      icon: "zap",
-      color: 'yellow',
-      earned: false,
-      progress: 0,
-      maxProgress: 10
-    },
-    {
-      id: uuidv4(),
-      type: 'learner',
-      title: 'Crypto Scholar',
-      description: 'Completed 5 learning modules about cryptocurrency.',
-      icon: "book-open",
-      color: 'violet',
-      earned: false,
-      progress: 2,
-      maxProgress: 5
-    },
-    {
-      id: uuidv4(),
-      type: 'goal_achiever',
-      title: 'Goal Achiever',
-      description: 'Reached your first investment goal.',
-      icon: "target",
-      color: 'rose',
-      earned: false
-    },
-    {
-      id: uuidv4(),
-      type: 'diamond_hands',
-      title: 'Diamond Hands',
-      description: 'Held through a 20% market downturn without selling.',
-      icon: "gift",
-      color: 'sky',
-      earned: false
-    },
-    {
-      id: uuidv4(),
-      type: 'elite_investor',
-      title: 'Elite Investor',
-      description: 'Achieved a portfolio value of over $100,000.',
-      icon: "star",
-      color: 'pink',
-      earned: metrics.totalValue >= 100000,
-      earnedDate: metrics.totalValue >= 100000 ? new Date().toISOString() : undefined,
-      progress: Math.min(Math.floor(metrics.totalValue / 1000), 100),
-      maxProgress: 100
-    },
-  ];
-  
-  return achievements;
-};

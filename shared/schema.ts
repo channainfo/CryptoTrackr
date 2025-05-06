@@ -516,3 +516,52 @@ export type InsertLearningQuiz = z.infer<typeof insertLearningQuizSchema>;
 
 export type UserLearningProgress = typeof userLearningProgress.$inferSelect;
 export type InsertUserLearningProgress = z.infer<typeof insertUserLearningProgressSchema>;
+
+// Achievements table
+export const achievementTypeEnum = pgEnum('enum_achievement_type', [
+  'investment',
+  'portfolio_value',
+  'trading_volume',
+  'diversification',
+  'learning',
+  'login_streak',
+  'transaction_count',
+  'profit_threshold'
+]);
+
+export const achievements = pgTable("achievements", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  type: achievementTypeEnum("type").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  icon: varchar("icon", { length: 50 }).notNull(),
+  earned: boolean("earned").notNull().default(false),
+  earnedDate: timestamp("earned_date"),
+  progress: integer("progress").default(0),
+  maxProgress: integer("max_progress"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+export const insertAchievementSchema = createInsertSchema(achievements).pick({
+  userId: true,
+  type: true,
+  title: true,
+  description: true,
+  icon: true,
+  earned: true,
+  earnedDate: true,
+  progress: true,
+  maxProgress: true,
+});
+
+export const achievementsRelations = relations(achievements, ({ one }) => ({
+  user: one(users, {
+    fields: [achievements.userId],
+    references: [users.id],
+  }),
+}));
+
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;

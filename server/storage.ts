@@ -3,7 +3,7 @@ import {
   portfolios, tokens, portfolioTokens, transactions, tokenMarketDatas, 
   type Token, type Portfolio, type PortfolioToken, type Transaction as SchemaTransaction
 } from "@shared/schema";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, ne } from "drizzle-orm";
 import { db, pool } from "./db";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -64,7 +64,7 @@ export interface IStorage {
   removePortfolioAsset(id: string): Promise<boolean>;
   
   // Transaction methods
-  getTransactions(): Promise<Transaction[]>;
+  getTransactions(userId?: string): Promise<Transaction[]>;
   getTransaction(id: string): Promise<Transaction | undefined>;
   addTransaction(transaction: Partial<Transaction>): Promise<Transaction>;
 }
@@ -196,7 +196,7 @@ export class DatabaseStorage implements IStorage {
           await this.addUserWallet({
             userId: user.id,
             address: address.toLowerCase(),
-            chainType: walletType,
+            chainType: walletType as "ethereum" | "solana" | "base" | "sui", // Cast to valid enum type
             isDefault: true
           });
           
@@ -476,7 +476,7 @@ export class DatabaseStorage implements IStorage {
               .where(and(
                 eq(userWallets.userId, wallet[0].userId),
                 eq(userWallets.isDefault, true),
-                eq(userWallets.id, id, true) // Not the current wallet
+                ne(userWallets.id, id) // Not the current wallet
               ));
           }
         }
@@ -865,7 +865,7 @@ export class DatabaseStorage implements IStorage {
     
     // Check if this is a partial sell (quantity is reduced)
     const isPartialSell = data.quantity !== undefined && data.quantity < portfolioToken.quantity;
-    const sellQuantity = isPartialSell ? portfolioToken.quantity - data.quantity : 0;
+    const sellQuantity = isPartialSell && data.quantity !== undefined ? portfolioToken.quantity - data.quantity : 0;
     
     if (data.quantity !== undefined) {
       updateData.amount = data.quantity.toString();
@@ -981,44 +981,66 @@ export class DatabaseStorage implements IStorage {
   }
 
   // TRANSACTION METHODS
-  async getTransactions(): Promise<Transaction[]> {
-    const dbTransactions = await db.query.transactions.findMany({
+  async getTransactions(userId?: string): Promise<Transaction[]> {
+    // Build query options
+    const queryOptions: any = {
       with: {
         token: true
       },
       orderBy: [desc(transactions.transactionDate)]
-    });
+    };
     
-    return dbTransactions.map(tx => ({
-      id: tx.id,
-      userId: tx.userId,
-      cryptoId: tx.tokenId,
-      cryptoName: tx.token.name,
-      cryptoSymbol: tx.token.symbol,
-      type: tx.type,
-      quantity: Number(tx.amount),
-      price: Number(tx.price),
-      value: Number(tx.totalValue),
-      timestamp: tx.transactionDate.toISOString()
+    // Add userId filter if provided
+    if (userId) {
+      queryOptions.where = eq(transactions.userId, userId);
+    }
+    
+    const dbTransactions = await db.query.transactions.findMany(queryOptions);
+    
+    // Get the tokens for these transactions
+    return Promise.all(dbTransactions.map(async tx => {
+      // Get token data
+      const [token] = await db.select()
+        .from(tokens)
+        .where(eq(tokens.id, tx.tokenId))
+        .limit(1);
+      
+      return {
+        id: tx.id,
+        userId: tx.userId,
+        cryptoId: tx.tokenId,
+        cryptoName: token ? token.name : 'Unknown',
+        cryptoSymbol: token ? token.symbol : 'UNKNOWN',
+        type: tx.type,
+        quantity: Number(tx.amount),
+        price: Number(tx.price),
+        value: Number(tx.totalValue),
+        timestamp: tx.transactionDate.toISOString()
+      };
     }));
   }
 
   async getTransaction(id: string): Promise<Transaction | undefined> {
     const [tx] = await db.query.transactions.findMany({
-      where: eq(transactions.id, id),
-      with: {
-        token: true
-      }
+      where: eq(transactions.id, id)
     });
     
     if (!tx) return undefined;
+    
+    // Get token data
+    const [token] = await db.select()
+      .from(tokens)
+      .where(eq(tokens.id, tx.tokenId))
+      .limit(1);
+    
+    if (!token) return undefined;
     
     return {
       id: tx.id,
       userId: tx.userId,
       cryptoId: tx.tokenId,
-      cryptoName: tx.token.name,
-      cryptoSymbol: tx.token.symbol,
+      cryptoName: token.name,
+      cryptoSymbol: token.symbol,
       type: tx.type,
       quantity: Number(tx.amount),
       price: Number(tx.price),
