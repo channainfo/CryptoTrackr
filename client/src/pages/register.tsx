@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useEffect } from "react";
 import { useUser } from "@/contexts/UserContext";
 
@@ -61,40 +61,25 @@ export default function Register() {
       });
 
       if (registerResponse) {
-        // Automatically log in after successful registration
-        try {
-          console.log('Auto-login with:', { username: userData.username, password: userData.password });
-          
-          const loginResponse = await apiRequest("/api/auth/login", {
-            method: "POST",
-            data: {
-              username: userData.username,
-              password: userData.password
-            },
-          });
-          
-          if (loginResponse) {
-            toast({
-              title: "Welcome to Trailer!",
-              description: "Your account has been created and you're now logged in.",
-            });
-            
-            // Check if there's a saved route to redirect to
-            const lastRoute = localStorage.getItem('lastRoute');
-            if (lastRoute) {
-              localStorage.removeItem('lastRoute'); // Clear it after use
-              setLocation(lastRoute);
-            } else {
-              setLocation("/dashboard");
-            }
-          }
-        } catch (loginError) {
-          console.error("Auto-login error:", loginError);
-          toast({
-            title: "Registration successful",
-            description: "Your account has been created, but we couldn't log you in automatically. Please log in manually.",
-          });
-          setLocation("/login");
+        // Registration was successful and the server automatically logs in the user
+        // by creating a session, so we just need to invalidate the user query
+        // to force a refresh of the session data
+        
+        // Invalidate the auth query to force a refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+        
+        toast({
+          title: "Welcome to Trailer!",
+          description: "Your account has been created and you're now logged in.",
+        });
+        
+        // Check if there's a saved route to redirect to
+        const lastRoute = localStorage.getItem('lastRoute');
+        if (lastRoute) {
+          localStorage.removeItem('lastRoute'); // Clear it after use
+          setLocation(lastRoute);
+        } else {
+          setLocation("/dashboard");
         }
       }
     } catch (error) {
