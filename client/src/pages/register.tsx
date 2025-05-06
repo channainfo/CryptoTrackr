@@ -44,17 +44,47 @@ export default function Register() {
       
       // The apiRequest function already handles JSON stringification,
       // so we pass the object directly
-      const response = await apiRequest("/api/auth/register", {
+      const registerResponse = await apiRequest("/api/auth/register", {
         method: "POST",
-        data: userData, // Change from 'body: JSON.stringify(userData)' to 'data: userData'
+        data: userData,
       });
 
-      if (response) {
-        toast({
-          title: "Registration successful",
-          description: "Your account has been created. You can now log in.",
-        });
-        setLocation("/login");
+      if (registerResponse) {
+        // Automatically log in after successful registration
+        try {
+          console.log('Auto-login with:', { username: userData.username, password: userData.password });
+          
+          const loginResponse = await apiRequest("/api/auth/login", {
+            method: "POST",
+            data: {
+              username: userData.username,
+              password: userData.password
+            },
+          });
+          
+          if (loginResponse) {
+            toast({
+              title: "Welcome to Trailer!",
+              description: "Your account has been created and you're now logged in.",
+            });
+            
+            // Check if there's a saved route to redirect to
+            const lastRoute = localStorage.getItem('lastRoute');
+            if (lastRoute) {
+              localStorage.removeItem('lastRoute'); // Clear it after use
+              setLocation(lastRoute);
+            } else {
+              setLocation("/dashboard");
+            }
+          }
+        } catch (loginError) {
+          console.error("Auto-login error:", loginError);
+          toast({
+            title: "Registration successful",
+            description: "Your account has been created, but we couldn't log you in automatically. Please log in manually.",
+          });
+          setLocation("/login");
+        }
       }
     } catch (error) {
       toast({
