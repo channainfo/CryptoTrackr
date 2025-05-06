@@ -136,7 +136,7 @@ export class TaxCalculationModel {
           type: transactions.type,
           amount: transactions.amount,
           price: transactions.price,
-          date: transactions.timestamp,
+          date: transactions.transactionDate,
           tokenSymbol: tokens.symbol,
           tokenName: tokens.name
         })
@@ -145,15 +145,15 @@ export class TaxCalculationModel {
         .where(
           and(
             eq(transactions.userId, userId),
-            gte(transactions.timestamp, startDate.toISOString()),
-            lte(transactions.timestamp, endDate.toISOString())
+            gte(transactions.transactionDate, startDate),
+            lte(transactions.transactionDate, endDate)
           )
         )
         .orderBy(
           method === 'fifo' 
-            ? asc(transactions.timestamp)
+            ? asc(transactions.transactionDate)
             : method === 'lifo'
-              ? desc(transactions.timestamp)
+              ? desc(transactions.transactionDate)
               : desc(transactions.price) // hifo
         );
       
@@ -167,7 +167,7 @@ export class TaxCalculationModel {
           type: transactions.type,
           amount: transactions.amount,
           price: transactions.price,
-          date: transactions.timestamp,
+          date: transactions.transactionDate,
           tokenSymbol: tokens.symbol,
           tokenName: tokens.name
         })
@@ -176,14 +176,14 @@ export class TaxCalculationModel {
         .where(
           and(
             eq(transactions.userId, userId),
-            lte(transactions.timestamp, startDate.toISOString())
+            lte(transactions.transactionDate, startDate)
           )
         )
         .orderBy(
           method === 'fifo' 
-            ? asc(transactions.timestamp)
+            ? asc(transactions.transactionDate)
             : method === 'lifo'
-              ? desc(transactions.timestamp)
+              ? desc(transactions.transactionDate)
               : desc(transactions.price) // hifo
         );
       
@@ -529,129 +529,5 @@ export class TaxCalculationModel {
     return tax;
   }
   
-  /**
-   * Generate dummy tax data for testing
-   */
-  static generateDummyTaxData(
-    year: string,
-    income: string = '50000',
-    status: 'single' | 'joint' | 'separate' | 'head' = 'single'
-  ) {
-    // This is temporary until real data is available
-    const symbols = ['BTC', 'ETH', 'XRP', 'DOT', 'SOL'];
-    const mockTransactions: TaxableTransaction[] = [];
-    
-    // Generate 10-20 random transactions
-    const count = Math.floor(Math.random() * 10) + 10;
-    
-    for (let i = 0; i < count; i++) {
-      const type = Math.random() > 0.5 ? 'buy' : 'sell';
-      const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      const amount = parseFloat((Math.random() * 10).toFixed(4));
-      const price = parseFloat((Math.random() * 50000).toFixed(2));
-      const costBasis = type === 'buy' ? price * amount : 0;
-      const proceeds = type === 'sell' ? price * amount : 0;
-      const gainLoss = proceeds - (type === 'sell' ? price * amount * 0.8 : 0); // Simulate some gain/loss
-      const holdingPeriod = Math.floor(Math.random() * 500);
-      const isLongTerm = holdingPeriod > 365;
-      
-      mockTransactions.push({
-        id: `tx-${i}`,
-        date: new Date(parseInt(year), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-        type,
-        symbol,
-        amount,
-        price,
-        costBasis,
-        proceeds,
-        gainLoss,
-        holdingPeriod,
-        isLongTerm
-      });
-    }
-    
-    // Sort by date
-    mockTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    // Calculate summary
-    const summary: TaxSummary = {
-      taxYear: year,
-      totalTransactions: mockTransactions.length,
-      shortTermGains: 0,
-      longTermGains: 0,
-      totalGains: 0,
-      totalTaxableAmount: 0,
-      estimatedTax: 0,
-      costBasis: 0,
-      proceeds: 0,
-      byAsset: {}
-    };
-    
-    // Initialize asset summaries
-    symbols.forEach(symbol => {
-      summary.byAsset[symbol] = {
-        totalGains: 0,
-        shortTermGains: 0,
-        longTermGains: 0,
-        transactions: 0
-      };
-    });
-    
-    // Calculate summary values
-    mockTransactions.forEach(tx => {
-      if (tx.type === 'sell') {
-        if (tx.isLongTerm) {
-          summary.longTermGains += tx.gainLoss;
-        } else {
-          summary.shortTermGains += tx.gainLoss;
-        }
-        
-        if (!summary.byAsset[tx.symbol]) {
-          summary.byAsset[tx.symbol] = {
-            totalGains: 0,
-            shortTermGains: 0,
-            longTermGains: 0,
-            transactions: 0
-          };
-        }
-        
-        summary.byAsset[tx.symbol].totalGains += tx.gainLoss;
-        if (tx.isLongTerm) {
-          summary.byAsset[tx.symbol].longTermGains += tx.gainLoss;
-        } else {
-          summary.byAsset[tx.symbol].shortTermGains += tx.gainLoss;
-        }
-      }
-      
-      summary.costBasis += tx.costBasis;
-      summary.proceeds += tx.proceeds;
-      summary.byAsset[tx.symbol].transactions++;
-    });
-    
-    summary.totalGains = summary.shortTermGains + summary.longTermGains;
-    
-    // Estimate tax (simplified)
-    const incomeValue = parseInt(income);
-    const shortTermTax = this.calculateEstimatedTax(
-      summary.shortTermGains, 
-      incomeValue, 
-      'SHORT_TERM',
-      status
-    );
-    
-    const longTermTax = this.calculateEstimatedTax(
-      summary.longTermGains, 
-      incomeValue + summary.shortTermGains, 
-      'LONG_TERM',
-      status
-    );
-    
-    summary.estimatedTax = shortTermTax + longTermTax;
-    summary.totalTaxableAmount = summary.totalGains;
-    
-    return {
-      transactions: mockTransactions,
-      summary
-    };
-  }
+
 }

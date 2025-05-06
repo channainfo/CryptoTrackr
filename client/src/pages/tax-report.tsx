@@ -151,61 +151,25 @@ export default function TaxReport() {
         variant: "destructive",
       });
 
-      // Generate placeholder data if API not yet implemented
-      generatePlaceholderData();
+      // Use empty state when data not available
+      handleNoDataAvailable();
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Generate placeholder data when the API is not available yet
-  const generatePlaceholderData = () => {
-    // This is temporary until the backend is implemented
-    const symbols = ["BTC", "ETH", "XRP", "DOT", "SOL"];
-    const mockTransactions: TaxableTransaction[] = [];
-
-    // Generate 10-20 random transactions
-    const count = Math.floor(Math.random() * 10) + 10;
-
-    for (let i = 0; i < count; i++) {
-      const type = Math.random() > 0.5 ? "buy" : "sell";
-      const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      const amount = parseFloat((Math.random() * 10).toFixed(4));
-      const price = parseFloat((Math.random() * 50000).toFixed(2));
-      const costBasis = type === "buy" ? price * amount : 0;
-      const proceeds = type === "sell" ? price * amount : 0;
-      const gainLoss = proceeds - (type === "sell" ? price * amount * 0.8 : 0); // Simulate some gain/loss
-      const holdingPeriod = Math.floor(Math.random() * 500);
-      const isLongTerm = holdingPeriod > 365;
-
-      mockTransactions.push({
-        id: `tx-${i}`,
-        date: new Date(
-          parseInt(taxYear),
-          Math.floor(Math.random() * 12),
-          Math.floor(Math.random() * 28) + 1,
-        ).toISOString(),
-        type,
-        symbol,
-        amount,
-        price,
-        costBasis,
-        proceeds,
-        gainLoss,
-        holdingPeriod,
-        isLongTerm,
-      });
-    }
-
-    // Sort by date
-    mockTransactions.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-
-    // Calculate summary
-    const summary: TaxSummary = {
+  // Handle case when backend data is not available
+  const handleNoDataAvailable = () => {
+    toast({
+      title: "No transactions found",
+      description: "You don't have any recorded transactions in this time period.",
+    });
+    
+    // Set empty data instead of generating random data
+    setTransactions([]);
+    setTaxSummary({
       taxYear,
-      totalTransactions: mockTransactions.length,
+      totalTransactions: 0,
       shortTermGains: 0,
       longTermGains: 0,
       totalGains: 0,
@@ -214,65 +178,7 @@ export default function TaxReport() {
       costBasis: 0,
       proceeds: 0,
       byAsset: {},
-    };
-
-    // Initialize asset summaries
-    symbols.forEach((symbol) => {
-      summary.byAsset[symbol] = {
-        totalGains: 0,
-        shortTermGains: 0,
-        longTermGains: 0,
-        transactions: 0,
-      };
     });
-
-    // Calculate summary values
-    mockTransactions.forEach((tx) => {
-      if (tx.type === "sell") {
-        if (tx.isLongTerm) {
-          summary.longTermGains += tx.gainLoss;
-        } else {
-          summary.shortTermGains += tx.gainLoss;
-        }
-
-        if (!summary.byAsset[tx.symbol]) {
-          summary.byAsset[tx.symbol] = {
-            totalGains: 0,
-            shortTermGains: 0,
-            longTermGains: 0,
-            transactions: 0,
-          };
-        }
-
-        summary.byAsset[tx.symbol].totalGains += tx.gainLoss;
-        if (tx.isLongTerm) {
-          summary.byAsset[tx.symbol].longTermGains += tx.gainLoss;
-        } else {
-          summary.byAsset[tx.symbol].shortTermGains += tx.gainLoss;
-        }
-      }
-
-      summary.costBasis += tx.costBasis;
-      summary.proceeds += tx.proceeds;
-      summary.byAsset[tx.symbol].transactions++;
-    });
-
-    summary.totalGains = summary.shortTermGains + summary.longTermGains;
-
-    // Estimate tax (simplified)
-    const estimatedShortTermTax = calculateEstimatedTax(
-      summary.shortTermGains,
-      "SHORT_TERM",
-    );
-    const estimatedLongTermTax = calculateEstimatedTax(
-      summary.longTermGains,
-      "LONG_TERM",
-    );
-    summary.estimatedTax = estimatedShortTermTax + estimatedLongTermTax;
-    summary.totalTaxableAmount = summary.totalGains;
-
-    setTransactions(mockTransactions);
-    setTaxSummary(summary);
   };
 
   // Calculate estimated tax based on bracket
