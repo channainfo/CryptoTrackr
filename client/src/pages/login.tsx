@@ -3,6 +3,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/queryClient";
+import { useEffect } from "react";
+import { useUser } from "@/contexts/UserContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +41,15 @@ type RegistrationFormValues = z.infer<typeof registrationSchema>;
 export default function Login() {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
+  const { user, isLoading } = useUser();
+  
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user && !isLoading) {
+      console.log('User already logged in, redirecting to dashboard');
+      setLocation('/dashboard');
+    }
+  }, [user, isLoading, setLocation]);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({

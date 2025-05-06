@@ -470,6 +470,10 @@ router.post("/login", async (req: Request, res: Response) => {
     }
     
     // Verify password
+    if (!user.password) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+    
     const isPasswordValid = await verifyPassword(user.password, password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid username or password" });
