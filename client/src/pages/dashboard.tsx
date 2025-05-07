@@ -217,60 +217,14 @@ const Dashboard = () => {
         ) : selectedPortfolioId ? (
           // Portfolio content when a portfolio is selected
           <>
-            {/* Portfolio Summary and Chart layout - desktop view puts summary and chart side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
-              {/* Portfolio Summary Cards - Combined into one card */}
-              <div className="lg:col-span-6 portfolio-summary">
-                <CombinedSummaryCard
-                  items={[
-                    {
-                      title: "Total Balance",
-                      value: isLoading
-                        ? "Loading..."
-                        : `$${portfolioSummary.totalValue.toLocaleString()}`,
-                      changePercent: `${portfolioSummary.totalChangePercent > 0 ? "+" : ""}${portfolioSummary.totalChangePercent.toFixed(1)}%`,
-                      isPositive: portfolioSummary.totalChangePercent >= 0,
-                      icon: <BadgeDollarSign className="h-4 w-4" />,
-                    },
-                    {
-                      title: "24h Change",
-                      value: isLoading
-                        ? "Loading..."
-                        : `${portfolioSummary.dayChange >= 0 ? "+" : ""}$${Math.abs(portfolioSummary.dayChange).toLocaleString()}`,
-                      changePercent: `${portfolioSummary.dayChangePercent > 0 ? "+" : ""}${portfolioSummary.dayChangePercent.toFixed(1)}%`,
-                      isPositive: portfolioSummary.dayChangePercent >= 0,
-                      icon: <ArrowUpDown className="h-4 w-4" />,
-                    },
-                    {
-                      title: "Monthly Performance",
-                      value: isLoading
-                        ? "Loading..."
-                        : `${portfolioSummary.monthChange >= 0 ? "+" : ""}$${Math.abs(portfolioSummary.monthChange).toLocaleString()}`,
-                      changePercent: `${portfolioSummary.monthChangePercent > 0 ? "+" : ""}${portfolioSummary.monthChangePercent.toFixed(1)}%`,
-                      isPositive: portfolioSummary.monthChangePercent >= 0,
-                      icon: <LineChart className="h-4 w-4" />,
-                    },
-                    {
-                      title: "Number of Assets",
-                      value: isLoading
-                        ? "Loading..."
-                        : portfolioSummary.assetCount.toString(),
-                      icon: <Coins className="h-4 w-4" />,
-                    },
-                  ]}
-                  showDistributionBars={true}
-                />
-              </div>
-
-              {/* Portfolio Chart Section - Takes more space on desktop */}
-              <div className="lg:col-span-6 portfolio-chart">
-                <PortfolioChart portfolioId={selectedPortfolioId} />
-              </div>
-            </div>
-
-            {/* Tabs for different sections */}
-            <Tabs defaultValue="assets" className="mb-6">
-              <TabsList className="mb-4 grid grid-cols-4 w-full max-w-3xl">
+            {/* Tabs for all dashboard sections */}
+            <Tabs defaultValue="summary" className="mb-6">
+              {/* Scrollable tabs list */}
+              <TabsList className="mb-4 w-full overflow-x-auto flex whitespace-nowrap px-2 space-x-1">
+                <TabsTrigger value="summary" className="flex items-center">
+                  <BadgeDollarSign className="h-4 w-4 mr-2" />
+                  Portfolio Summary
+                </TabsTrigger>
                 <TabsTrigger value="assets" className="flex items-center">
                   <PieChart className="h-4 w-4 mr-2" />
                   Assets
@@ -283,11 +237,64 @@ const Dashboard = () => {
                   <ListFilter className="h-4 w-4 mr-2" />
                   Transactions
                 </TabsTrigger>
-                <TabsTrigger value="market" className="flex items-center">
+                <TabsTrigger value="news" className="flex items-center">
                   <Newspaper className="h-4 w-4 mr-2" />
                   Market News
                 </TabsTrigger>
               </TabsList>
+              
+              {/* Summary Tab */}
+              <TabsContent value="summary" className="mt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  {/* Portfolio Summary Cards - Combined into one card */}
+                  <div className="lg:col-span-6 portfolio-summary">
+                    <CombinedSummaryCard
+                      items={[
+                        {
+                          title: "Total Balance",
+                          value: isLoading
+                            ? "Loading..."
+                            : `$${portfolioSummary.totalValue.toLocaleString()}`,
+                          changePercent: `${portfolioSummary.totalChangePercent > 0 ? "+" : ""}${portfolioSummary.totalChangePercent.toFixed(1)}%`,
+                          isPositive: portfolioSummary.totalChangePercent >= 0,
+                          icon: <BadgeDollarSign className="h-4 w-4" />,
+                        },
+                        {
+                          title: "24h Change",
+                          value: isLoading
+                            ? "Loading..."
+                            : `${portfolioSummary.dayChange >= 0 ? "+" : ""}$${Math.abs(portfolioSummary.dayChange).toLocaleString()}`,
+                          changePercent: `${portfolioSummary.dayChangePercent > 0 ? "+" : ""}${portfolioSummary.dayChangePercent.toFixed(1)}%`,
+                          isPositive: portfolioSummary.dayChangePercent >= 0,
+                          icon: <ArrowUpDown className="h-4 w-4" />,
+                        },
+                        {
+                          title: "Monthly Performance",
+                          value: isLoading
+                            ? "Loading..."
+                            : `${portfolioSummary.monthChange >= 0 ? "+" : ""}$${Math.abs(portfolioSummary.monthChange).toLocaleString()}`,
+                          changePercent: `${portfolioSummary.monthChangePercent > 0 ? "+" : ""}${portfolioSummary.monthChangePercent.toFixed(1)}%`,
+                          isPositive: portfolioSummary.monthChangePercent >= 0,
+                          icon: <LineChart className="h-4 w-4" />,
+                        },
+                        {
+                          title: "Number of Assets",
+                          value: isLoading
+                            ? "Loading..."
+                            : portfolioSummary.assetCount.toString(),
+                          icon: <Coins className="h-4 w-4" />,
+                        },
+                      ]}
+                      showDistributionBars={true}
+                    />
+                  </div>
+
+                  {/* Portfolio Chart Section - Takes equal space on desktop */}
+                  <div className="lg:col-span-6 portfolio-chart">
+                    <PortfolioChart portfolioId={selectedPortfolioId} />
+                  </div>
+                </div>
+              </TabsContent>
 
               {/* Assets Tab */}
               <TabsContent value="assets" className="mt-0">
@@ -322,7 +329,7 @@ const Dashboard = () => {
               </TabsContent>
 
               {/* Market News Tab */}
-              <TabsContent value="market" className="mt-0">
+              <TabsContent value="news" className="mt-0">
                 {/* Market Insights */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="market-trends">
