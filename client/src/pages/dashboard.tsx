@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Newspaper,
   FolderPlus,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -237,9 +238,13 @@ const Dashboard = () => {
                   <ListFilter className="h-4 w-4 mr-2" />
                   Transactions
                 </TabsTrigger>
+                <TabsTrigger value="trends" className="flex items-center">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Market Trends
+                </TabsTrigger>
                 <TabsTrigger value="news" className="flex items-center">
                   <Newspaper className="h-4 w-4 mr-2" />
-                  Market News
+                  News
                 </TabsTrigger>
               </TabsList>
               
@@ -307,12 +312,14 @@ const Dashboard = () => {
               {/* Performance Tab */}
               <TabsContent value="performance" className="mt-0">
                 {/* Portfolio Performance & Rebalance */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  <div className="portfolio-performance">
-                    <PortfolioPerformance portfolioId={selectedPortfolioId} />
-                  </div>
-                  <div className="portfolio-rebalance">
-                    <PortfolioRebalance portfolioId={selectedPortfolioId} />
+                <div className="grid grid-cols-1 gap-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="portfolio-performance">
+                      <PortfolioPerformance portfolioId={selectedPortfolioId} />
+                    </div>
+                    <div className="portfolio-rebalance">
+                      <PortfolioRebalance portfolioId={selectedPortfolioId} />
+                    </div>
                   </div>
                 </div>
               </TabsContent>
@@ -328,19 +335,24 @@ const Dashboard = () => {
                 </div>
               </TabsContent>
 
-              {/* Market News Tab */}
-              <TabsContent value="news" className="mt-0">
+              {/* Market Trends Tab */}
+              <TabsContent value="trends" className="mt-0">
                 {/* Market Insights */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="market-trends">
                     <MarketTrends />
                   </div>
                   <div className="market-sentiment">
                     <MarketSentiment />
                   </div>
-                  <div className="crypto-news">
-                    <NewsWidget />
-                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* News Tab */}
+              <TabsContent value="news" className="mt-0">
+                {/* Crypto News */}
+                <div className="crypto-news">
+                  <NewsWidget />
                 </div>
               </TabsContent>
             </Tabs>
