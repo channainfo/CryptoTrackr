@@ -280,8 +280,9 @@ const Portfolio = () => {
         }}
       >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <TabsList className="mb-4 md:mb-0">
-            <TabsTrigger value="all" className="relative">
+          <TabsList className="mb-4 md:mb-0 w-full overflow-x-auto flex whitespace-nowrap px-2 space-x-1">
+            <TabsTrigger value="all" className="relative flex items-center">
+              <FolderPlus className="h-4 w-4 mr-2 hidden sm:block" />
               All Portfolios
               {portfolioCounts.all > 0 && (
                 <Badge variant="secondary" className="ml-2">
@@ -289,7 +290,8 @@ const Portfolio = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="active" className="relative">
+            <TabsTrigger value="active" className="relative flex items-center">
+              <TrendingUp className="h-4 w-4 mr-2 hidden sm:block" />
               Active
               {portfolioCounts.active > 0 && (
                 <Badge variant="secondary" className="ml-2">
@@ -297,7 +299,8 @@ const Portfolio = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="watchlist" className="relative">
+            <TabsTrigger value="watchlist" className="relative flex items-center">
+              <Star className="h-4 w-4 mr-2 hidden sm:block" />
               Watchlist
               {portfolioCounts.watchlist > 0 && (
                 <Badge variant="secondary" className="ml-2">
