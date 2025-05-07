@@ -20,7 +20,7 @@ interface TimeRangeButtonProps {
 
 const TimeRangeButton = ({ range, activeRange, onClick }: TimeRangeButtonProps) => (
   <button
-    className={`px-3 py-1 rounded-md text-sm ${
+    className={`px-2 py-0.5 rounded text-xs ${
       activeRange === range
         ? "bg-primary text-white"
         : "bg-neutral-light dark:bg-zinc-700 text-neutral-dark dark:text-gray-300"
@@ -48,14 +48,13 @@ const PortfolioChart = ({ className = '', portfolioId }: PortfolioChartProps) =>
   const timeRanges: TimeRange[] = ["1D", "1W", "1M", "1Y", "ALL"];
   
   return (
-    <Card className={`shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900 ${className}`}>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex flex-col md:flex-row justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold dark:text-white">Portfolio Performance</h3>
-            <p className="text-neutral-mid text-sm dark:text-gray-400">Track your crypto portfolio performance</p>
+    <Card className={`shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900 h-full ${className}`}>
+      <CardContent className="p-4 h-full flex flex-col">
+        <div className="flex flex-col sm:flex-row justify-between mb-4">
+          <div className="mb-2 sm:mb-0">
+            <h3 className="text-sm font-semibold text-primary dark:text-primary-foreground">Portfolio Performance</h3>
           </div>
-          <div className="flex space-x-2 mt-4 md:mt-0">
+          <div className="flex flex-wrap gap-1">
             {timeRanges.map(range => (
               <TimeRangeButton
                 key={range}
@@ -67,19 +66,19 @@ const PortfolioChart = ({ className = '', portfolioId }: PortfolioChartProps) =>
           </div>
         </div>
         
-        <div className="h-64 mt-4 relative">
+        <div className="flex-grow mt-2 relative">
           {isLoading ? (
             <div className="flex items-center justify-center h-full bg-neutral-lighter dark:bg-zinc-800 rounded">
               <div className="text-center">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-sm text-neutral-mid">Loading portfolio data...</p>
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
+                <p className="text-xs text-neutral-mid">Loading portfolio data...</p>
               </div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
-                margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                margin={{ top: 5, right: 5, left: 0, bottom: 20 }}
               >
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -91,23 +90,25 @@ const PortfolioChart = ({ className = '', portfolioId }: PortfolioChartProps) =>
                   dataKey="date" 
                   axisLine={false}
                   tickLine={false}
-                  tickMargin={10}
-                  tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                  tickMargin={5}
+                  tick={{ fontSize: 10, fill: '#9CA3AF' }}
                   className="dark:text-gray-400"
+                  height={20}
                 />
                 <YAxis 
                   dataKey="value"
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(value) => `$${value.toLocaleString()}`}
-                  tick={{ fontSize: 12, fill: '#9CA3AF' }}
-                  width={80}
+                  tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                  width={60}
                   className="dark:text-gray-400"
                 />
                 <CartesianGrid 
                   vertical={false} 
                   stroke="#F3F4F6" 
                   className="dark:stroke-gray-700"
+                  strokeDasharray="3 3"
                 />
                 <Tooltip 
                   formatter={(value: number) => [`$${value.toLocaleString()}`, 'Value']}

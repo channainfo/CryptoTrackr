@@ -18,18 +18,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Set up session middleware
+// Trust first proxy in production
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(
   session({
     store: new PgSession({
       pool,
-      tableName: "user_sessions", // Table to use for storing sessions
-      createTableIfMissing: true  // Create the sessions table if it doesn't exist
+      tableName: "user_sessions",
+      createTableIfMissing: true
     }),
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+      secure: process.env.NODE_ENV === "production",
+      sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
     }

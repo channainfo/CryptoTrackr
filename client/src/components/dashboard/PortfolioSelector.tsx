@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectGroup, 
-  SelectItem, 
-  SelectTrigger, 
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
   SelectValue,
-  SelectLabel
-} from '@/components/ui/select';
+  SelectLabel,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,22 +17,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { PlusCircle, Edit, Trash2, Info } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PlusCircle, Edit, Trash2, Info } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 export interface Portfolio {
   id: string;
@@ -56,57 +56,68 @@ interface PortfolioSelectorProps {
   currentPortfolioId?: string;
 }
 
-const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioSelectorProps) => {
+const PortfolioSelector = ({
+  onPortfolioChange,
+  currentPortfolioId,
+}: PortfolioSelectorProps) => {
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [newPortfolioName, setNewPortfolioName] = useState('');
-  const [newPortfolioDescription, setNewPortfolioDescription] = useState('');
+  const [newPortfolioName, setNewPortfolioName] = useState("");
+  const [newPortfolioDescription, setNewPortfolioDescription] = useState("");
   const [isDefaultPortfolio, setIsDefaultPortfolio] = useState(false);
-  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null);
-  const [portfolioSummaries, setPortfolioSummaries] = useState<Record<string, PortfolioSummary>>({});
+  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(
+    null,
+  );
+  const [portfolioSummaries, setPortfolioSummaries] = useState<
+    Record<string, PortfolioSummary>
+  >({});
   const queryClient = useQueryClient();
 
   // Query to fetch all user portfolios
   const { data: portfolios, isLoading } = useQuery({
-    queryKey: ['/api/portfolios'],
+    queryKey: ["/api/portfolios"],
     queryFn: async () => {
-      console.log('Fetching portfolios');
+      console.log("Fetching portfolios");
       try {
-        const response = await fetch('/api/portfolios');
+        const response = await fetch("/api/portfolios");
         if (!response.ok) {
-          throw new Error('Failed to fetch portfolios');
+          throw new Error("Failed to fetch portfolios");
         }
         const data = await response.json();
-        console.log('Fetched portfolios:', data);
+        console.log("Fetched portfolios:", data);
         return data;
       } catch (error) {
-        console.error('Error fetching portfolios:', error);
+        console.error("Error fetching portfolios:", error);
         throw error;
       }
-    }
+    },
   });
 
   // Mutation to create a new portfolio
   const createPortfolioMutation = useMutation({
-    mutationFn: async (data: { name: string, description?: string, isDefault?: boolean }) => {
+    mutationFn: async (data: {
+      name: string;
+      description?: string;
+      isDefault?: boolean;
+    }) => {
       return apiRequest({
-        url: '/api/portfolios',
-        method: 'POST',
-        data
+        url: "/api/portfolios",
+        method: "POST",
+        data,
       });
     },
     onSuccess: (newPortfolio) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolios"] });
       setIsCreateOpen(false);
       resetForm();
-      
+
       // If this was set as default, update our local state accordingly
       if (newPortfolio.isDefault && onPortfolioChange) {
         onPortfolioChange(newPortfolio.id);
       }
-      
+
       toast({
         title: "Portfolio created",
         description: "Your new portfolio has been created successfully.",
@@ -116,30 +127,36 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
       toast({
         variant: "destructive",
         title: "Failed to create portfolio",
-        description: error.message || "There was an error creating your portfolio.",
+        description:
+          error.message || "There was an error creating your portfolio.",
       });
-    }
+    },
   });
 
   // Mutation to update a portfolio
   const updatePortfolioMutation = useMutation({
-    mutationFn: async (data: { id: string, name: string, description?: string, isDefault?: boolean }) => {
+    mutationFn: async (data: {
+      id: string;
+      name: string;
+      description?: string;
+      isDefault?: boolean;
+    }) => {
       return apiRequest({
         url: `/api/portfolios/${data.id}`,
-        method: 'PATCH',
-        data
+        method: "PATCH",
+        data,
       });
     },
     onSuccess: (updatedPortfolio) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolios"] });
       setIsEditOpen(false);
       resetForm();
-      
+
       // If this was set as default, update our local state accordingly
       if (updatedPortfolio.isDefault && onPortfolioChange) {
         onPortfolioChange(updatedPortfolio.id);
       }
-      
+
       toast({
         title: "Portfolio updated",
         description: "Your portfolio has been updated successfully.",
@@ -149,9 +166,10 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
       toast({
         variant: "destructive",
         title: "Failed to update portfolio",
-        description: error.message || "There was an error updating your portfolio.",
+        description:
+          error.message || "There was an error updating your portfolio.",
       });
-    }
+    },
   });
 
   // Mutation to delete a portfolio
@@ -159,14 +177,14 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
     mutationFn: async (portfolioId: string) => {
       return apiRequest({
         url: `/api/portfolios/${portfolioId}`,
-        method: 'DELETE'
+        method: "DELETE",
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/portfolios'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolios"] });
       setIsDeleteConfirmOpen(false);
       resetForm();
-      
+
       toast({
         title: "Portfolio deleted",
         description: "Your portfolio has been deleted successfully.",
@@ -176,15 +194,16 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
       toast({
         variant: "destructive",
         title: "Failed to delete portfolio",
-        description: error.message || "There was an error deleting your portfolio.",
+        description:
+          error.message || "There was an error deleting your portfolio.",
       });
-    }
+    },
   });
 
   // Reset form state
   const resetForm = () => {
-    setNewPortfolioName('');
-    setNewPortfolioDescription('');
+    setNewPortfolioName("");
+    setNewPortfolioDescription("");
     setIsDefaultPortfolio(false);
     setSelectedPortfolio(null);
   };
@@ -192,30 +211,30 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
   // Handle creating a new portfolio
   const handleCreatePortfolio = () => {
     if (!newPortfolioName.trim()) return;
-    
+
     createPortfolioMutation.mutate({
       name: newPortfolioName,
       description: newPortfolioDescription || undefined,
-      isDefault: isDefaultPortfolio
+      isDefault: isDefaultPortfolio,
     });
   };
 
   // Handle updating an existing portfolio
   const handleUpdatePortfolio = () => {
     if (!selectedPortfolio || !newPortfolioName.trim()) return;
-    
+
     updatePortfolioMutation.mutate({
       id: selectedPortfolio.id,
       name: newPortfolioName,
       description: newPortfolioDescription || undefined,
-      isDefault: isDefaultPortfolio
+      isDefault: isDefaultPortfolio,
     });
   };
 
   // Handle deleting a portfolio
   const handleDeletePortfolio = () => {
     if (!selectedPortfolio) return;
-    
+
     deletePortfolioMutation.mutate(selectedPortfolio.id);
   };
 
@@ -223,7 +242,7 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
   const openEditDialog = (portfolio: Portfolio) => {
     setSelectedPortfolio(portfolio);
     setNewPortfolioName(portfolio.name);
-    setNewPortfolioDescription(portfolio.description || '');
+    setNewPortfolioDescription(portfolio.description || "");
     setIsDefaultPortfolio(portfolio.isDefault || false);
     setIsEditOpen(true);
   };
@@ -247,22 +266,26 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
       // Fetch portfolio summaries for each portfolio
       portfolios.forEach((portfolio: Portfolio) => {
         fetch(`/api/portfolios/${portfolio.id}/summary`)
-          .then(res => res.json())
-          .then(data => {
-            setPortfolioSummaries(prev => ({
+          .then((res) => res.json())
+          .then((data) => {
+            setPortfolioSummaries((prev) => ({
               ...prev,
-              [portfolio.id]: data
+              [portfolio.id]: data,
             }));
           })
-          .catch(err => {
-            console.error(`Error fetching summary for portfolio ${portfolio.id}:`, err);
+          .catch((err) => {
+            console.error(
+              `Error fetching summary for portfolio ${portfolio.id}:`,
+              err,
+            );
           });
       });
     }
   }, [portfolios]);
 
   // Find default or first portfolio to use as initial value if none is specified
-  const defaultPortfolio = portfolios?.find((p: Portfolio) => p.isDefault) || portfolios?.[0];
+  const defaultPortfolio =
+    portfolios?.find((p: Portfolio) => p.isDefault) || portfolios?.[0];
   const selectedId = currentPortfolioId || defaultPortfolio?.id;
 
   // Prepare portfolio items with extra metadata
@@ -271,7 +294,7 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
     return {
       ...portfolio,
       assetCount: summary?.assetCount || 0,
-      totalValue: summary?.totalValue || 0
+      totalValue: summary?.totalValue || 0,
     };
   });
 
@@ -280,7 +303,7 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
       {/* Portfolio Selector */}
       <div className="flex items-center space-x-2">
         <div className="flex-1">
-          <Select 
+          <Select
             value={selectedId}
             onValueChange={handlePortfolioChange}
             disabled={isLoading || !portfolios?.length}
@@ -291,54 +314,23 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Your Portfolios</SelectLabel>
-                {portfolioItems?.map((portfolio) => (
-                  <SelectItem 
-                    key={portfolio.id} 
+                {portfolioItems?.map((portfolio: Portfolio) => (
+                  <SelectItem
+                    key={portfolio.id}
                     value={portfolio.id}
                     className="flex justify-between items-center py-2"
                   >
                     <div className="flex items-center w-full justify-between pr-2">
                       <div>
-                        {portfolio.name}
-                        {portfolio.isDefault && (
-                          <Badge variant="outline" className="ml-2 text-xs">Default</Badge>
-                        )}
+                        {portfolio.name.length > 10
+                          ? `${portfolio.name.slice(0, 7)}...`
+                          : portfolio.name}
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-6 w-6"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditDialog(portfolio);
-                              }}
-                            >
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">Edit Portfolio</TooltipContent>
-                        </Tooltip>
-                        
-                        {portfolios.length > 1 && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openDeleteDialog(portfolio);
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">Delete Portfolio</TooltipContent>
-                          </Tooltip>
+                        {portfolio.isDefault && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Default
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -348,23 +340,6 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
             </SelectContent>
           </Select>
         </div>
-
-        {/* Create Portfolio Button */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="rounded-full" 
-                onClick={() => setIsCreateOpen(true)}
-              >
-                <PlusCircle className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Create New Portfolio</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
 
       {/* Create Portfolio Dialog */}
@@ -373,37 +348,49 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
           <DialogHeader>
             <DialogTitle>Create New Portfolio</DialogTitle>
             <DialogDescription>
-              Add a new portfolio to track different sets of cryptocurrency assets.
+              Add a new portfolio to track different sets of cryptocurrency
+              assets.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="portfolio-name">Portfolio Name</Label>
-              <Input 
-                id="portfolio-name" 
+              <Input
+                id="portfolio-name"
                 value={newPortfolioName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPortfolioName(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNewPortfolioName(e.target.value)
+                }
                 placeholder="My Investment Portfolio"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="portfolio-description">Description (Optional)</Label>
-              <Textarea 
-                id="portfolio-description" 
+              <Label htmlFor="portfolio-description">
+                Description (Optional)
+              </Label>
+              <Textarea
+                id="portfolio-description"
                 value={newPortfolioDescription}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewPortfolioDescription(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setNewPortfolioDescription(e.target.value)
+                }
                 placeholder="Long-term investments focused on large-cap tokens"
                 className="resize-none h-20"
               />
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="default-portfolio" 
+              <Checkbox
+                id="default-portfolio"
                 checked={isDefaultPortfolio}
-                onCheckedChange={(checked) => setIsDefaultPortfolio(checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setIsDefaultPortfolio(checked as boolean)
+                }
               />
               <div className="grid gap-1.5">
-                <Label htmlFor="default-portfolio" className="inline-flex items-center">
+                <Label
+                  htmlFor="default-portfolio"
+                  className="inline-flex items-center"
+                >
                   Set as default portfolio
                   <TooltipProvider>
                     <Tooltip>
@@ -411,7 +398,8 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
                         <Info className="h-4 w-4 ml-1 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        The default portfolio will be loaded automatically when you open the dashboard.
+                        The default portfolio will be loaded automatically when
+                        you open the dashboard.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -420,8 +408,8 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsCreateOpen(false);
                 resetForm();
@@ -430,11 +418,15 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleCreatePortfolio}
-              disabled={!newPortfolioName.trim() || createPortfolioMutation.isPending}
+              disabled={
+                !newPortfolioName.trim() || createPortfolioMutation.isPending
+              }
             >
-              {createPortfolioMutation.isPending ? 'Creating...' : 'Create Portfolio'}
+              {createPortfolioMutation.isPending
+                ? "Creating..."
+                : "Create Portfolio"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -452,29 +444,40 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-portfolio-name">Portfolio Name</Label>
-              <Input 
-                id="edit-portfolio-name" 
+              <Input
+                id="edit-portfolio-name"
                 value={newPortfolioName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPortfolioName(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNewPortfolioName(e.target.value)
+                }
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-portfolio-description">Description (Optional)</Label>
-              <Textarea 
-                id="edit-portfolio-description" 
+              <Label htmlFor="edit-portfolio-description">
+                Description (Optional)
+              </Label>
+              <Textarea
+                id="edit-portfolio-description"
                 value={newPortfolioDescription}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewPortfolioDescription(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setNewPortfolioDescription(e.target.value)
+                }
                 className="resize-none h-20"
               />
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="edit-default-portfolio" 
+              <Checkbox
+                id="edit-default-portfolio"
                 checked={isDefaultPortfolio}
-                onCheckedChange={(checked) => setIsDefaultPortfolio(checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setIsDefaultPortfolio(checked as boolean)
+                }
               />
               <div className="grid gap-1.5">
-                <Label htmlFor="edit-default-portfolio" className="inline-flex items-center">
+                <Label
+                  htmlFor="edit-default-portfolio"
+                  className="inline-flex items-center"
+                >
                   Set as default portfolio
                   <TooltipProvider>
                     <Tooltip>
@@ -482,7 +485,8 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
                         <Info className="h-4 w-4 ml-1 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        The default portfolio will be loaded automatically when you open the dashboard.
+                        The default portfolio will be loaded automatically when
+                        you open the dashboard.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -491,8 +495,8 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsEditOpen(false);
                 resetForm();
@@ -501,11 +505,15 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleUpdatePortfolio}
-              disabled={!newPortfolioName.trim() || updatePortfolioMutation.isPending}
+              disabled={
+                !newPortfolioName.trim() || updatePortfolioMutation.isPending
+              }
             >
-              {updatePortfolioMutation.isPending ? 'Updating...' : 'Update Portfolio'}
+              {updatePortfolioMutation.isPending
+                ? "Updating..."
+                : "Update Portfolio"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -517,18 +525,19 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
           <DialogHeader>
             <DialogTitle>Delete Portfolio</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the portfolio "{selectedPortfolio?.name}"?
-              This action cannot be undone.
+              Are you sure you want to delete the portfolio "
+              {selectedPortfolio?.name}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-destructive">
-              All assets and historical data for this portfolio will be permanently deleted.
+              All assets and historical data for this portfolio will be
+              permanently deleted.
             </p>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsDeleteConfirmOpen(false);
                 resetForm();
@@ -537,12 +546,14 @@ const PortfolioSelector = ({ onPortfolioChange, currentPortfolioId }: PortfolioS
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="destructive"
               onClick={handleDeletePortfolio}
               disabled={deletePortfolioMutation.isPending}
             >
-              {deletePortfolioMutation.isPending ? 'Deleting...' : 'Delete Portfolio'}
+              {deletePortfolioMutation.isPending
+                ? "Deleting..."
+                : "Delete Portfolio"}
             </Button>
           </DialogFooter>
         </DialogContent>

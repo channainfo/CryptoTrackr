@@ -23,51 +23,55 @@ const SummaryCard = ({
   assetDistribution = false
 }: SummaryCardProps) => {
   return (
-    <Card className="shadow-sm border border-gray-100">
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-neutral-mid text-sm">{title}</h3>
-            <p className={cn(
-              "text-2xl font-bold mt-1",
-              change && !isPositive ? "text-accent-red" : "",
-              change && isPositive ? "text-accent-green" : ""
-            )}>
-              {value}
-            </p>
+    <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
+      <CardContent className="p-3">
+        {/* Combined title and icon */}
+        <div className="flex justify-between items-center mb-1">
+          <div className="flex items-center gap-1.5">
+            {icon && (
+              <div className="bg-primary bg-opacity-10 text-primary rounded-full p-1.5">
+                {icon}
+              </div>
+            )}
+            <h3 className="text-neutral-mid text-xs font-medium">{title}</h3>
           </div>
-          {(change && changePercent) ? (
+          
+          {/* Change percentage badge - now moved to right side */}
+          {changePercent && (
             <div className={cn(
-              "flex items-center px-2 py-1 rounded-full text-xs font-medium",
+              "flex items-center rounded text-xs font-medium py-0.5 px-1.5",
               isPositive 
                 ? "bg-accent-green bg-opacity-10 text-accent-green" 
                 : "bg-accent-red bg-opacity-10 text-accent-red"
             )}>
-              {isPositive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
+              {isPositive ? <ArrowUp className="h-2.5 w-2.5 mr-0.5" /> : <ArrowDown className="h-2.5 w-2.5 mr-0.5" />}
               <span>{changePercent}</span>
             </div>
-          ) : icon ? (
-            <div className="p-2 bg-primary bg-opacity-10 text-primary rounded-full">
-              {icon}
-            </div>
-          ) : null}
+          )}
         </div>
         
+        {/* Value */}
+        <p className={cn(
+          "text-xl font-bold",
+          change && !isPositive ? "text-accent-red" : "",
+          change && isPositive ? "text-accent-green" : "",
+          "dark:text-white"
+        )}>
+          {value}
+        </p>
+        
+        {/* Asset distribution bars - made smaller */}
         {assetDistribution ? (
-          <div className="grid grid-cols-7 gap-1 mt-2">
-            <div className="h-2 rounded-full bg-primary"></div>
-            <div className="h-2 rounded-full bg-secondary"></div>
-            <div className="h-2 rounded-full bg-accent-green"></div>
-            <div className="h-2 rounded-full bg-accent-yellow"></div>
-            <div className="h-2 rounded-full bg-accent-red"></div>
-            <div className="h-2 rounded-full bg-purple-500"></div>
-            <div className="h-2 rounded-full bg-gray-400"></div>
+          <div className="grid grid-cols-7 gap-0.5 mt-2">
+            <div className="h-1.5 rounded-full bg-primary"></div>
+            <div className="h-1.5 rounded-full bg-secondary"></div>
+            <div className="h-1.5 rounded-full bg-accent-green"></div>
+            <div className="h-1.5 rounded-full bg-accent-yellow"></div>
+            <div className="h-1.5 rounded-full bg-accent-red"></div>
+            <div className="h-1.5 rounded-full bg-purple-500"></div>
+            <div className="h-1.5 rounded-full bg-gray-400"></div>
           </div>
-        ) : (
-          <div className="h-12 w-full">
-            <div className="crypto-chart"></div>
-          </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );
