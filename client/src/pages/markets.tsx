@@ -11,7 +11,8 @@ import {
   BarChart3, 
   ListFilter, 
   TrendingUp,
-  Activity 
+  Activity,
+  FolderPlus
 } from "lucide-react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { usePortfolio } from "@/hooks/usePortfolio";
@@ -22,8 +23,12 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -178,7 +183,7 @@ const Markets = () => {
           </p>
         </div>
 
-        {/* Search and Column Settings */}
+        {/* Search and Action Buttons */}
         <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="relative flex-1 w-full md:w-auto">
             <Input
@@ -192,81 +197,108 @@ const Markets = () => {
             </div>
           </div>
           
-          <div className="flex gap-2 items-center">
-            {/* Show Owned Only Toggle */}
-            <div className="flex items-center space-x-2 mr-2">
-              <Button 
-                variant={showOwnedOnly ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setShowOwnedOnly(!showOwnedOnly)}
-                className={showOwnedOnly ? "bg-primary/90 text-white" : ""}
-              >
-                <CircleDollarSign className="h-4 w-4 mr-2" />
-                {showOwnedOnly ? "My Assets" : "All Assets"}
-              </Button>
-            </div>
-            
-            {/* Column Visibility Menu */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Combined Actions in Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings2 className="h-4 w-4 mr-2" />
-                  Columns
+                <Button>
+                  <ListFilter className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={() => setShowOwnedOnly(!showOwnedOnly)}
+                  className={showOwnedOnly ? "bg-secondary" : ""}
+                >
+                  <CircleDollarSign className="h-4 w-4 mr-2" />
+                  {showOwnedOnly ? "Show All Assets" : "Show My Assets Only"}
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.rank}
-                  onCheckedChange={() => toggleColumn('rank')}
-                >
-                  Rank (#)
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.asset}
-                  onCheckedChange={() => toggleColumn('asset')}
-                >
-                  Asset
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.holdings}
-                  onCheckedChange={() => toggleColumn('holdings')}
-                >
-                  Holdings
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.value}
-                  onCheckedChange={() => toggleColumn('value')}
-                >
-                  Value
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.price}
-                  onCheckedChange={() => toggleColumn('price')}
-                >
-                  Price
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.change}
-                  onCheckedChange={() => toggleColumn('change')}
-                >
-                  24h %
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.marketCap}
-                  onCheckedChange={() => toggleColumn('marketCap')}
-                >
-                  Market Cap
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.chart}
-                  onCheckedChange={() => toggleColumn('chart')}
-                >
-                  Chart
-                </DropdownMenuCheckboxItem>
+                
+                <DropdownMenuLabel>Add to Portfolio</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => toast({
+                  title: "Feature in development",
+                  description: "Adding tokens to your portfolio will be available soon."
+                })}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  Add New Token
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuLabel>View Options</DropdownMenuLabel>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Settings2 className="h-4 w-4 mr-2" />
+                    Configure Columns
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-48">
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.rank}
+                      onCheckedChange={() => toggleColumn('rank')}
+                    >
+                      Rank (#)
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.asset}
+                      onCheckedChange={() => toggleColumn('asset')}
+                    >
+                      Asset
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.holdings}
+                      onCheckedChange={() => toggleColumn('holdings')}
+                    >
+                      Holdings
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.value}
+                      onCheckedChange={() => toggleColumn('value')}
+                    >
+                      Value
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.price}
+                      onCheckedChange={() => toggleColumn('price')}
+                    >
+                      Price
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.change}
+                      onCheckedChange={() => toggleColumn('change')}
+                    >
+                      24h %
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.marketCap}
+                      onCheckedChange={() => toggleColumn('marketCap')}
+                    >
+                      Market Cap
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.chart}
+                      onCheckedChange={() => toggleColumn('chart')}
+                    >
+                      Chart
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
+            
+            {/* Show Owned Only Toggle (Kept as a separate button for quick access) */}
+            <Button 
+              variant={showOwnedOnly ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setShowOwnedOnly(!showOwnedOnly)}
+              className="hidden md:flex"
+            >
+              <CircleDollarSign className="h-4 w-4 mr-2" />
+              {showOwnedOnly ? "My Assets" : "All Assets"}
+            </Button>
           </div>
         </div>
 
