@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useEffect } from "react";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/use-auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ type RegistrationFormValues = z.infer<typeof registrationSchema>;
 export default function Register() {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
-  const { user, isLoading } = useUser();
+  const { user, isLoading, registerMutation } = useAuth();
   
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -53,41 +53,22 @@ export default function Register() {
       const { confirmPassword, ...userData } = values;
       console.log('Registering with data:', userData);
       
-      // The apiRequest function already handles JSON stringification,
-      // so we pass the object directly
-      const registerResponse = await apiRequest("/api/auth/register", {
-        method: "POST",
-        data: userData,
-      });
-
-      if (registerResponse) {
-        // Registration was successful and the server automatically logs in the user
-        // by creating a session, so we just need to invalidate the user query
-        // to force a refresh of the session data
-        
-        // Invalidate the auth query to force a refresh
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-        
-        toast({
-          title: "Welcome to Trailer!",
-          description: "Your account has been created and you're now logged in.",
-        });
-        
-        // Check if there's a saved route to redirect to
-        const lastRoute = localStorage.getItem('lastRoute');
-        if (lastRoute) {
-          localStorage.removeItem('lastRoute'); // Clear it after use
-          setLocation(lastRoute);
-        } else {
-          setLocation("/dashboard");
-        }
+      // Use the registerMutation from useAuth hook
+      await registerMutation.mutateAsync(userData);
+      
+      // Registration success is handled by the onSuccess callback in the mutation
+      // The toast and redirect are handled there
+      
+      // Check if there's a saved route to redirect to
+      const lastRoute = localStorage.getItem('lastRoute');
+      if (lastRoute) {
+        localStorage.removeItem('lastRoute'); // Clear it after use
+        setLocation(lastRoute);
+      } else {
+        setLocation("/dashboard");
       }
     } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "Username may already be taken",
-        variant: "destructive",
-      });
+      // Error handling is done in the mutation's onError callback
       console.error("Registration error:", error);
     }
   };

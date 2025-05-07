@@ -13,6 +13,7 @@ interface ApiRequestOptions {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   data?: unknown;
   body?: unknown; // Alternative name for data for compatibility
+  headers?: Record<string, string>; // Support for custom headers
 }
 
 export async function apiRequest(urlOrOptions: string | ApiRequestOptions, config?: Omit<ApiRequestOptions, 'url'>): Promise<any> {
@@ -21,19 +22,31 @@ export async function apiRequest(urlOrOptions: string | ApiRequestOptions, confi
   let data: unknown;
   
   // Handle both formats of the function call
+  let headers: Record<string, string> = {};
+  
   if (typeof urlOrOptions === 'string') {
     url = urlOrOptions;
     method = config?.method || 'GET';
     data = config?.data || config?.body;
+    headers = config?.headers || {};
   } else {
     url = urlOrOptions.url;
     method = urlOrOptions.method;
     data = urlOrOptions.data || urlOrOptions.body;
+    headers = urlOrOptions.headers || {};
+  }
+  
+  // Add content-type header for requests with data
+  if (data) {
+    headers = { 
+      "Content-Type": "application/json",
+      ...headers 
+    };
   }
   
   const res = await fetch(url, {
     method: method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });

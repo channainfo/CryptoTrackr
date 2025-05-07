@@ -13,20 +13,27 @@ import { promisify } from "util";
 const scryptAsync = promisify(crypto.scrypt);
 
 async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const buf = await scryptAsync(password, salt, 64) as Buffer;
-  return `${buf.toString('hex')}.${salt}`;
+  const salt = crypto.randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
 }
 
-async function verifyPassword(storedPassword: string, suppliedPassword: string): Promise<boolean> {
-  const [hashedPassword, salt] = storedPassword.split('.');
-  const hashedPasswordBuf = Buffer.from(hashedPassword, 'hex');
-  const suppliedPasswordBuf = await scryptAsync(suppliedPassword, salt, 64) as Buffer;
-  
+async function verifyPassword(
+  storedPassword: string,
+  suppliedPassword: string,
+): Promise<boolean> {
+  const [hashedPassword, salt] = storedPassword.split(".");
+  const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
+  const suppliedPasswordBuf = (await scryptAsync(
+    suppliedPassword,
+    salt,
+    64,
+  )) as Buffer;
+
   try {
     return crypto.timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
   } catch (e) {
-    console.error('Error comparing passwords:', e);
+    console.error("Error comparing passwords:", e);
     return false;
   }
 }
@@ -179,19 +186,55 @@ router.post("/wallet/ethereum", async (req: Request, res: Response) => {
 
     // Set up session
     if (req.session) {
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      req.session.walletAddress = address;
-      req.session.walletType = "ethereum";
+      // Force regenerate the session to prevent session fixation attacks
+      const sessionData = {
+        userId: user.id,
+        username: user.username,
+        walletAddress: address,
+        walletType: "ethereum"
+      };
+      
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Error regenerating session:", err);
+          return res.status(500).json({ message: "Authentication failed" });
+        }
+        
+        // Now assign the user data to the new session
+        req.session.userId = sessionData.userId;
+        req.session.username = sessionData.username;
+        req.session.walletAddress = sessionData.walletAddress;
+        req.session.walletType = sessionData.walletType;
+        
+        // Save the session to ensure it's stored
+        req.session.save((err) => {
+          if (err) {
+            console.error("Error saving session:", err);
+            return res.status(500).json({ message: "Authentication failed" });
+          }
+          
+          // Log the session for debugging
+          console.log("Ethereum wallet authentication successful, new session:", {
+            sessionId: req.session.id,
+            userId: req.session.userId,
+            username: req.session.username,
+            walletAddress: req.session.walletAddress,
+            walletType: req.session.walletType
+          });
+          
+          // Return user info
+          res.json({
+            id: user.id,
+            username: user.username,
+            walletAddress: address,
+            walletType: "ethereum",
+          });
+        });
+      });
+    } else {
+      console.error("No session found during Ethereum wallet authentication");
+      res.status(500).json({ message: "Session initialization failed" });
     }
-
-    // Return user info
-    res.json({
-      id: user.id,
-      username: user.username,
-      walletAddress: address,
-      walletType: "ethereum",
-    });
   } catch (error) {
     console.error("Ethereum authentication error:", error);
     res.status(500).json({ message: "Authentication failed" });
@@ -255,19 +298,55 @@ router.post("/wallet/solana", async (req: Request, res: Response) => {
 
     // Set up session
     if (req.session) {
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      req.session.walletAddress = address;
-      req.session.walletType = "solana";
+      // Force regenerate the session to prevent session fixation attacks
+      const sessionData = {
+        userId: user.id,
+        username: user.username,
+        walletAddress: address,
+        walletType: "solana"
+      };
+      
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Error regenerating session:", err);
+          return res.status(500).json({ message: "Authentication failed" });
+        }
+        
+        // Now assign the user data to the new session
+        req.session.userId = sessionData.userId;
+        req.session.username = sessionData.username;
+        req.session.walletAddress = sessionData.walletAddress;
+        req.session.walletType = sessionData.walletType;
+        
+        // Save the session to ensure it's stored
+        req.session.save((err) => {
+          if (err) {
+            console.error("Error saving session:", err);
+            return res.status(500).json({ message: "Authentication failed" });
+          }
+          
+          // Log the session for debugging
+          console.log("Solana wallet authentication successful, new session:", {
+            sessionId: req.session.id,
+            userId: req.session.userId,
+            username: req.session.username,
+            walletAddress: req.session.walletAddress,
+            walletType: req.session.walletType
+          });
+          
+          // Return user info
+          res.json({
+            id: user.id,
+            username: user.username,
+            walletAddress: address,
+            walletType: "solana",
+          });
+        });
+      });
+    } else {
+      console.error("No session found during Solana wallet authentication");
+      res.status(500).json({ message: "Session initialization failed" });
     }
-
-    // Return user info
-    res.json({
-      id: user.id,
-      username: user.username,
-      walletAddress: address,
-      walletType: "solana",
-    });
   } catch (error) {
     console.error("Solana authentication error:", error);
     res.status(500).json({ message: "Authentication failed" });
@@ -364,19 +443,55 @@ router.post("/wallet/base", async (req: Request, res: Response) => {
 
     // Set up session
     if (req.session) {
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      req.session.walletAddress = address;
-      req.session.walletType = "base";
+      // Force regenerate the session to prevent session fixation attacks
+      const sessionData = {
+        userId: user.id,
+        username: user.username,
+        walletAddress: address,
+        walletType: "base"
+      };
+      
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Error regenerating session:", err);
+          return res.status(500).json({ message: "Authentication failed" });
+        }
+        
+        // Now assign the user data to the new session
+        req.session.userId = sessionData.userId;
+        req.session.username = sessionData.username;
+        req.session.walletAddress = sessionData.walletAddress;
+        req.session.walletType = sessionData.walletType;
+        
+        // Save the session to ensure it's stored
+        req.session.save((err) => {
+          if (err) {
+            console.error("Error saving session:", err);
+            return res.status(500).json({ message: "Authentication failed" });
+          }
+          
+          // Log the session for debugging
+          console.log("Base wallet authentication successful, new session:", {
+            sessionId: req.session.id,
+            userId: req.session.userId,
+            username: req.session.username,
+            walletAddress: req.session.walletAddress,
+            walletType: req.session.walletType
+          });
+          
+          // Return user info
+          res.json({
+            id: user.id,
+            username: user.username,
+            walletAddress: address,
+            walletType: "base",
+          });
+        });
+      });
+    } else {
+      console.error("No session found during Base wallet authentication");
+      res.status(500).json({ message: "Session initialization failed" });
     }
-
-    // Return user info
-    res.json({
-      id: user.id,
-      username: user.username,
-      walletAddress: address,
-      walletType: "base",
-    });
   } catch (error) {
     console.error("Base authentication error:", error);
     res.status(500).json({ message: "Authentication failed" });
@@ -398,20 +513,20 @@ const loginSchema = z.object({
 // User registration endpoint
 router.post("/register", async (req: Request, res: Response) => {
   try {
-    console.log('Register request body:', req.body);
-    
+    console.log("Register request body:", req.body);
+
     // Validate request body
     const validation = registerSchema.safeParse(req.body);
-    
+
     if (!validation.success) {
       return res.status(400).json({
         message: "Invalid registration data",
         errors: validation.error.flatten().fieldErrors,
       });
     }
-    
+
     const { username, password } = validation.data;
-    
+
     // Check if username already exists
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {
@@ -419,27 +534,59 @@ router.post("/register", async (req: Request, res: Response) => {
         message: "Username already exists",
       });
     }
-    
+
     // Hash the password
     const hashedPassword = await hashPassword(password);
-    
+
     // Create the user
     const user = await storage.createUser({
       username,
       password: hashedPassword,
     });
-    
+
     // Set up session - automatically log in the user
     if (req.session) {
-      req.session.userId = user.id;
-      req.session.username = user.username;
+      // Force regenerate the session to prevent session fixation attacks
+      const sessionData = {
+        userId: user.id,
+        username: user.username
+      };
+      
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Error regenerating session:", err);
+          return res.status(500).json({ message: "Registration failed" });
+        }
+        
+        // Now assign the user data to the new session
+        req.session.userId = sessionData.userId;
+        req.session.username = sessionData.username;
+        
+        // Save the session to ensure it's stored
+        req.session.save((err) => {
+          if (err) {
+            console.error("Error saving session:", err);
+            return res.status(500).json({ message: "Registration failed" });
+          }
+          
+          // Log the session for debugging
+          console.log("Registration successful, new session:", {
+            sessionId: req.session.id,
+            userId: req.session.userId,
+            username: req.session.username
+          });
+          
+          // Return user info (exclude password)
+          res.status(200).json({
+            id: user.id,
+            username: user.username,
+          });
+        });
+      });
+    } else {
+      console.error("No session found during registration");
+      res.status(500).json({ message: "Session initialization failed" });
     }
-    
-    // Return user info (exclude password)
-    res.status(200).json({
-      id: user.id,
-      username: user.username,
-    });
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({ message: "Registration failed" });
@@ -449,47 +596,79 @@ router.post("/register", async (req: Request, res: Response) => {
 // User login endpoint
 router.post("/login", async (req: Request, res: Response) => {
   try {
-    console.log('Login request body:', req.body);
-    
+    console.log("Login request body:", req.body);
+
     // Validate request body
     const validation = loginSchema.safeParse(req.body);
-    
+
     if (!validation.success) {
       return res.status(400).json({
         message: "Invalid login data",
         errors: validation.error.flatten().fieldErrors,
       });
     }
-    
+
     const { username, password } = validation.data;
-    
+
     // Find the user
     const user = await storage.getUserByUsername(username);
     if (!user) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
-    
+
     // Verify password
     if (!user.password) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
-    
+
     const isPasswordValid = await verifyPassword(user.password, password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
-    
+
     // Set up session
     if (req.session) {
-      req.session.userId = user.id;
-      req.session.username = user.username;
+      // Force regenerate the session to prevent session fixation attacks
+      const sessionData = {
+        userId: user.id,
+        username: user.username
+      };
+      
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("Error regenerating session:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        
+        // Now assign the user data to the new session
+        req.session.userId = sessionData.userId;
+        req.session.username = sessionData.username;
+        
+        // Save the session to ensure it's stored
+        req.session.save((err) => {
+          if (err) {
+            console.error("Error saving session:", err);
+            return res.status(500).json({ message: "Login failed" });
+          }
+          
+          // Log the session for debugging
+          console.log("Login successful, new session:", {
+            sessionId: req.session.id,
+            userId: req.session.userId,
+            username: req.session.username
+          });
+          
+          // Return user info (exclude password)
+          res.status(200).json({
+            id: user.id,
+            username: user.username,
+          });
+        });
+      });
+    } else {
+      console.error("No session found during login");
+      res.status(500).json({ message: "Session initialization failed" });
     }
-    
-    // Return user info (exclude password)
-    res.status(200).json({
-      id: user.id,
-      username: user.username,
-    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Login failed" });
@@ -529,11 +708,19 @@ router.get("/session", (req: Request, res: Response) => {
 // Get current user details
 router.get("/me", async (req: Request, res: Response) => {
   try {
+    // Log session info for debugging
+    console.log("Session info:", {
+      hasSession: !!req.session,
+      sessionId: req.session?.id,
+      userId: req.session?.userId,
+      username: req.session?.username,
+    });
+
     // Check if the user is authenticated
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     const userId = req.session.userId;
 
     // Get user from the database
@@ -600,7 +787,7 @@ router.post("/link-wallet", async (req: Request, res: Response) => {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     // Get current authenticated user ID from session
     const userId = req.session.userId;
 
@@ -719,7 +906,7 @@ router.delete("/wallets/:id", async (req: Request, res: Response) => {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    
+
     const userId = req.session.userId;
 
     const walletId = req.params.id;
