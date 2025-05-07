@@ -18,8 +18,8 @@ import {
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/auth";
-import { useUser } from "@/contexts/UserContext";
+
+import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface SidebarProps {
@@ -28,7 +28,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isMobile = false }: SidebarProps) => {
   const [location] = useLocation();
-  const { user } = useUser();
+  const { user } = useAuth();
   
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -72,12 +72,10 @@ const Sidebar = ({ isMobile = false }: SidebarProps) => {
     return colors[colorIndex];
   };
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+  const { logoutMutation } = useAuth();
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
   
   return (

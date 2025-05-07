@@ -6,6 +6,8 @@ import { storage } from "./storage";
 import session from "express-session";
 import { pool } from "./db";
 import connectPgSimple from "connect-pg-simple";
+import helmet from "helmet";
+import { createAdminUserIfNeeded } from "./adminSeed";
 
 // Create PostgreSQL session store
 const PgSession = connectPgSimple(session);
@@ -16,6 +18,27 @@ const sessionSecret = process.env.SESSION_SECRET || "trailer-app-secret-key-chan
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Use Helmet to set security headers
+app.use(helmet({
+  // Customize helmet settings
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow evaluation for Vite HMR
+      connectSrc: ["'self'", "ws:", "wss:"], // Allow WebSocket connections for HMR
+      imgSrc: ["'self'", "data:", "blob:"], // Allow data URLs for images
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+      fontSrc: ["'self'", "data:"], // Allow data URLs for fonts
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  // Set Cross-Origin policies
+  crossOriginEmbedderPolicy: false, // Disable for compatibility with external resources
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
 // Set up session middleware
 // Trust first proxy in production
@@ -28,17 +51,29 @@ app.use(
     store: new PgSession({
       pool,
       tableName: "user_sessions",
-      createTableIfMissing: true
+      createTableIfMissing: true,
+      // Specify schema options
+      schemaName: "public",
+      // Clean up invalid sessions
+      pruneSessionInterval: 60 * 15, // 15 minutes
+      // Ensure only one connection pool is used
+      disableTouch: false
     }),
     secret: sessionSecret,
-    resave: false,
+    // Change resave to true to ensure session is saved to store
+    resave: true,
     saveUninitialized: false,
+    // Enable rolling sessions - extends expiration on each request
+    rolling: true,
     proxy: true,
+    name: 'trailer.sid', // Custom cookie name for clarity
     cookie: {
       secure: process.env.NODE_ENV === "production",
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
+      // Improve path specificity to reduce cookie size
+      path: '/'
     }
   })
 );
@@ -77,6 +112,9 @@ app.use((req, res, next) => {
   // Initialize database with seed data
   await storage.seedInitialDataIfNeeded();
   await seedLearningModules();
+  
+  // Skip admin user creation for now since there's a schema mismatch
+  console.log("Skipping automatic admin user creation due to schema issues.");
   
   const server = await registerRoutes(app);
 

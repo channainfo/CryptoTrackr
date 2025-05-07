@@ -230,9 +230,9 @@ const Dashboard = () => {
                   <PieChart className="h-4 w-4 mr-2" />
                   Assets
                 </TabsTrigger>
-                <TabsTrigger value="performance" className="flex items-center">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Performance
+                <TabsTrigger value="balance" className="flex items-center">
+                  <BadgeDollarSign className="h-4 w-4 mr-2" />
+                  Portfolio Balance
                 </TabsTrigger>
                 <TabsTrigger value="transactions" className="flex items-center">
                   <ListFilter className="h-4 w-4 mr-2" />
@@ -244,15 +244,15 @@ const Dashboard = () => {
                 </TabsTrigger>
                 <TabsTrigger value="news" className="flex items-center">
                   <Newspaper className="h-4 w-4 mr-2" />
-                  News
+                  Market Sentiment & News
                 </TabsTrigger>
               </TabsList>
-              
+
               {/* Summary Tab */}
               <TabsContent value="summary" className="mt-0">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                  {/* Portfolio Summary Cards - Combined into one card */}
-                  <div className="lg:col-span-6 portfolio-summary">
+                <div className="flex flex-col space-y-4 md:space-y-6">
+                  {/* Portfolio Summary Card with full width on mobile, tablet and desktop */}
+                  <div className="w-full portfolio-summary">
                     <CombinedSummaryCard
                       items={[
                         {
@@ -262,8 +262,11 @@ const Dashboard = () => {
                             : `$${portfolioSummary.totalValue.toLocaleString()}`,
                           changePercent: `${portfolioSummary.totalChangePercent > 0 ? "+" : ""}${portfolioSummary.totalChangePercent.toFixed(1)}%`,
                           isPositive: portfolioSummary.totalChangePercent >= 0,
-                          icon: <BadgeDollarSign className="h-4 w-4" />,
+                          icon: (
+                            <BadgeDollarSign className="h-6 w-6 sm:h-6 sm:w-6" />
+                          ),
                         },
+
                         {
                           title: "24h Change",
                           value: isLoading
@@ -271,7 +274,9 @@ const Dashboard = () => {
                             : `${portfolioSummary.dayChange >= 0 ? "+" : ""}$${Math.abs(portfolioSummary.dayChange).toLocaleString()}`,
                           changePercent: `${portfolioSummary.dayChangePercent > 0 ? "+" : ""}${portfolioSummary.dayChangePercent.toFixed(1)}%`,
                           isPositive: portfolioSummary.dayChangePercent >= 0,
-                          icon: <ArrowUpDown className="h-4 w-4" />,
+                          icon: (
+                            <ArrowUpDown className="h-6 w-6 sm:h-6 sm:w-6" />
+                          ),
                         },
                         {
                           title: "Monthly Performance",
@@ -280,23 +285,27 @@ const Dashboard = () => {
                             : `${portfolioSummary.monthChange >= 0 ? "+" : ""}$${Math.abs(portfolioSummary.monthChange).toLocaleString()}`,
                           changePercent: `${portfolioSummary.monthChangePercent > 0 ? "+" : ""}${portfolioSummary.monthChangePercent.toFixed(1)}%`,
                           isPositive: portfolioSummary.monthChangePercent >= 0,
-                          icon: <LineChart className="h-4 w-4" />,
+                          icon: <LineChart className="h-6 w-6 sm:h-6 sm:w-6" />,
                         },
+
                         {
-                          title: "Number of Assets",
+                          title: "Assets",
                           value: isLoading
                             ? "Loading..."
                             : portfolioSummary.assetCount.toString(),
-                          icon: <Coins className="h-4 w-4" />,
+                          icon: <Coins className="h-6 w-6 sm:h-6 sm:w-6" />,
                         },
                       ]}
                       showDistributionBars={true}
                     />
                   </div>
 
-                  {/* Portfolio Chart Section - Takes equal space on desktop */}
-                  <div className="lg:col-span-6 portfolio-chart">
-                    <PortfolioChart portfolioId={selectedPortfolioId} />
+                  {/* Portfolio Chart - Full width on all devices */}
+                  <PortfolioChart portfolioId={selectedPortfolioId} />
+
+                  {/* Portfolio Performance History Section - Full width on all devices */}
+                  <div className="w-full portfolio-performance mb-4">
+                    <PortfolioPerformance portfolioId={selectedPortfolioId} />
                   </div>
                 </div>
               </TabsContent>
@@ -305,22 +314,18 @@ const Dashboard = () => {
               <TabsContent value="assets" className="mt-0">
                 {/* Asset Breakdown */}
                 <div className="asset-allocation">
-                  <AssetTable portfolioId={selectedPortfolioId} />
+                  <AssetTable
+                    portfolioId={selectedPortfolioId}
+                    showViewAll={false}
+                  />
                 </div>
               </TabsContent>
 
-              {/* Performance Tab */}
-              <TabsContent value="performance" className="mt-0">
-                {/* Portfolio Performance & Rebalance */}
-                <div className="grid grid-cols-1 gap-6 mb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="portfolio-performance">
-                      <PortfolioPerformance portfolioId={selectedPortfolioId} />
-                    </div>
-                    <div className="portfolio-rebalance">
-                      <PortfolioRebalance portfolioId={selectedPortfolioId} />
-                    </div>
-                  </div>
+              {/* Balance Tab */}
+              <TabsContent value="balance" className="mt-0">
+                {/* Portfolio Rebalance Section */}
+                <div className="w-full portfolio-rebalance">
+                  <PortfolioRebalance portfolioId={selectedPortfolioId} />
                 </div>
               </TabsContent>
 
@@ -331,6 +336,9 @@ const Dashboard = () => {
                   <TransactionList
                     portfolioId={selectedPortfolioId}
                     transactionType="all"
+                    limit={10}
+                    showViewAll={true}
+                    showTypeTabs={true}
                   />
                 </div>
               </TabsContent>
@@ -338,18 +346,19 @@ const Dashboard = () => {
               {/* Market Trends Tab */}
               <TabsContent value="trends" className="mt-0">
                 {/* Market Insights */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <div className="market-trends">
-                    <MarketTrends />
-                  </div>
-                  <div className="market-sentiment">
-                    <MarketSentiment />
+                    <MarketTrends limit={10} showViewAll={true} />
                   </div>
                 </div>
               </TabsContent>
-              
+
               {/* News Tab */}
               <TabsContent value="news" className="mt-0">
+                {/* Market Sentiment (moved from trends) */}
+                <div className="market-sentiment mb-6">
+                  <MarketSentiment />
+                </div>
                 {/* Crypto News */}
                 <div className="crypto-news">
                   <NewsWidget />
