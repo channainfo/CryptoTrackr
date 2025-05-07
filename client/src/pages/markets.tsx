@@ -3,17 +3,32 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, ArrowUpDown, Settings2, CircleDollarSign } from "lucide-react";
+import { 
+  Search, 
+  ArrowUpDown, 
+  Settings2, 
+  CircleDollarSign, 
+  BarChart3, 
+  ListFilter, 
+  TrendingUp,
+  Activity,
+  FolderPlus
+} from "lucide-react";
 import { useCryptoData } from "@/hooks/useCryptoData";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { CryptoAsset, PortfolioAsset } from "@/types/crypto";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -168,7 +183,7 @@ const Markets = () => {
           </p>
         </div>
 
-        {/* Search and Column Settings */}
+        {/* Search and Action Buttons */}
         <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="relative flex-1 w-full md:w-auto">
             <Input
@@ -182,388 +197,556 @@ const Markets = () => {
             </div>
           </div>
           
-          <div className="flex gap-2 items-center">
-            {/* Show Owned Only Toggle */}
-            <div className="flex items-center space-x-2 mr-2">
-              <Button 
-                variant={showOwnedOnly ? "default" : "outline"} 
-                size="sm" 
-                onClick={() => setShowOwnedOnly(!showOwnedOnly)}
-                className={showOwnedOnly ? "bg-primary/90 text-white" : ""}
-              >
-                <CircleDollarSign className="h-4 w-4 mr-2" />
-                {showOwnedOnly ? "My Assets" : "All Assets"}
-              </Button>
-            </div>
-            
-            {/* Column Visibility Menu */}
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Combined Actions in Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings2 className="h-4 w-4 mr-2" />
-                  Columns
+                <Button>
+                  <ListFilter className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Actions</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={() => setShowOwnedOnly(!showOwnedOnly)}
+                  className={showOwnedOnly ? "bg-secondary" : ""}
+                >
+                  <CircleDollarSign className="h-4 w-4 mr-2" />
+                  {showOwnedOnly ? "Show All Assets" : "Show My Assets Only"}
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.rank}
-                  onCheckedChange={() => toggleColumn('rank')}
-                >
-                  Rank (#)
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.asset}
-                  onCheckedChange={() => toggleColumn('asset')}
-                >
-                  Asset
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.holdings}
-                  onCheckedChange={() => toggleColumn('holdings')}
-                >
-                  Holdings
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.value}
-                  onCheckedChange={() => toggleColumn('value')}
-                >
-                  Value
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.price}
-                  onCheckedChange={() => toggleColumn('price')}
-                >
-                  Price
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.change}
-                  onCheckedChange={() => toggleColumn('change')}
-                >
-                  24h %
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.marketCap}
-                  onCheckedChange={() => toggleColumn('marketCap')}
-                >
-                  Market Cap
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem 
-                  checked={columnVisibility.chart}
-                  onCheckedChange={() => toggleColumn('chart')}
-                >
-                  Chart
-                </DropdownMenuCheckboxItem>
+                
+                <DropdownMenuLabel>Add to Portfolio</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => toast({
+                  title: "Feature in development",
+                  description: "Adding tokens to your portfolio will be available soon."
+                })}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  Add New Token
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuLabel>View Options</DropdownMenuLabel>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Settings2 className="h-4 w-4 mr-2" />
+                    Configure Columns
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-48">
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.rank}
+                      onCheckedChange={() => toggleColumn('rank')}
+                    >
+                      Rank (#)
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.asset}
+                      onCheckedChange={() => toggleColumn('asset')}
+                    >
+                      Asset
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.holdings}
+                      onCheckedChange={() => toggleColumn('holdings')}
+                    >
+                      Holdings
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.value}
+                      onCheckedChange={() => toggleColumn('value')}
+                    >
+                      Value
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.price}
+                      onCheckedChange={() => toggleColumn('price')}
+                    >
+                      Price
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.change}
+                      onCheckedChange={() => toggleColumn('change')}
+                    >
+                      24h %
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.marketCap}
+                      onCheckedChange={() => toggleColumn('marketCap')}
+                    >
+                      Market Cap
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={columnVisibility.chart}
+                      onCheckedChange={() => toggleColumn('chart')}
+                    >
+                      Chart
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
+            
+            {/* Show Owned Only Toggle (Kept as a separate button for quick access) */}
+            <Button 
+              variant={showOwnedOnly ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setShowOwnedOnly(!showOwnedOnly)}
+              className="hidden md:flex"
+            >
+              <CircleDollarSign className="h-4 w-4 mr-2" />
+              {showOwnedOnly ? "My Assets" : "All Assets"}
+            </Button>
           </div>
         </div>
 
-        {/* Market Data Table */}
-        <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead>
-                <tr>
-                  {columnVisibility.rank && (
-                    <th 
-                      className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSort('rank')}
-                    >
-                      <div className="flex items-center">
-                        <span>Rank</span>
-                        {sortField === 'rank' && (
-                          <ArrowUpDown className="ml-1 h-3 w-3" />
-                        )}
-                      </div>
-                    </th>
-                  )}
-                  {columnVisibility.asset && (
-                    <th 
-                      className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSort('name')}
-                    >
-                      <div className="flex items-center">
-                        <span>Asset</span>
-                        {sortField === 'name' && (
-                          <ArrowUpDown className="ml-1 h-3 w-3" />
-                        )}
-                      </div>
-                    </th>
-                  )}
-                  {columnVisibility.holdings && (
-                    <th 
-                      className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSort('holdings')}
-                    >
-                      <div className="flex items-center justify-end">
-                        <span>Holdings</span>
-                        {sortField === 'holdings' && (
-                          <ArrowUpDown className="ml-1 h-3 w-3" />
-                        )}
-                      </div>
-                    </th>
-                  )}
-                  {columnVisibility.value && (
-                    <th 
-                      className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSort('value')}
-                    >
-                      <div className="flex items-center justify-end">
-                        <span>Value</span>
-                        {sortField === 'value' && (
-                          <ArrowUpDown className="ml-1 h-3 w-3" />
-                        )}
-                      </div>
-                    </th>
-                  )}
-                  {columnVisibility.price && (
-                    <th 
-                      className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSort('price')}
-                    >
-                      <div className="flex items-center justify-end">
-                        <span>Price</span>
-                        {sortField === 'price' && (
-                          <ArrowUpDown className="ml-1 h-3 w-3" />
-                        )}
-                      </div>
-                    </th>
-                  )}
-                  {columnVisibility.change && (
-                    <th 
-                      className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSort('change')}
-                    >
-                      <div className="flex items-center justify-end">
-                        <span>24h %</span>
-                        {sortField === 'change' && (
-                          <ArrowUpDown className="ml-1 h-3 w-3" />
-                        )}
-                      </div>
-                    </th>
-                  )}
-                  {columnVisibility.marketCap && (
-                    <th 
-                      className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                      onClick={() => toggleSort('marketCap')}
-                    >
-                      <div className="flex items-center justify-end">
-                        <span>Market Cap</span>
-                        {sortField === 'marketCap' && (
-                          <ArrowUpDown className="ml-1 h-3 w-3" />
-                        )}
-                      </div>
-                    </th>
-                  )}
-                  {columnVisibility.chart && (
-                    <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">
-                      Chart
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {isLoadingMarket || isLoadingPortfolio ? (
-                  Array(5)
-                    .fill(0)
-                    .map((_, index) => (
-                      <tr key={index}>
-                        {columnVisibility.rank && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Skeleton className="h-4 w-4" />
-                          </td>
-                        )}
-                        {columnVisibility.asset && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <Skeleton className="h-8 w-8 rounded-full" />
-                              <div className="ml-4">
-                                <Skeleton className="h-4 w-24" />
-                                <Skeleton className="h-3 w-12 mt-1" />
-                              </div>
-                            </div>
-                          </td>
-                        )}
-                        {columnVisibility.holdings && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <Skeleton className="h-4 w-16 ml-auto" />
-                          </td>
-                        )}
-                        {columnVisibility.value && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <Skeleton className="h-4 w-24 ml-auto" />
-                          </td>
-                        )}
-                        {columnVisibility.price && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <Skeleton className="h-4 w-20 ml-auto" />
-                          </td>
-                        )}
-                        {columnVisibility.change && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <Skeleton className="h-4 w-16 ml-auto" />
-                          </td>
-                        )}
-                        {columnVisibility.marketCap && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <Skeleton className="h-4 w-28 ml-auto" />
-                          </td>
-                        )}
-                        {columnVisibility.chart && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <Skeleton className="h-8 w-16 ml-auto" />
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                ) : sortedAndFilteredData.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={Object.values(columnVisibility).filter(Boolean).length}
-                      className="px-6 py-8 text-center text-neutral-mid dark:text-gray-400"
-                    >
-                      No cryptocurrencies found matching your search.
-                    </td>
-                  </tr>
-                ) : (
-                  sortedAndFilteredData.map(
-                    (crypto: CryptoAsset, index: number) => (
-                      <tr
-                        key={crypto.id}
-                        className="hover:bg-neutral-lighter dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        {columnVisibility.rank && (
-                          <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-gray-300">
-                            {index + 1}
-                          </td>
-                        )}
-                        {columnVisibility.asset && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div
-                                className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full ${getBgColor(crypto.symbol)}`}
-                              >
-                                <span className="text-xs font-mono">
-                                  {crypto.symbol}
-                                </span>
-                              </div>
-                              <div className="ml-4 flex flex-col">
+        {/* Tabs for different market views */}
+        <Tabs defaultValue="all" className="mb-6">
+          {/* Scrollable tabs list */}
+          <TabsList className="mb-4 w-full overflow-x-auto flex whitespace-nowrap px-2 space-x-1">
+            <TabsTrigger value="all" className="flex items-center">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              All Markets
+            </TabsTrigger>
+            <TabsTrigger value="trending" className="flex items-center">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Trending
+            </TabsTrigger>
+            <TabsTrigger value="owned" className="flex items-center">
+              <CircleDollarSign className="h-4 w-4 mr-2" />
+              My Holdings
+            </TabsTrigger>
+            <TabsTrigger value="watchlist" className="flex items-center">
+              <Activity className="h-4 w-4 mr-2" />
+              Watchlist
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* All Markets Tab */}
+          <TabsContent value="all" className="mt-0">
+            {/* Market Data Table */}
+            <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead>
+                    <tr>
+                      {columnVisibility.rank && (
+                        <th 
+                          className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                          onClick={() => toggleSort('rank')}
+                        >
+                          <div className="flex items-center">
+                            <span>Rank</span>
+                            {sortField === 'rank' && (
+                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      )}
+                      {columnVisibility.asset && (
+                        <th 
+                          className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                          onClick={() => toggleSort('name')}
+                        >
+                          <div className="flex items-center">
+                            <span>Asset</span>
+                            {sortField === 'name' && (
+                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      )}
+                      {columnVisibility.holdings && (
+                        <th 
+                          className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                          onClick={() => toggleSort('holdings')}
+                        >
+                          <div className="flex items-center justify-end">
+                            <span>Holdings</span>
+                            {sortField === 'holdings' && (
+                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      )}
+                      {columnVisibility.value && (
+                        <th 
+                          className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                          onClick={() => toggleSort('value')}
+                        >
+                          <div className="flex items-center justify-end">
+                            <span>Value</span>
+                            {sortField === 'value' && (
+                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      )}
+                      {columnVisibility.price && (
+                        <th 
+                          className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                          onClick={() => toggleSort('price')}
+                        >
+                          <div className="flex items-center justify-end">
+                            <span>Price</span>
+                            {sortField === 'price' && (
+                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      )}
+                      {columnVisibility.change && (
+                        <th 
+                          className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                          onClick={() => toggleSort('change')}
+                        >
+                          <div className="flex items-center justify-end">
+                            <span>24h %</span>
+                            {sortField === 'change' && (
+                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      )}
+                      {columnVisibility.marketCap && (
+                        <th 
+                          className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                          onClick={() => toggleSort('marketCap')}
+                        >
+                          <div className="flex items-center justify-end">
+                            <span>Market Cap</span>
+                            {sortField === 'marketCap' && (
+                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      )}
+                      {columnVisibility.chart && (
+                        <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">
+                          Chart
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {isLoadingMarket || isLoadingPortfolio ? (
+                      Array(5)
+                        .fill(0)
+                        .map((_, index) => (
+                          <tr key={index}>
+                            {columnVisibility.rank && (
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <Skeleton className="h-4 w-4" />
+                              </td>
+                            )}
+                            {columnVisibility.asset && (
+                              <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center">
-                                  <p className="text-sm font-medium dark:text-white">
-                                    {crypto.name}
-                                  </p>
-                                  {ownedAssetsMap.has(crypto.symbol) && (
-                                    <Badge variant="outline" className="ml-2 px-1.5 py-0 h-4 bg-primary/10 border-primary/20 text-primary">
-                                      <span className="text-[9px]">OWNED</span>
-                                    </Badge>
-                                  )}
+                                  <Skeleton className="h-8 w-8 rounded-full" />
+                                  <div className="ml-4">
+                                    <Skeleton className="h-4 w-24" />
+                                    <Skeleton className="h-3 w-12 mt-1" />
+                                  </div>
                                 </div>
-                                <div className="flex items-center">
-                                  <p className="text-xs text-neutral-mid dark:text-gray-400">
+                              </td>
+                            )}
+                            {columnVisibility.holdings && (
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <Skeleton className="h-4 w-16 ml-auto" />
+                              </td>
+                            )}
+                            {columnVisibility.value && (
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <Skeleton className="h-4 w-24 ml-auto" />
+                              </td>
+                            )}
+                            {columnVisibility.price && (
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <Skeleton className="h-4 w-20 ml-auto" />
+                              </td>
+                            )}
+                            {columnVisibility.change && (
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <Skeleton className="h-4 w-16 ml-auto" />
+                              </td>
+                            )}
+                            {columnVisibility.marketCap && (
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <Skeleton className="h-4 w-24 ml-auto" />
+                              </td>
+                            )}
+                            {columnVisibility.chart && (
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                <Skeleton className="h-8 w-16 ml-auto" />
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                    ) : (
+                      sortedAndFilteredData.map((crypto) => (
+                        <tr
+                          key={crypto.id}
+                          className="hover:bg-gray-50 dark:hover:bg-zinc-800"
+                        >
+                          {columnVisibility.rank && (
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-neutral-mid dark:text-gray-400">
+                                #{crypto.id.substring(0, 2)}
+                              </div>
+                            </td>
+                          )}
+                          {columnVisibility.asset && (
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getBgColor(crypto.symbol)}`}>
+                                  {crypto.symbol.substring(0, 1)}
+                                </div>
+                                <div className="ml-4">
+                                  <div className="font-medium">{crypto.name}</div>
+                                  <div className="text-sm text-muted-foreground">
                                     {crypto.symbol}
-                                  </p>
-                                  {ownedAssetsMap.has(crypto.symbol) && (
-                                    <p className="text-xs ml-2 text-primary">
-                                      {ownedAssetsMap.get(crypto.symbol)?.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 })}
-                                    </p>
-                                  )}
+                                  </div>
                                 </div>
+                                {ownedAssetsMap.has(crypto.symbol) && (
+                                  <Badge variant="outline" className="ml-2 text-xs">
+                                    Owned
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                          {columnVisibility.holdings && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              {ownedAssetsMap.has(crypto.symbol) ? (
+                                <span className="font-medium">
+                                  {ownedAssetsMap.get(crypto.symbol)?.quantity}
+                                </span>
+                              ) : (
+                                <span className="text-neutral-mid">-</span>
+                              )}
+                            </td>
+                          )}
+                          {columnVisibility.value && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              {ownedAssetsMap.has(crypto.symbol) ? (
+                                <span className="font-medium">
+                                  ${ownedAssetsMap.get(crypto.symbol)?.value?.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
+                                </span>
+                              ) : (
+                                <span className="text-neutral-mid">-</span>
+                              )}
+                            </td>
+                          )}
+                          {columnVisibility.price && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              ${crypto.currentPrice.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </td>
+                          )}
+                          {columnVisibility.change && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <span
+                                className={
+                                  crypto.priceChangePercentage24h >= 0
+                                    ? "text-green-500 dark:text-green-400"
+                                    : "text-red-500 dark:text-red-400"
+                                }
+                              >
+                                {crypto.priceChangePercentage24h >= 0 ? "+" : ""}
+                                {crypto.priceChangePercentage24h.toFixed(2)}%
+                              </span>
+                            </td>
+                          )}
+                          {columnVisibility.marketCap && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              ${(crypto.currentPrice * 1000000).toLocaleString(
+                                undefined,
+                                { maximumFractionDigits: 0 },
+                              )}
+                            </td>
+                          )}
+                          {columnVisibility.chart && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div
+                                className={`h-8 w-16 ${crypto.priceChangePercentage24h >= 0 ? "bg-green-50 dark:bg-green-900" : "bg-red-50 dark:bg-red-900"} rounded-sm ml-auto overflow-hidden relative`}
+                              >
+                                <div className="absolute inset-0 opacity-60">
+                                  <svg
+                                    viewBox="0 0 100 20"
+                                    preserveAspectRatio="none"
+                                    className="w-full h-full"
+                                  >
+                                    <path
+                                      d={
+                                        crypto.priceChangePercentage24h >= 0
+                                          ? "M0,10 L10,8 L20,12 L30,7 L40,9 L50,5 L60,8 L70,4 L80,8 L90,6 L100,10"
+                                          : "M0,8 L10,10 L20,7 L30,9 L40,11 L50,12 L60,13 L70,10 L80,12 L90,11 L100,12"
+                                      }
+                                      stroke={
+                                        crypto.priceChangePercentage24h >= 0
+                                          ? "#10B981"
+                                          : "#EF4444"
+                                      }
+                                      strokeWidth="1.5"
+                                      fill="none"
+                                    />
+                                  </svg>
+                                </div>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </TabsContent>
+          
+          {/* Trending Tab */}
+          <TabsContent value="trending" className="mt-0">
+            <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900 p-6">
+              <h3 className="text-lg font-medium mb-4">Trending Cryptocurrencies</h3>
+              <p className="text-muted-foreground mb-6">
+                Showing the most actively traded cryptocurrencies in the last 24 hours.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sortedAndFilteredData.slice(0, 6).map((crypto) => (
+                  <Card key={crypto.id} className="p-4 border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center mb-2">
+                      <div className={`w-8 h-8 rounded-full mr-2 flex items-center justify-center ${getBgColor(crypto.symbol)}`}>
+                        {crypto.symbol.substring(0, 1)}
+                      </div>
+                      <div>
+                        <div className="font-medium">{crypto.name}</div>
+                        <div className="text-sm text-muted-foreground">{crypto.symbol}</div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="text-lg font-medium">
+                        ${crypto.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <Badge 
+                        variant={crypto.priceChangePercentage24h >= 0 ? "secondary" : "destructive"}
+                        className="text-xs"
+                      >
+                        {crypto.priceChangePercentage24h >= 0 ? "+" : ""}
+                        {crypto.priceChangePercentage24h.toFixed(2)}%
+                      </Badge>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+          
+          {/* My Holdings Tab */}
+          <TabsContent value="owned" className="mt-0">
+            <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900 p-6">
+              <h3 className="text-lg font-medium mb-4">My Holdings</h3>
+              {portfolioAssets && portfolioAssets.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-left text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">
+                          Asset
+                        </th>
+                        <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">
+                          Holdings
+                        </th>
+                        <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">
+                          Value
+                        </th>
+                        <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">
+                          Price
+                        </th>
+                        <th className="px-6 py-3 bg-neutral-light dark:bg-zinc-800 text-right text-xs font-medium text-neutral-mid dark:text-gray-300 uppercase tracking-wider">
+                          24h %
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-gray-700">
+                      {portfolioAssets.map((asset) => (
+                        <tr key={asset.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getBgColor(asset.symbol)}`}>
+                                {asset.symbol.substring(0, 1)}
+                              </div>
+                              <div className="ml-4">
+                                <div className="font-medium">{asset.name}</div>
+                                <div className="text-sm text-muted-foreground">{asset.symbol}</div>
                               </div>
                             </div>
                           </td>
-                        )}
-                        {columnVisibility.holdings && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium dark:text-white">
-                            {ownedAssetsMap.has(crypto.symbol) ? (
-                              ownedAssetsMap.get(crypto.symbol)?.quantity.toLocaleString(undefined, { 
-                                minimumFractionDigits: 0, 
-                                maximumFractionDigits: 8 
-                              })
-                            ) : (
-                              <span className="text-neutral-mid dark:text-gray-500">-</span>
-                            )}
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            {asset.quantity}
                           </td>
-                        )}
-                        {columnVisibility.value && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium dark:text-white">
-                            {ownedAssetsMap.has(crypto.symbol) ? (
-                              `$${ownedAssetsMap.get(crypto.symbol)?.value.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              })}`
-                            ) : (
-                              <span className="text-neutral-mid dark:text-gray-500">-</span>
-                            )}
-                          </td>
-                        )}
-                        {columnVisibility.price && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-mono font-medium dark:text-white">
-                            $
-                            {crypto.currentPrice.toLocaleString(undefined, {
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            ${asset.value.toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                        )}
-                        {columnVisibility.change && (
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            ${asset.currentPrice.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <span
-                              className={`text-sm font-medium ${crypto.priceChangePercentage24h >= 0 ? "text-accent-green" : "text-accent-red"}`}
+                              className={
+                                asset.priceChangePercentage24h >= 0
+                                  ? "text-green-500 dark:text-green-400"
+                                  : "text-red-500 dark:text-red-400"
+                              }
                             >
-                              {crypto.priceChangePercentage24h >= 0 ? "+" : ""}
-                              {crypto.priceChangePercentage24h.toFixed(1)}%
+                              {asset.priceChangePercentage24h >= 0 ? "+" : ""}
+                              {asset.priceChangePercentage24h.toFixed(2)}%
                             </span>
                           </td>
-                        )}
-                        {columnVisibility.marketCap && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium dark:text-white">
-                            $
-                            {(crypto.currentPrice * 1000000).toLocaleString(
-                              undefined,
-                              { maximumFractionDigits: 0 },
-                            )}
-                          </td>
-                        )}
-                        {columnVisibility.chart && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <div
-                              className={`h-8 w-16 ${crypto.priceChangePercentage24h >= 0 ? "bg-green-50 dark:bg-green-900" : "bg-red-50 dark:bg-red-900"} rounded-sm ml-auto overflow-hidden relative`}
-                            >
-                              <div className="absolute inset-0 opacity-60">
-                                <svg
-                                  viewBox="0 0 100 20"
-                                  preserveAspectRatio="none"
-                                  className="w-full h-full"
-                                >
-                                  <path
-                                    d={
-                                      crypto.priceChangePercentage24h >= 0
-                                        ? "M0,10 L10,8 L20,12 L30,7 L40,9 L50,5 L60,8 L70,4 L80,8 L90,6 L100,10"
-                                        : "M0,8 L10,10 L20,7 L30,9 L40,11 L50,12 L60,13 L70,10 L80,12 L90,11 L100,12"
-                                    }
-                                    stroke={
-                                      crypto.priceChangePercentage24h >= 0
-                                        ? "#10B981"
-                                        : "#EF4444"
-                                    }
-                                    strokeWidth="1.5"
-                                    fill="none"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ),
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">You don't own any cryptocurrencies yet.</p>
+                  <Button variant="outline">Add Your First Crypto</Button>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+          
+          {/* Watchlist Tab */}
+          <TabsContent value="watchlist" className="mt-0">
+            <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900 p-6">
+              <h3 className="text-lg font-medium mb-4">My Watchlist</h3>
+              <p className="text-muted-foreground mb-6">
+                Track cryptocurrencies you're interested in without adding them to your portfolio.
+              </p>
+              <div className="flex justify-center py-8">
+                <div className="text-center max-w-md">
+                  <p className="text-muted-foreground mb-4">
+                    Your watchlist is currently empty. Add cryptocurrencies to track their performance.
+                  </p>
+                  <Button variant="outline">Create Watchlist</Button>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

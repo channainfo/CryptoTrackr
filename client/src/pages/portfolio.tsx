@@ -40,6 +40,14 @@ import {
   SelectValue,
   SelectLabel,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { PortfolioWithAssets } from "@/hooks/usePortfolios";
 
@@ -257,16 +265,67 @@ const Portfolio = () => {
           </p>
         </div>
         <div className="mt-4 sm:mt-0 space-x-2">
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <FolderPlus className="h-4 w-4 mr-1" />
-            Create Portfolio
-          </Button>
           <Button variant="outline" asChild>
             <Link href="/learning/glossary">
               <BookOpen className="h-4 w-4 mr-1" />
               Crypto Glossary
             </Link>
           </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-6">
+        {/* Actions section - moved to top */}
+        <div className="w-full mb-4 md:mb-0 md:w-auto md:mr-4 flex flex-shrink-0 space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="flex-grow md:flex-grow-0">
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Create Portfolio
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {
+                setActiveTab("all");
+                setIsCreateOpen(true);
+              }}>
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Create Standard Portfolio
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                setActiveTab("watchlist");
+                setIsCreateOpen(true);
+              }}>
+                <Star className="h-4 w-4 mr-2" />
+                Create Watchlist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex-shrink-0">
+                <Filter className="h-4 w-4 mr-2" />
+                Sort & Filter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Sort Portfolios</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {sortOptions.map((option) => (
+                <DropdownMenuItem 
+                  key={option.value}
+                  onClick={() => setSortBy(option.value)}
+                  className={sortBy === option.value ? "bg-secondary" : ""}
+                >
+                  <div className="flex items-center">
+                    {getSortIcon(option.value)}
+                    <span>{option.label}</span>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -279,56 +338,35 @@ const Portfolio = () => {
           console.log(`Tab changed to ${value} - using client-side filtering`);
         }}
       >
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <TabsList className="mb-4 md:mb-0">
-            <TabsTrigger value="all" className="relative">
-              All Portfolios
-              {portfolioCounts.all > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {portfolioCounts.all}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="active" className="relative">
-              Active
-              {portfolioCounts.active > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {portfolioCounts.active}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="watchlist" className="relative">
-              Watchlist
-              {portfolioCounts.watchlist > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {portfolioCounts.watchlist}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Sort options */}
-          <div className="flex items-center">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <div className="flex items-center">
-                  {getSortIcon(sortBy)}
-                  <SelectValue placeholder="Sort portfolios" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Sort By</SelectLabel>
-                  {sortOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <TabsList className="mb-6 w-full overflow-x-auto flex whitespace-nowrap px-2 space-x-1">
+          <TabsTrigger value="all" className="relative flex items-center">
+            <FolderPlus className="h-4 w-4 mr-2 hidden sm:block" />
+            All Portfolios
+            {portfolioCounts.all > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {portfolioCounts.all}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="active" className="relative flex items-center">
+            <TrendingUp className="h-4 w-4 mr-2 hidden sm:block" />
+            Active
+            {portfolioCounts.active > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {portfolioCounts.active}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="watchlist" className="relative flex items-center">
+            <Star className="h-4 w-4 mr-2 hidden sm:block" />
+            Watchlist
+            {portfolioCounts.watchlist > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {portfolioCounts.watchlist}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="all" className="space-y-6">
           {renderPortfolioContent()}
