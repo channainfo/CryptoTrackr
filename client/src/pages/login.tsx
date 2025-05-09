@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useEffect } from "react";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/use-auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,7 @@ type RegistrationFormValues = z.infer<typeof registrationSchema>;
 export default function Login() {
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
-  const { user, isLoading } = useUser();
+  const { user, isLoading, loginMutation } = useAuth();
   
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -64,37 +64,22 @@ export default function Login() {
     try {
       console.log('Logging in with:', values);
       
-      // The apiRequest function already handles JSON stringification,
-      // so we pass the object directly
-      const response = await apiRequest("/api/auth/login", {
-        method: "POST",
-        data: values,
-      });
-
-      if (response) {
-        // Invalidate the auth query to force a refresh
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-        
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-        
-        // Check if there's a saved route to redirect to
-        const lastRoute = localStorage.getItem('lastRoute');
-        if (lastRoute) {
-          localStorage.removeItem('lastRoute'); // Clear it after use
-          setLocation(lastRoute);
-        } else {
-          setLocation("/dashboard");
-        }
+      // Use the loginMutation from useAuth hook
+      await loginMutation.mutateAsync(values);
+      
+      // Login success is handled by the onSuccess callback in the mutation
+      // The toast and redirect are handled there
+      
+      // Check if there's a saved route to redirect to
+      const lastRoute = localStorage.getItem('lastRoute');
+      if (lastRoute) {
+        localStorage.removeItem('lastRoute'); // Clear it after use
+        setLocation(lastRoute);
+      } else {
+        setLocation("/dashboard");
       }
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Invalid username or password",
-        variant: "destructive",
-      });
+      // Error handling is done in the mutation's onError callback
       console.error("Login error:", error);
     }
   };

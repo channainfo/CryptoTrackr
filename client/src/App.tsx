@@ -22,15 +22,18 @@ import CryptoConceptsPage from "@/pages/learning/crypto-concepts";
 import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import Achievements from "@/pages/achievements";
+import TokenManagement from "@/pages/admin/token-management";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import AppLayout from "@/components/layout/AppLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { CryptoConceptsProvider } from "@/contexts/CryptoConceptsContext";
-import { UserProvider, useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/use-auth";
+import { AuthProvider } from "@/hooks/use-auth";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
 import CryptoConceptPopup from "@/components/tutorial/CryptoConceptPopup";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 
 function Router() {
   return (
@@ -67,7 +70,7 @@ function Router() {
       <Route path="/learning/module/:id">
         {params => {
           // First check auth through our protected route logic
-          const { user, isLoading } = useUser();
+          const { user, isLoading } = useAuth();
           const [, setLocation] = useLocation();
           
           if (isLoading) {
@@ -99,7 +102,7 @@ function Router() {
       <Route path="/learning/quiz/:id">
         {params => {
           // First check auth
-          const { user, isLoading } = useUser();
+          const { user, isLoading } = useAuth();
           const [, setLocation] = useLocation();
           
           if (isLoading) {
@@ -124,6 +127,7 @@ function Router() {
       <ProtectedRoute path="/learning/crypto-concepts" component={CryptoConceptsPage} />
       <ProtectedRoute path="/alerts" component={Alerts} />
       <ProtectedRoute path="/achievements" component={Achievements} />
+      <AdminRoute path="/admin/tokens" component={TokenManagement} />
       
       {/* Fallback route */}
       <Route path="*" component={NotFound} />
@@ -137,7 +141,8 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
+      <AuthProvider>
+        {/* Removed UserProvider as we'll only use AuthProvider */}
         <TutorialProvider>
           <CryptoConceptsProvider>
             <TooltipProvider>
@@ -161,7 +166,7 @@ function App() {
             </TooltipProvider>
           </CryptoConceptsProvider>
         </TutorialProvider>
-      </UserProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

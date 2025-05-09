@@ -1,24 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-
-type UserInfo = {
-  id: string;
-  username: string;
-  createdAt: string;
-};
+import { useAuth } from "@/hooks/use-auth";
 
 export const UserInformation = () => {
-  // Fetch user information
-  const { data: userInfo, isLoading } = useQuery<UserInfo>({
-    queryKey: ["/api/auth/me"],
-    retry: 1,
-  });
+  // Get user information from auth context
+  const { user, isLoading } = useAuth();
 
   // Format date if available
-  const formattedDate = userInfo?.createdAt 
-    ? format(new Date(userInfo.createdAt), "PPP") 
+  const formattedDate = user?.createdAt 
+    ? format(new Date(user.createdAt), "PPP") 
     : "";
 
   return (
@@ -50,14 +41,14 @@ export const UserInformation = () => {
             <div className="space-y-1">
               <p className="text-sm font-medium text-neutral-dark">User ID</p>
               <p className="text-base font-mono bg-gray-100 dark:bg-gray-800 p-2 rounded-md">
-                {userInfo?.id || "Not available"}
+                {user?.id || "Not available"}
               </p>
             </div>
             
             <div className="space-y-1">
               <p className="text-sm font-medium text-neutral-dark">Username</p>
               <p className="text-base">
-                {userInfo?.username || "Not available"}
+                {user?.username || "Not available"}
               </p>
             </div>
             

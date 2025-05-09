@@ -17,21 +17,21 @@ import { useToast } from "@/hooks/use-toast";
 import { ConnectedWallets } from "@/components/wallet/ConnectedWallets";
 import { LinkWalletCard } from "@/components/wallet/LinkWalletCard";
 import { UserInformation } from "@/components/account/UserInformation";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/hooks/use-auth";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const Settings = () => {
   const { toast } = useToast();
-  const { user, isLoading } = useUser();
+  const { user, isLoading } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
     username: "",
     email: user?.email || "",
-    name: user?.name || "",
-    phone: user?.phone || "",
+    name: "", // Name is not in the user schema yet
+    phone: "", // Phone is not in the user schema yet
   });
 
   // Password state
@@ -47,8 +47,8 @@ const Settings = () => {
       setFormData({
         username: user.username || "",
         email: user.email || "",
-        name: user.name || "",
-        phone: user.phone || "",
+        name: "", // Name is not in the user schema yet
+        phone: "", // Phone is not in the user schema yet
       });
     }
   }, [user]);

@@ -13,12 +13,12 @@ import {
   Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { logout } from "@/lib/auth";
-import { useUser } from "@/contexts/UserContext";
+
+import { useAuth } from "@/hooks/use-auth";
 
 const MobileNav = () => {
   const [location] = useLocation();
-  const { user } = useUser();
+  const { user } = useAuth();
   
   const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,12 +28,10 @@ const MobileNav = () => {
     { href: '/settings', label: 'Account', icon: Settings },
   ];
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+  const { logoutMutation } = useAuth();
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
   
   return (

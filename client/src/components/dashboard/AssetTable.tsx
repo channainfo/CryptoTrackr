@@ -69,8 +69,8 @@ const AssetTable = ({ limit, showViewAll = true, portfolioId }: AssetTableProps)
   const sortedAssets = useMemo(() => {
     let filtered = assets || [];
     
-    // Apply limit if needed
-    if (limit) {
+    // Apply limit if needed and showViewAll is true
+    if (limit && showViewAll) {
       filtered = filtered.slice(0, limit);
     }
     
@@ -203,12 +203,7 @@ const AssetTable = ({ limit, showViewAll = true, portfolioId }: AssetTableProps)
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {showViewAll && (
-              <Button variant="ghost" size="sm" className="text-primary text-sm font-medium flex items-center">
-                View All
-                <ArrowUpRight className="h-4 w-4 ml-1" />
-              </Button>
-            )}
+            {/* View All button removed */}
           </div>
         </div>
         

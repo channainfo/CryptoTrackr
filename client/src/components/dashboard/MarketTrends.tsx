@@ -29,54 +29,69 @@ const MarketTrends = ({ limit = 3, showViewAll = true }: MarketTrendsProps) => {
   };
   
   return (
-    <Card className="shadow-sm border border-gray-100">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Market Trends</h3>
+    <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-zinc-900">
+      <CardContent className="p-3 sm:p-4 md:p-6">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-lg font-semibold">Market Trends</h3>
           {showViewAll && (
-            <button className="text-primary text-sm font-medium">View All</button>
+            <button 
+              className="text-primary text-xs sm:text-sm font-medium"
+              onClick={() => {
+                // Find the Market Trends tab and click it to navigate to that tab
+                const tabs = document.querySelectorAll('[role="tab"]');
+                tabs.forEach((tab) => {
+                  if (tab.textContent?.includes("Market Trends")) {
+                    (tab as HTMLElement).click();
+                    // Scroll back to top after tab change
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                });
+              }}
+            >
+              View All
+            </button>
           )}
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {isLoading ? (
             Array(limit).fill(0).map((_, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div className="ml-3">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-3 w-16 mt-1" />
+                  <Skeleton className="h-6 w-6 sm:h-8 sm:w-8 rounded-full" />
+                  <div className="ml-2 sm:ml-3">
+                    <Skeleton className="h-3 sm:h-4 w-16 sm:w-20" />
+                    <Skeleton className="h-2 sm:h-3 w-12 sm:w-16 mt-1" />
                   </div>
                 </div>
                 <div className="text-right">
-                  <Skeleton className="h-4 w-20 ml-auto" />
-                  <Skeleton className="h-5 w-16 ml-auto mt-1" />
+                  <Skeleton className="h-3 sm:h-4 w-16 sm:w-20 ml-auto" />
+                  <Skeleton className="h-4 sm:h-5 w-12 sm:w-16 ml-auto mt-1" />
                 </div>
               </div>
             ))
           ) : (
             displayedTrends.map((crypto: CryptoAsset) => (
-              <div key={crypto.id} className="flex items-center justify-between">
+              <div key={crypto.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                 <div className="flex items-center">
-                  <div className={`flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full ${getBgColor(crypto.symbol)}`}>
-                    <span className="text-xs font-mono">{crypto.symbol}</span>
+                  <div className={`flex-shrink-0 h-6 w-6 sm:h-8 sm:w-8 flex items-center justify-center rounded-full ${getBgColor(crypto.symbol)}`}>
+                    <span className="text-[10px] sm:text-xs font-mono">{crypto.symbol}</span>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium">{crypto.name}</p>
-                    <div className="flex items-center text-xs">
+                  <div className="ml-2 sm:ml-3">
+                    <p className="text-xs sm:text-sm font-medium line-clamp-1">{crypto.name}</p>
+                    <div className="flex items-center text-[10px] sm:text-xs">
                       <span className={`${crypto.priceChangePercentage24h >= 0 ? 'text-accent-green' : 'text-accent-red'} font-medium`}>
                         {crypto.priceChangePercentage24h >= 0 ? '+' : ''}{crypto.priceChangePercentage24h.toFixed(1)}%
                       </span>
-                      <span className="text-neutral-mid ml-2">24h</span>
+                      <span className="text-neutral-mid ml-1 sm:ml-2">24h</span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium font-mono">
+                  <p className="text-xs sm:text-sm font-medium font-mono">
                     ${crypto.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                  <div className={`h-5 w-16 ${crypto.priceChangePercentage24h >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-sm mt-1 overflow-hidden relative`}>
+                  <div className={`h-4 sm:h-5 w-12 sm:w-16 ${crypto.priceChangePercentage24h >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-sm mt-1 overflow-hidden relative`}>
                     <div className="absolute inset-0 opacity-60">
                       <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="w-full h-full">
                         <path 

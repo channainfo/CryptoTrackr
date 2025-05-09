@@ -3,11 +3,11 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Achievement } from '@shared/schema';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/hooks/use-auth';
 
 export const useAchievements = () => {
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuth();
   
   // Fetch achievements from the API
   const { 
