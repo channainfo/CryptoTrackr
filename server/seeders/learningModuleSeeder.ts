@@ -1,6 +1,6 @@
 import { db } from "../db";
-import { 
-  learningModules, 
+import {
+  learningModules,
   learningQuizzes,
   InsertLearningModule
 } from "@shared/schema";
@@ -169,50 +169,50 @@ const learningQuizzesData = [
 export async function seedLearningModules() {
   try {
     console.log("Checking if learning modules need to be seeded...");
-    
+
     // Check if we already have learning modules
     const existingModules = await db.select().from(learningModules);
-    
+
     if (existingModules.length > 0) {
       console.log(`Found ${existingModules.length} existing learning modules, skipping seeding.`);
       return;
     }
-    
+
     console.log("Seeding learning modules...");
-    
+
     // Insert learning modules
     const insertedModules = await db.insert(learningModules).values(learningModulesData).returning();
-    
+
     console.log(`Successfully seeded ${insertedModules.length} learning modules.`);
-    
+
     // Associate quizzes with their respective modules
     const bitcoinModule = insertedModules.find(m => m.title === "Bitcoin Basics");
     const tradingModule = insertedModules.find(m => m.title === "Cryptocurrency Trading Fundamentals");
     const defiModule = insertedModules.find(m => m.title === "Introduction to DeFi");
-    
+
     if (bitcoinModule) {
       await db.insert(learningQuizzes).values([
         { ...learningQuizzesData[0], moduleId: bitcoinModule.id },
         { ...learningQuizzesData[1], moduleId: bitcoinModule.id }
       ]);
     }
-    
+
     if (tradingModule) {
       await db.insert(learningQuizzes).values({
         ...learningQuizzesData[2],
         moduleId: tradingModule.id
       });
     }
-    
+
     if (defiModule) {
       await db.insert(learningQuizzes).values({
         ...learningQuizzesData[3],
         moduleId: defiModule.id
       });
     }
-    
+
     console.log("Successfully seeded learning quizzes.");
-    
+
   } catch (error) {
     console.error("Error seeding learning modules:", error);
   }

@@ -23,13 +23,24 @@ import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import Achievements from "@/pages/achievements";
 import TokenManagement from "@/pages/admin/token-management";
+import UsersManagementPage from "@/pages/admin/users-management";
+import AdminDashboard from "@/pages/admin/dashboard";
+import LearningModulesManagement from "@/pages/admin/learning-modules";
+import AlertsManagement from "@/pages/admin/alerts";
+import AchievementsManagement from "@/pages/admin/achievements";
+import WalletsManagement from "@/pages/admin/wallets";
+import PortfoliosManagement from "@/pages/admin/portfolios";
+import TransactionsManagement from "@/pages/admin/transactions";
+import MarketDataManagement from "@/pages/admin/market-data";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import AppLayout from "@/components/layout/AppLayout";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { TutorialProvider } from "@/contexts/TutorialContext";
 import { CryptoConceptsProvider } from "@/contexts/CryptoConceptsContext";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthProvider } from "@/hooks/use-auth";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { Tutorial, TutorialButton } from "@/components/tutorial";
 import CryptoConceptPopup from "@/components/tutorial/CryptoConceptPopup";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -127,7 +138,73 @@ function Router() {
       <ProtectedRoute path="/learning/crypto-concepts" component={CryptoConceptsPage} />
       <ProtectedRoute path="/alerts" component={Alerts} />
       <ProtectedRoute path="/achievements" component={Achievements} />
-      <AdminRoute path="/admin/tokens" component={TokenManagement} />
+      
+      {/* Admin routes */}
+      <AdminRoute path="/admin" component={() => (
+        <AdminLayout>
+          <AdminDashboard />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/dashboard" component={() => (
+        <AdminLayout>
+          <AdminDashboard />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/token-management" component={() => (
+        <AdminLayout>
+          <TokenManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/tokens" component={() => (
+        <AdminLayout>
+          <TokenManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/users-management" component={() => (
+        <AdminLayout>
+          <UsersManagementPage />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/users" component={() => (
+        <AdminLayout>
+          <UsersManagementPage />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/learning-modules" component={() => (
+        <AdminLayout>
+          <LearningModulesManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/alerts" component={() => (
+        <AdminLayout>
+          <AlertsManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/achievements" component={() => (
+        <AdminLayout>
+          <AchievementsManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/wallets" component={() => (
+        <AdminLayout>
+          <WalletsManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/portfolios" component={() => (
+        <AdminLayout>
+          <PortfoliosManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/transactions" component={() => (
+        <AdminLayout>
+          <TransactionsManagement />
+        </AdminLayout>
+      )} />
+      <AdminRoute path="/admin/market-data" component={() => (
+        <AdminLayout>
+          <MarketDataManagement />
+        </AdminLayout>
+      )} />
       
       {/* Fallback route */}
       <Route path="*" component={NotFound} />
@@ -138,25 +215,35 @@ function Router() {
 function App() {
   const [location] = useLocation();
   const isAuthPage = location === '/login' || location === '/register';
+  const isAdminPage = location.startsWith('/admin');
   
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {/* Removed UserProvider as we'll only use AuthProvider */}
         <TutorialProvider>
           <CryptoConceptsProvider>
             <TooltipProvider>
               <Toaster />
               {isAuthPage ? (
+                // Auth pages (login/register) with no sidebar
                 <div className="min-h-screen bg-background flex flex-col">
                   <Router />
                 </div>
+              ) : isAdminPage ? (
+                // Admin pages have their own layout with AdminSidebar
+                // The AdminLayout is applied directly in each admin page component
+                <div className="min-h-screen bg-background">
+                  <Router />
+                </div>
               ) : (
+                // Regular user pages use AppLayout with normal sidebar
                 <AppLayout>
                   <Router />
                 </AppLayout>
               )}
-              {!isAuthPage && (
+              
+              {/* Only show tutorial components on regular user pages */}
+              {!isAuthPage && !isAdminPage && (
                 <>
                   <Tutorial />
                   <TutorialButton />
