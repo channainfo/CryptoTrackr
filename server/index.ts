@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -9,11 +10,14 @@ import connectPgSimple from "connect-pg-simple";
 import helmet from "helmet";
 import { createAdminUserIfNeeded } from "./adminSeed";
 
+dotenv.config();
+
+
 // Create PostgreSQL session store
 const PgSession = connectPgSimple(session);
 
 // Session secret
-const sessionSecret = process.env.SESSION_SECRET || "trailer-app-secret-key-change-in-production";
+const sessionSecret = process.env.SESSION_SECRET
 
 const app = express();
 app.use(express.json());
@@ -59,7 +63,7 @@ app.use(
       // Ensure only one connection pool is used
       disableTouch: false
     }),
-    secret: sessionSecret,
+    secret: sessionSecret as any,
     // Change resave to true to ensure session is saved to store
     resave: true,
     saveUninitialized: false,
@@ -112,10 +116,10 @@ app.use((req, res, next) => {
   // Initialize database with seed data
   await storage.seedInitialDataIfNeeded();
   await seedLearningModules();
-  
+
   // Skip admin user creation for now since there's a schema mismatch
   console.log("Skipping automatic admin user creation due to schema issues.");
-  
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -138,12 +142,14 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = parseInt(process.env.APP_PORT || "5000");
+  const host = "0.0.0.0";
   server.listen({
     port,
-    host: "0.0.0.0",
+    host,
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`Server is ready`);
+    log(`serving http://${host}:${port}`);
   });
 })();

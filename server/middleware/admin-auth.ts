@@ -9,7 +9,7 @@ const adminTokens = new Set<string>();
 
 // Debug function to log admin tokens
 function logAdminTokens() {
-  console.log(`Current admin tokens: ${adminTokens.size}`, 
+  console.log(`Current admin tokens: ${adminTokens.size}`,
     Array.from(adminTokens).map(token => token.substring(0, 8) + '...')
   );
 }
@@ -26,7 +26,7 @@ async function isUserAdmin(userId: string): Promise<boolean> {
       .from(users)
       .where(eq(users.id, userId))
       .then(rows => rows[0]);
-    
+
     console.log(`Admin check result for ${userId}:`, user);
     return !!user?.isAdmin;
   } catch (error) {
@@ -44,7 +44,7 @@ export async function adminLogin(req: Request, res: Response) {
   if (!req.user) {
     return res.status(401).json({ message: 'Authentication required' });
   }
-  
+
   // Verify admin status from database (not from session)
   const isAdmin = await isUserAdmin(req.user.id);
   console.log('Admin login check for user:', {
@@ -52,28 +52,28 @@ export async function adminLogin(req: Request, res: Response) {
     isAdmin: isAdmin,
     user: req.user
   });
-  
+
   if (!isAdmin) {
     return res.status(403).json({ message: 'Unauthorized access. Admin privileges required.' });
   }
-  
+
   // Create and store admin token
   const adminToken = crypto.randomBytes(32).toString('hex');
   adminTokens.add(adminToken);
-  
+
   // Log the tokens before and after adding the new one
   console.log('Admin token created:', adminToken.substring(0, 8) + '...');
   logAdminTokens();
-  
+
   // Add expiration for the token (after 1 hour)
   setTimeout(() => {
     console.log('Admin token expired:', adminToken.substring(0, 8) + '...');
     adminTokens.delete(adminToken);
     logAdminTokens();
   }, 60 * 60 * 1000);
-  
+
   // Return admin token
-  res.json({ 
+  res.json({
     adminToken,
     expiresIn: 3600 // 1 hour
   });
@@ -89,7 +89,7 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
   if (!req.session || !req.session.userId) {
     return res.status(401).json({ message: 'Authentication required' });
   }
-  
+
   // If req.user isn't loaded yet, we need to load it to check admin status
   if (!req.user) {
     try {
@@ -97,11 +97,11 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
         .select()
         .from(users)
         .where(eq(users.id, req.session.userId));
-      
+
       if (!user) {
         return res.status(401).json({ message: 'Authentication required' });
       }
-      
+
       // Set the user for subsequent middleware
       req.user = user;
     } catch (error) {
@@ -109,43 +109,43 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
       return res.status(500).json({ message: 'Server error' });
     }
   }
-  
+
   // Check for admin token in the Authorization header
   const authHeader = req.headers.authorization;
-  console.log('Admin authorization check:', { 
+  console.log('Admin authorization check:', {
     hasAuthHeader: !!authHeader,
     headerValue: authHeader ? `${authHeader.substring(0, 15)}...` : null,
-    path: req.path 
+    path: req.path
   });
-  
+
   if (!authHeader || !authHeader.startsWith('AdminToken ')) {
     console.log('Admin authentication required - missing or invalid header format');
-    return res.status(401).json({ 
+    return res.status(401).json({
       message: 'Admin authentication required',
-      code: 'ADMIN_AUTH_REQUIRED' 
+      code: 'ADMIN_AUTH_REQUIRED'
     });
   }
-  
+
   // Extract the token
   const adminToken = authHeader.split(' ')[1];
-  
+
   // Log current valid tokens
   logAdminTokens();
-  
+
   // Verify the admin token
   const isValidToken = adminTokens.has(adminToken);
   console.log('Admin token validation:', {
     tokenPrefix: adminToken.substring(0, 8) + '...',
     isValid: isValidToken
   });
-  
+
   if (!isValidToken) {
-    return res.status(403).json({ 
+    return res.status(403).json({
       message: 'Invalid or expired admin token',
-      code: 'INVALID_ADMIN_TOKEN' 
+      code: 'INVALID_ADMIN_TOKEN'
     });
   }
-  
+
   // Admin authentication successful
   console.log('Admin authentication successful for request to:', req.path);
   next();
@@ -160,6 +160,6 @@ export function adminLogout(req: Request, res: Response) {
     const adminToken = authHeader.split(' ')[1];
     adminTokens.delete(adminToken);
   }
-  
+
   res.json({ message: 'Admin logout successful' });
 }

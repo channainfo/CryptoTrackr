@@ -122,6 +122,48 @@ interface Token {
   updatedAt: string;
 }
 
+import { DataTable } from '@/components/admin/data-table/DataTable';
+import { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
+
+// Define columns for tokens table
+function getTokenColumns(
+  onEdit: (token: Token) => void,
+  onDelete: (token: Token) => void
+): ColumnDef<Token>[] {
+  return [
+    {
+      accessorKey: 'symbol',
+      header: 'Symbol',
+      cell: ({ row }) => <div className="font-medium">{row.getValue('symbol')}</div>
+    },
+    {
+      accessorKey: 'name',
+      header: 'Name',
+    },
+    {
+      accessorKey: 'chain',
+      header: 'Chain',
+    },
+    {
+      accessorKey: 'isVerified',
+      header: 'Status',
+      cell: ({ row }) => {
+        const isVerified = row.getValue('isVerified');
+        return isVerified ? (
+          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+            <Check className="h-3.5 w-3.5 mr-1" /> Verified
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+            <X className="h-3.5 w-3.5 mr-1" /> Unverified
+          </Badge>
+        );
+      },
+    }
+  ];
+}
+
 export default function TokenManagementPage() {
   const { user } = useAuth();
   const { getAdminAuthHeader, isAdmin } = useAdminAuth();
@@ -405,15 +447,7 @@ export default function TokenManagementPage() {
     setIsImportDialogOpen(false);
   };
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Display error message using useEffect to avoid render loop
+  // Handle API errors
   useEffect(() => {
     if (error) {
       console.error("Error loading tokens:", error);
@@ -425,306 +459,317 @@ export default function TokenManagementPage() {
     }
   }, [error, toast]);
 
+  // Loading state
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Token Management</h1>
-          <p className="text-muted-foreground">
-            Manage cryptocurrency tokens available in the platform
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Dialog
-            open={isImportDialogOpen}
-            onOpenChange={setIsImportDialogOpen}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Token Management</h1>
+            <p className="text-muted-foreground">
+              Manage cryptocurrency tokens available in the platform
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Dialog
+              open={isImportDialogOpen}
+              onOpenChange={setIsImportDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Import Token
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Import Token</DialogTitle>
+                  <DialogDescription>
+                    Import a new token. Imported tokens will be marked as
+                    unverified until approved by an admin.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...importTokenForm}>
+                  <form
+                    onSubmit={importTokenForm.handleSubmit(onImportSubmit)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={importTokenForm.control}
+                      name="symbol"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Symbol</FormLabel>
+                          <FormControl>
+                            <Input placeholder="BTC" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={importTokenForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Bitcoin" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={importTokenForm.control}
+                      name="chain"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chain</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select blockchain" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="ethereum">Ethereum</SelectItem>
+                              <SelectItem value="solana">Solana</SelectItem>
+                              <SelectItem value="base">Base</SelectItem>
+                              <SelectItem value="sui">Sui</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={importTokenForm.control}
+                      name="contractAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contract Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="0x..." {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Contract address of the token (if applicable)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter className="mt-6">
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={resetImportForm}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={importTokenMutation.isPending}
+                      >
+                        {importTokenMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Import Token
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <PlusCircle className="h-4 w-4" />
+                  Add Token
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add New Token</DialogTitle>
+                  <DialogDescription>
+                    Add a new token to the platform
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...addTokenForm}>
+                  <form
+                    onSubmit={addTokenForm.handleSubmit(onAddSubmit)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={addTokenForm.control}
+                      name="symbol"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Symbol</FormLabel>
+                          <FormControl>
+                            <Input placeholder="BTC" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addTokenForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Bitcoin" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addTokenForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Description of the token"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addTokenForm.control}
+                      name="imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Image URL</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://example.com/image.png"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addTokenForm.control}
+                      name="chain"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chain</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select blockchain" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="ethereum">Ethereum</SelectItem>
+                              <SelectItem value="solana">Solana</SelectItem>
+                              <SelectItem value="base">Base</SelectItem>
+                              <SelectItem value="sui">Sui</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addTokenForm.control}
+                      name="contractAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contract Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="0x..." {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Contract address of the token (if applicable)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={addTokenForm.control}
+                      name="decimals"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Decimals</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Number of decimal places (typically 18 for ERC20)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter className="mt-6">
+                      <Button
+                        variant="outline"
+                        type="button"
+                        onClick={resetAddForm}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createTokenMutation.isPending}
+                      >
+                        {createTokenMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Add Token
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </header>
+
+        <div className="flex flex-col md:flex-row gap-4 items-end mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tokens by name or symbol..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Select
+            value={filterChain}
+            onValueChange={(value) => setFilterChain(value)}
           >
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Upload className="h-4 w-4" />
-                Import Token
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Import Token</DialogTitle>
-                <DialogDescription>
-                  Import a new token. Imported tokens will be marked as
-                  unverified until approved by an admin.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...importTokenForm}>
-                <form
-                  onSubmit={importTokenForm.handleSubmit(onImportSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={importTokenForm.control}
-                    name="symbol"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Symbol</FormLabel>
-                        <FormControl>
-                          <Input placeholder="BTC" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={importTokenForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Bitcoin" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={importTokenForm.control}
-                    name="chain"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Chain</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select blockchain" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="ethereum">Ethereum</SelectItem>
-                            <SelectItem value="solana">Solana</SelectItem>
-                            <SelectItem value="base">Base</SelectItem>
-                            <SelectItem value="sui">Sui</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={importTokenForm.control}
-                    name="contractAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contract Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="0x..." {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Contract address of the token (if applicable)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter className="mt-6">
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={resetImportForm}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={importTokenMutation.isPending}
-                    >
-                      {importTokenMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Import Token
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <PlusCircle className="h-4 w-4" />
-                Add Token
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add New Token</DialogTitle>
-                <DialogDescription>
-                  Add a new token to the platform
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...addTokenForm}>
-                <form
-                  onSubmit={addTokenForm.handleSubmit(onAddSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={addTokenForm.control}
-                    name="symbol"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Symbol</FormLabel>
-                        <FormControl>
-                          <Input placeholder="BTC" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addTokenForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Bitcoin" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addTokenForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Description of the token"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addTokenForm.control}
-                    name="imageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image URL</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.png"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addTokenForm.control}
-                    name="chain"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Chain</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select blockchain" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="ethereum">Ethereum</SelectItem>
-                            <SelectItem value="solana">Solana</SelectItem>
-                            <SelectItem value="base">Base</SelectItem>
-                            <SelectItem value="sui">Sui</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addTokenForm.control}
-                    name="contractAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contract Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="0x..." {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Contract address of the token (if applicable)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addTokenForm.control}
-                    name="decimals"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Decimals</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Number of decimal places (typically 18 for ERC20)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter className="mt-6">
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={resetAddForm}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createTokenMutation.isPending}
-                    >
-                      {createTokenMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Add Token
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </header>
-
-      <div className="flex flex-col md:flex-row gap-4 items-end mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search tokens by name or symbol..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Select value={filterChain} onValueChange={setFilterChain}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by chain" />
+              <SelectValue placeholder="Filter by Chain" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Chains</SelectItem>
@@ -740,13 +785,17 @@ export default function TokenManagementPage() {
               filterVerified === null
                 ? "all"
                 : filterVerified
-                  ? "verified"
-                  : "unverified"
+                ? "verified"
+                : "unverified"
             }
             onValueChange={(value) => {
-              if (value === "all") setFilterVerified(null);
-              else if (value === "verified") setFilterVerified(true);
-              else setFilterVerified(false);
+              setFilterVerified(
+                value === "all"
+                  ? null
+                  : value === "verified"
+                  ? true
+                  : false
+              );
             }}
           >
             <SelectTrigger className="w-[180px]">
@@ -759,69 +808,105 @@ export default function TokenManagementPage() {
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">All Tokens</TabsTrigger>
-          <TabsTrigger value="verified">Verified</TabsTrigger>
-          <TabsTrigger value="unverified">Unverified</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList>
+            <TabsTrigger value="all">All Tokens</TabsTrigger>
+            <TabsTrigger value="verified">Verified</TabsTrigger>
+            <TabsTrigger value="unverified">Unverified</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          <TokensTable
-            tokens={filteredTokens || []}
-            isLoading={isLoading}
-            onEdit={(token) => {
-              setSelectedToken(token);
-              setIsEditDialogOpen(true);
-            }}
-            onDelete={(token) => {
-              setSelectedToken(token);
-              setIsDeleteDialogOpen(true);
-            }}
-          />
-        </TabsContent>
+          <TabsContent value="all" className="space-y-4">
+            <DataTable
+              columns={getTokenColumns(
+                (token: Token) => {
+                  setSelectedToken(token);
+                  setIsEditDialogOpen(true);
+                },
+                (token: Token) => {
+                  setSelectedToken(token);
+                  setIsDeleteDialogOpen(true);
+                }
+              )}
+              data={filteredTokens || []}
+              onEdit={(token: Token) => {
+                setSelectedToken(token);
+                setIsEditDialogOpen(true);
+              }}
+              onDelete={(token: Token) => {
+                setSelectedToken(token);
+                setIsDeleteDialogOpen(true);
+              }}
+              filterColumn="symbol"
+              entityName="Token"
+              isLoading={isLoading}
+            />
+          </TabsContent>
 
-        <TabsContent value="verified" className="space-y-4">
-          <TokensTable
-            tokens={(filteredTokens || []).filter((token) => token.isVerified)}
-            isLoading={isLoading}
-            onEdit={(token) => {
-              setSelectedToken(token);
-              setIsEditDialogOpen(true);
-            }}
-            onDelete={(token) => {
-              setSelectedToken(token);
-              setIsDeleteDialogOpen(true);
-            }}
-          />
-        </TabsContent>
+          <TabsContent value="verified" className="space-y-4">
+            <DataTable
+              columns={getTokenColumns(
+                (token: Token) => {
+                  setSelectedToken(token);
+                  setIsEditDialogOpen(true);
+                },
+                (token: Token) => {
+                  setSelectedToken(token);
+                  setIsDeleteDialogOpen(true);
+                }
+              )}
+              data={(filteredTokens || []).filter((token) => token.isVerified)}
+              onEdit={(token: Token) => {
+                setSelectedToken(token);
+                setIsEditDialogOpen(true);
+              }}
+              onDelete={(token: Token) => {
+                setSelectedToken(token);
+                setIsDeleteDialogOpen(true);
+              }}
+              filterColumn="symbol"
+              entityName="Token"
+              isLoading={isLoading}
+            />
+          </TabsContent>
 
-        <TabsContent value="unverified" className="space-y-4">
-          <TokensTable
-            tokens={(filteredTokens || []).filter((token) => !token.isVerified)}
-            isLoading={isLoading}
-            onEdit={(token) => {
-              setSelectedToken(token);
-              setIsEditDialogOpen(true);
-            }}
-            onDelete={(token) => {
-              setSelectedToken(token);
-              setIsDeleteDialogOpen(true);
-            }}
-          />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="unverified" className="space-y-4">
+            <DataTable
+              columns={getTokenColumns(
+                (token: Token) => {
+                  setSelectedToken(token);
+                  setIsEditDialogOpen(true);
+                },
+                (token: Token) => {
+                  setSelectedToken(token);
+                  setIsDeleteDialogOpen(true);
+                }
+              )}
+              data={(filteredTokens || []).filter((token) => !token.isVerified)}
+              onEdit={(token: Token) => {
+                setSelectedToken(token);
+                setIsEditDialogOpen(true);
+              }}
+              onDelete={(token: Token) => {
+                setSelectedToken(token);
+                setIsDeleteDialogOpen(true);
+              }}
+              filterColumn="symbol"
+              entityName="Token"
+              isLoading={isLoading}
+            />
+          </TabsContent>
+        </Tabs>
 
-      {/* Edit Token Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Token</DialogTitle>
-            <DialogDescription>Update token information</DialogDescription>
-          </DialogHeader>
-          {selectedToken && (
+        {/* Edit Token Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Token</DialogTitle>
+              <DialogDescription>
+                Update token information and verification status
+              </DialogDescription>
+            </DialogHeader>
             <Form {...editTokenForm}>
               <form
                 onSubmit={editTokenForm.handleSubmit(onEditSubmit)}
@@ -863,7 +948,6 @@ export default function TokenManagementPage() {
                         <Input
                           placeholder="Description of the token"
                           {...field}
-                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -880,7 +964,6 @@ export default function TokenManagementPage() {
                         <Input
                           placeholder="https://example.com/image.png"
                           {...field}
-                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -921,11 +1004,7 @@ export default function TokenManagementPage() {
                     <FormItem>
                       <FormLabel>Contract Address</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="0x..."
-                          {...field}
-                          value={field.value || ""}
-                        />
+                        <Input placeholder="0x..." {...field} />
                       </FormControl>
                       <FormDescription>
                         Contract address of the token (if applicable)
@@ -962,10 +1041,9 @@ export default function TokenManagementPage() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Verified Token</FormLabel>
+                        <FormLabel>Verified</FormLabel>
                         <FormDescription>
-                          Mark this token as verified to display it prominently
-                          in the platform
+                          Verified tokens are displayed prominently in the app
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -986,157 +1064,50 @@ export default function TokenManagementPage() {
                     {updateTokenMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Update Token
+                    Save Changes
                   </Button>
                 </DialogFooter>
               </form>
             </Form>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Token</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this token? This action cannot be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {selectedToken && (
-              <div className="space-y-2">
-                <p>
-                  <span className="font-medium">Symbol:</span>{" "}
-                  {selectedToken.symbol}
-                </p>
-                <p>
-                  <span className="font-medium">Name:</span>{" "}
-                  {selectedToken.name}
-                </p>
-                <p>
-                  <span className="font-medium">Chain:</span>{" "}
-                  {selectedToken.chain}
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={onDelete}
-              disabled={deleteTokenMutation.isPending}
-            >
-              {deleteTokenMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-interface TokensTableProps {
-  tokens: Token[];
-  isLoading: boolean;
-  onEdit: (token: Token) => void;
-  onDelete: (token: Token) => void;
-}
-
-function TokensTable({
-  tokens,
-  isLoading,
-  onEdit,
-  onDelete,
-}: TokensTableProps) {
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (tokens.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64 border rounded-lg">
-        <div className="text-center space-y-2">
-          <p className="text-lg font-medium">No tokens found</p>
-          <p className="text-muted-foreground">
-            Try adjusting your filters or search terms
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Symbol</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Chain</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tokens.map((token) => (
-            <TableRow key={token.id}>
-              <TableCell className="font-medium">{token.symbol}</TableCell>
-              <TableCell>{token.name}</TableCell>
-              <TableCell>{token.chain}</TableCell>
-              <TableCell>
-                {token.isVerified ? (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
-                    <Check className="h-3 w-3 mr-1" /> Verified
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-500">
-                    <X className="h-3 w-3 mr-1" /> Unverified
-                  </span>
+        {/* Delete Token Confirmation Dialog */}
+        <Dialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Token</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this token? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="p-4 border rounded-md">
+              <p className="font-medium">{selectedToken?.name} ({selectedToken?.symbol})</p>
+              <p className="text-sm text-muted-foreground">Chain: {selectedToken?.chain}</p>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={onDelete}
+                disabled={deleteTokenMutation.isPending}
+              >
+                {deleteTokenMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-              </TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(token)}>
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDelete(token)}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
   );
 }

@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 import { LearningModule, UserLearningProgress } from "@shared/schema";
 import axios from "axios";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Create OpenAI client with API key from environment variables
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -40,7 +43,7 @@ export class OpenAIService {
       const response = await axios.get(
         `https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=${limit}`
       );
-      
+
       if (response.data && response.data.Data && Array.isArray(response.data.Data)) {
         // Transform the API response to our NewsArticle format
         return response.data.Data.map((item: any) => ({
@@ -58,7 +61,7 @@ export class OpenAIService {
       return [];
     }
   }
-  
+
   /**
    * Get personalized news recommendations based on user's portfolio
    * @param portfolioTokens The user's portfolio tokens
@@ -66,20 +69,20 @@ export class OpenAIService {
    * @returns Filtered and ranked news articles with relevance explanations
    */
   static async getPersonalizedNewsRecommendations(
-    portfolioTokens: Array<{symbol: string, name: string}>,
+    portfolioTokens: Array<{ symbol: string, name: string }>,
     newsArticles: NewsArticle[],
     limit: number = 4
   ): Promise<NewsRecommendationResponse> {
     // Extract symbols and names from portfolio tokens
     const tokenSymbols = portfolioTokens.map(token => token.symbol.toUpperCase());
     const tokenNames = portfolioTokens.map(token => token.name);
-    
+
     try {
       // If no portfolio tokens, return general recommendations
       if (portfolioTokens.length === 0) {
         return this.getGeneralNewsRecommendations(newsArticles, limit);
       }
-      
+
       // Prepare news articles data for the prompt
       const newsData = newsArticles.map(article => ({
         id: newsArticles.indexOf(article),
@@ -88,7 +91,7 @@ export class OpenAIService {
         source: article.source,
         publishedAt: article.publishedAt,
       }));
-      
+
       // Use OpenAI to rank and filter the news articles based on portfolio
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -122,14 +125,14 @@ export class OpenAIService {
         response_format: { type: "json_object" },
         max_tokens: 800,
       });
-      
+
       const content = response.choices[0].message.content;
       if (!content) {
         throw new Error("Empty response from OpenAI");
       }
-      
+
       const recommendation = JSON.parse(content);
-      
+
       // Map the recommended article IDs back to the original news articles
       const recommendedArticles = recommendation.articles.map((rec: any) => {
         const article = newsArticles[rec.id];
@@ -138,35 +141,35 @@ export class OpenAIService {
           relevance: rec.relevance
         };
       });
-      
+
       return {
         articles: recommendedArticles,
         portfolioInsight: recommendation.portfolioInsight
       };
     } catch (error) {
       console.error("Error getting personalized news recommendations:", error);
-      
+
       // Fallback to simpler filtering if AI fails
       const filteredArticles = newsArticles
         .filter(article => {
           // Simple keyword matching
           const content = (article.title + " " + (article.summary || "")).toLowerCase();
-          return tokenSymbols.some(symbol => 
-            content.includes(symbol.toLowerCase()) || 
+          return tokenSymbols.some(symbol =>
+            content.includes(symbol.toLowerCase()) ||
             content.includes(symbol.toLowerCase().replace(/^[a-z]{0,3}/, ""))
-          ) || tokenNames.some(name => 
+          ) || tokenNames.some(name =>
             content.includes(name.toLowerCase())
           );
         })
         .slice(0, limit);
-      
+
       return {
         articles: filteredArticles,
         portfolioInsight: "These articles may be relevant to your portfolio holdings."
       };
     }
   }
-  
+
   /**
    * Get general news recommendations when no portfolio data is available
    * @param newsArticles Array of news articles
@@ -186,7 +189,7 @@ export class OpenAIService {
         source: article.source,
         publishedAt: article.publishedAt,
       }));
-      
+
       // Use OpenAI to select the most important general crypto news
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -218,14 +221,14 @@ export class OpenAIService {
         response_format: { type: "json_object" },
         max_tokens: 800,
       });
-      
+
       const content = response.choices[0].message.content;
       if (!content) {
         throw new Error("Empty response from OpenAI");
       }
-      
+
       const recommendation = JSON.parse(content);
-      
+
       // Map the recommended article IDs back to the original news articles
       const recommendedArticles = recommendation.articles.map((rec: any) => {
         const article = newsArticles[rec.id];
@@ -234,14 +237,14 @@ export class OpenAIService {
           relevance: rec.relevance
         };
       });
-      
+
       return {
         articles: recommendedArticles,
         portfolioInsight: recommendation.portfolioInsight
       };
     } catch (error) {
       console.error("Error getting general news recommendations:", error);
-      
+
       // Simple fallback if AI fails
       return {
         articles: newsArticles.slice(0, limit),
@@ -279,16 +282,16 @@ export class OpenAIService {
       // Filter out modules the user has already completed
       const completedIds = completedModules.map(m => m.id);
       const inProgressIds = inProgressModules.map(m => m.id);
-      
+
       const uncompletedModules = availableModules.filter(
         m => !completedIds.includes(m.id)
       );
-      
+
       // If all modules are completed, recommend one to revisit
       if (uncompletedModules.length === 0) {
         return this.recommendModuleToRevisit(completedModules, portfolioData);
       }
-      
+
       // If user has in-progress modules, prioritize those first
       if (inProgressModules.length > 0) {
         // Skip AI call for in-progress modules to save API costs
@@ -298,7 +301,7 @@ export class OpenAIService {
           explanation: `Continue working on "${inProgressModule.title}" that you've already started. Completing what you've begun will help reinforce your understanding.`
         };
       }
-      
+
       // For new modules, use the OpenAI API to get a personalized recommendation
       return await this.getAIRecommendation(
         userId,
@@ -309,19 +312,19 @@ export class OpenAIService {
       );
     } catch (error) {
       console.error("Error getting personalized recommendation:", error);
-      
+
       // Fallback to a simple algorithm if AI fails
       // Just get the first module sorted by difficulty
       const fallbackModule = availableModules
         .sort((a, b) => a.difficulty - b.difficulty)[0] || availableModules[0];
-      
+
       return {
         moduleId: fallbackModule.id,
         explanation: "This module is a good next step in your learning journey."
       };
     }
   }
-  
+
   /**
    * Use AI to recommend a module to revisit from completed modules
    */
@@ -335,12 +338,12 @@ export class OpenAIService {
   ): Promise<{ moduleId: string; explanation: string }> {
     try {
       const moduleToRevisit = completedModules[Math.floor(Math.random() * completedModules.length)];
-      
+
       // Format portfolio data for the prompt
       const portfolioContext = portfolioData?.tokens?.length
         ? `Their portfolio includes these tokens: ${portfolioData.tokens.join(", ")}.`
         : "";
-      
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -361,12 +364,12 @@ export class OpenAIService {
         response_format: { type: "json_object" },
         max_tokens: 300,
       });
-      
+
       const content = response.choices[0].message.content;
       if (!content) {
         throw new Error("Empty response from OpenAI");
       }
-      
+
       const parsed = JSON.parse(content);
       return {
         moduleId: parsed.moduleId,
@@ -374,7 +377,7 @@ export class OpenAIService {
       };
     } catch (error) {
       console.error("Error recommending module to revisit:", error);
-      
+
       // Simple fallback if AI recommendation fails
       const moduleToRevisit = completedModules[Math.floor(Math.random() * completedModules.length)];
       return {
@@ -383,7 +386,7 @@ export class OpenAIService {
       };
     }
   }
-  
+
   /**
    * Use AI to get a personalized module recommendation
    */
@@ -406,27 +409,27 @@ export class OpenAIService {
     const completedModulesText = completedModules.length > 0
       ? completedModules.map(m => `- ${m.title} (Difficulty: ${m.difficulty}, Category: ${m.category})`).join("\n")
       : "None";
-    
-    const availableModulesText = availableModules.map(m => 
+
+    const availableModulesText = availableModules.map(m =>
       `- Module ID: ${m.id}, Title: ${m.title}, Difficulty: ${m.difficulty}, Category: ${m.category}, Description: ${m.description}`
     ).join("\n");
-    
+
     // Format portfolio data for the prompt
     const portfolioContext = portfolioData?.tokens?.length
       ? `Their portfolio includes these tokens: ${portfolioData.tokens.join(", ")}.`
       : "They haven't added any tokens to their portfolio yet.";
-    
+
     const userStatsText = `User Stats:
     - Completed modules: ${userStats.completedModules}
     - In-progress modules: ${userStats.inProgressModules}
     - Completion percentage: ${userStats.completedPercentage}%`;
-    
-    const progressLevel = completedModules.length === 0 
-      ? "beginner (no modules completed)" 
+
+    const progressLevel = completedModules.length === 0
+      ? "beginner (no modules completed)"
       : completedModules.length < 3
-      ? "early learner (completed a few modules)"
-      : "intermediate (completed several modules)";
-    
+        ? "early learner (completed a few modules)"
+        : "intermediate (completed several modules)";
+
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -457,30 +460,30 @@ Based on the user's progress and portfolio, recommend ONE module from the availa
         response_format: { type: "json_object" },
         max_tokens: 300,
       });
-      
+
       const content = response.choices[0].message.content;
       if (!content) {
         throw new Error("Empty response from OpenAI");
       }
-      
+
       const recommendation = JSON.parse(content);
-      
+
       // Verify that the recommended module exists in available modules
       const moduleExists = availableModules.some(m => m.id === recommendation.moduleId);
       if (!moduleExists) {
         throw new Error(`Recommended module ${recommendation.moduleId} does not exist in available modules`);
       }
-      
+
       return {
         moduleId: recommendation.moduleId,
         explanation: recommendation.explanation
       };
     } catch (error) {
       console.error("Error getting AI recommendation:", error);
-      
+
       // Fallback to a simple algorithm if AI fails
       const fallbackModule = availableModules.sort((a, b) => a.difficulty - b.difficulty)[0];
-      
+
       return {
         moduleId: fallbackModule.id,
         explanation: "This module is a good next step based on your learning progress."
