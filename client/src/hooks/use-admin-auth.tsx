@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 /**
  * Hook for managing admin authentication
@@ -15,7 +16,14 @@ export function useAdminAuth() {
     const expiryString = localStorage.getItem('adminTokenExpiry');
     return expiryString ? parseInt(expiryString, 10) : null;
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Check token validity on initial load
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
 
   // Check if the admin token is valid (not expired)
   const isTokenValid = () => {
@@ -137,14 +145,31 @@ export function useAdminAuth() {
     return isTokenValid() && adminToken ? { Authorization: `AdminToken ${adminToken}` } : {};
   };
 
+  // Helper method to handle logout flow
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      await adminLogoutMutation.mutateAsync();
+      setLocation('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     // Auth state
     isAdmin: isTokenValid(),
     adminToken: isTokenValid() ? adminToken : null,
+    isLoading,
     
     // Auth mutations
     adminLoginMutation,
     adminLogoutMutation,
+    
+    // Helper methods
+    logout,
     
     // Utility function for admin API calls
     getAdminAuthHeader,

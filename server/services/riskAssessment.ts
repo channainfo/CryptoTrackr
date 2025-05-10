@@ -1,6 +1,8 @@
 import OpenAI from "openai";
 import { Portfolio, PortfolioToken } from "@shared/schema";
-import { db } from "../db";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Create OpenAI client with API key from environment variables
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -52,13 +54,13 @@ export class RiskAssessmentService {
       if (!assets || assets.length === 0) {
         return this.generateDefaultRiskAssessment();
       }
-      
+
       // Extract relevant portfolio data for the prompt
       const totalValue = assets.reduce((sum, asset) => {
         const value = Number(asset.amount) * Number(asset.currentPrice || 0);
         return sum + value;
       }, 0);
-      
+
       const portfolioData = {
         name: portfolio.name,
         description: portfolio.description,
@@ -74,7 +76,7 @@ export class RiskAssessmentService {
           };
         }),
       };
-      
+
       // Extract relevant market data for context
       const marketContext = marketData.slice(0, 10).map(coin => ({
         name: coin.name,
@@ -84,7 +86,7 @@ export class RiskAssessmentService {
         marketCap: coin.market_cap,
         volume24h: coin.total_volume,
       }));
-      
+
       // Generate risk assessment using OpenAI
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -145,12 +147,12 @@ export class RiskAssessmentService {
         response_format: { type: "json_object" },
         max_tokens: 1200,
       });
-      
+
       const content = response.choices[0].message.content;
       if (!content) {
         throw new Error("Empty response from OpenAI");
       }
-      
+
       const riskAssessment = JSON.parse(content);
       return {
         ...riskAssessment,
@@ -161,7 +163,7 @@ export class RiskAssessmentService {
       return this.generateDefaultRiskAssessment();
     }
   }
-  
+
   /**
    * Generate a generalized risk assessment for a specific token
    * @param symbol Token symbol
@@ -176,15 +178,15 @@ export class RiskAssessmentService {
   ): Promise<RiskAssessmentResponse> {
     try {
       // Find token in market data
-      const tokenData = marketData.find(coin => 
+      const tokenData = marketData.find(coin =>
         coin.symbol.toLowerCase() === symbol.toLowerCase() ||
         coin.name.toLowerCase() === name.toLowerCase()
       );
-      
+
       if (!tokenData) {
         return this.generateDefaultTokenRiskAssessment(symbol, name);
       }
-      
+
       // Generate risk assessment using OpenAI
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -245,12 +247,12 @@ export class RiskAssessmentService {
         response_format: { type: "json_object" },
         max_tokens: 1000,
       });
-      
+
       const content = response.choices[0].message.content;
       if (!content) {
         throw new Error("Empty response from OpenAI");
       }
-      
+
       const riskAssessment = JSON.parse(content);
       return {
         ...riskAssessment,
@@ -261,7 +263,7 @@ export class RiskAssessmentService {
       return this.generateDefaultTokenRiskAssessment(symbol, name);
     }
   }
-  
+
   /**
    * Generate a default risk assessment when analysis fails
    */
@@ -304,7 +306,7 @@ export class RiskAssessmentService {
       timestamp: new Date().toISOString(),
     };
   }
-  
+
   /**
    * Generate a default risk assessment for a specific token when analysis fails
    */

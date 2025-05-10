@@ -1,6 +1,6 @@
-import { 
+import {
   users, userWallets, type User, type InsertUser, type UserWallet, type InsertUserWallet,
-  portfolios, tokens, portfolioTokens, transactions, tokenMarketDatas, 
+  portfolios, tokens, portfolioTokens, transactions, tokenMarketDatas,
   type Token, type Portfolio, type PortfolioToken, type Transaction as SchemaTransaction
 } from "@shared/schema";
 import { eq, and, desc, asc, ne } from "drizzle-orm";
@@ -40,21 +40,21 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByWalletAddress(address: string, walletType: string): Promise<User | undefined>;
   createUser(user: InsertUser & { walletAddress?: string, walletType?: string }): Promise<User>;
-  
+
   // User wallet methods
   getUserWallets(userId: string): Promise<UserWallet[]>;
   getUserWalletByAddress(address: string, chainType: string): Promise<UserWallet | undefined>;
   addUserWallet(wallet: InsertUserWallet): Promise<UserWallet>;
   updateUserWallet(id: string, data: Partial<UserWallet>): Promise<UserWallet | undefined>;
   removeUserWallet(id: string): Promise<boolean>;
-  
+
   // Portfolio methods
   getUserPortfolios(userId: string): Promise<Portfolio[]>;
   createPortfolio(data: Partial<Portfolio>): Promise<Portfolio>;
   getPortfolioById(id: string): Promise<Portfolio | undefined>;
   updatePortfolio(id: string, data: Partial<Portfolio>): Promise<Portfolio | undefined>;
   deletePortfolio(id: string): Promise<boolean>;
-  
+
   // Portfolio assets methods
   getPortfolioAssets(): Promise<PortfolioAsset[]>;
   getPortfolioAssetsById(portfolioId: string): Promise<PortfolioAsset[]>;
@@ -62,7 +62,7 @@ export interface IStorage {
   addPortfolioAsset(asset: Partial<PortfolioAsset>): Promise<PortfolioAsset>;
   updatePortfolioAsset(id: string, data: Partial<PortfolioAsset>): Promise<PortfolioAsset | undefined>;
   removePortfolioAsset(id: string): Promise<boolean>;
-  
+
   // Transaction methods
   getTransactions(userId?: string): Promise<Transaction[]>;
   getTransaction(id: string): Promise<Transaction | undefined>;
@@ -78,7 +78,7 @@ export class DatabaseStorage implements IStorage {
         `SELECT * FROM users WHERE id = $1 LIMIT 1`,
         [id]
       );
-      
+
       if (result.rows && result.rows.length > 0) {
         return result.rows[0] as User;
       }
@@ -96,7 +96,7 @@ export class DatabaseStorage implements IStorage {
         `SELECT * FROM users WHERE username = $1 LIMIT 1`,
         [username]
       );
-      
+
       if (result.rows && result.rows.length > 0) {
         return result.rows[0] as User;
       }
@@ -117,22 +117,22 @@ export class DatabaseStorage implements IStorage {
              WHERE table_name = 'user_wallets'
           ) AS table_exists`
         );
-        
+
         // If the table doesn't exist, fall back to checking the users table
         if (!tableCheck.rows[0].table_exists) {
           console.log("user_wallets table doesn't exist, falling back to users table");
-          
+
           // Check if the wallet_address column exists in the users table
           const columnCheck = await pool.query(
             `SELECT column_name FROM information_schema.columns
              WHERE table_name = 'users' AND column_name = 'wallet_address'`
           );
-          
+
           // If the column doesn't exist, return undefined - we can't query by wallet address
           if (!columnCheck.rows || columnCheck.rows.length === 0) {
             return undefined;
           }
-          
+
           // Use direct SQL query to find user by wallet address and type
           const result = await pool.query(
             `SELECT * FROM users 
@@ -140,18 +140,18 @@ export class DatabaseStorage implements IStorage {
              LIMIT 1`,
             [address.toLowerCase(), walletType]
           );
-          
+
           if (result.rows && result.rows.length > 0) {
             return result.rows[0] as User;
           }
-          
+
           return undefined;
         }
       } catch (error) {
         console.error("Error checking for user_wallets table:", error);
         return undefined;
       }
-      
+
       // First find the wallet in user_wallets
       const walletResult = await pool.query(
         `SELECT * FROM user_wallets 
@@ -159,23 +159,23 @@ export class DatabaseStorage implements IStorage {
          LIMIT 1`,
         [address.toLowerCase(), walletType]
       );
-      
+
       // If we found a wallet, get the associated user
       if (walletResult.rows && walletResult.rows.length > 0) {
         const wallet = walletResult.rows[0];
-        
+
         const userResult = await pool.query(
           `SELECT * FROM users 
            WHERE id = $1 
            LIMIT 1`,
           [wallet.user_id]
         );
-        
+
         if (userResult.rows && userResult.rows.length > 0) {
           return userResult.rows[0] as User;
         }
       }
-      
+
       // If we didn't find the wallet in user_wallets, try the legacy path with users table
       // This handles the migration period
       const legacyResult = await pool.query(
@@ -184,13 +184,13 @@ export class DatabaseStorage implements IStorage {
          LIMIT 1`,
         [address.toLowerCase(), walletType]
       );
-      
+
       if (legacyResult.rows && legacyResult.rows.length > 0) {
         const user = legacyResult.rows[0] as User;
-        
+
         // Migrate this wallet to the user_wallets table
         console.log(`Migrating wallet ${address} from users table to user_wallets table for user ${user.id}`);
-        
+
         try {
           // Add the wallet to user_wallets
           await this.addUserWallet({
@@ -199,7 +199,7 @@ export class DatabaseStorage implements IStorage {
             chainType: walletType as "ethereum" | "solana" | "base" | "sui", // Cast to valid enum type
             isDefault: true
           });
-          
+
           // Clear the wallet data from the users table to prevent duplication
           await pool.query(
             `UPDATE users 
@@ -211,10 +211,10 @@ export class DatabaseStorage implements IStorage {
           console.error("Error migrating wallet to user_wallets:", error);
           // Continue with authentication even if migration fails
         }
-        
+
         return user;
       }
-      
+
       return undefined;
     } catch (error) {
       console.error('Error getting user by wallet address:', error);
@@ -226,7 +226,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Extract fields from insertUser
       const { username, password } = insertUser;
-      
+
       // Create user without wallet data
       const result = await pool.query(
         `INSERT INTO users (username, password, created_at, updated_at) 
@@ -234,10 +234,10 @@ export class DatabaseStorage implements IStorage {
          RETURNING *`,
         [username, password]
       );
-      
+
       if (result.rows && result.rows.length > 0) {
         const user = result.rows[0] as User;
-        
+
         // If wallet data is provided, add it to the user_wallets table
         if (insertUser.walletAddress && insertUser.walletType) {
           try {
@@ -252,17 +252,17 @@ export class DatabaseStorage implements IStorage {
             // Continue with user creation even if adding wallet fails
           }
         }
-        
+
         return user;
       }
-      
+
       throw new Error("Failed to create user");
     } catch (error) {
       console.error("Error in createUser:", error);
       throw error;
     }
   }
-  
+
   // USER WALLET METHODS
   async getUserWallets(userId: string): Promise<UserWallet[]> {
     try {
@@ -273,7 +273,7 @@ export class DatabaseStorage implements IStorage {
            WHERE table_name = 'user_wallets'
         ) AS table_exists`
       );
-      
+
       if (!tableCheck.rows[0].table_exists) {
         // If the table doesn't exist yet, create it
         await pool.query(`
@@ -289,7 +289,7 @@ export class DatabaseStorage implements IStorage {
         `);
         return [];
       }
-      
+
       // Get user wallets with direct SQL to avoid Drizzle issues
       const walletsResult = await pool.query(
         `SELECT * FROM user_wallets 
@@ -297,13 +297,13 @@ export class DatabaseStorage implements IStorage {
          ORDER BY is_default DESC, created_at ASC`,
         [userId]
       );
-      
+
       const wallets = walletsResult.rows || [];
-      
+
       // For demonstration - if this user has no wallets, add some demo wallets
       if (wallets.length === 0) {
         console.log(`Seeding demo wallets for user ${userId}`);
-        
+
         try {
           // Create demo wallets with direct SQL to avoid TypeScript issues
           // Ethereum wallet (default)
@@ -314,7 +314,7 @@ export class DatabaseStorage implements IStorage {
              (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
             [userId, "0x1234567890abcdef1234567890abcdef12345678", "ethereum", true]
           );
-          
+
           // Solana wallet
           await pool.query(
             `INSERT INTO user_wallets 
@@ -323,7 +323,7 @@ export class DatabaseStorage implements IStorage {
              (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
             [userId, "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsVLcUvcB4", "solana", false]
           );
-          
+
           // Base wallet
           await pool.query(
             `INSERT INTO user_wallets 
@@ -332,7 +332,7 @@ export class DatabaseStorage implements IStorage {
              (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
             [userId, "0xabcdef1234567890abcdef1234567890abcdef12", "base", false]
           );
-          
+
           // Sui wallet
           await pool.query(
             `INSERT INTO user_wallets 
@@ -341,7 +341,7 @@ export class DatabaseStorage implements IStorage {
              (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())`,
             [userId, "0x7890abcdef1234567890abcdef1234567890abcd", "sui", false]
           );
-          
+
           // Get the newly created wallets
           const newWalletsResult = await pool.query(
             `SELECT * FROM user_wallets 
@@ -349,65 +349,65 @@ export class DatabaseStorage implements IStorage {
              ORDER BY is_default DESC, created_at ASC`,
             [userId]
           );
-          
+
           return newWalletsResult.rows || [];
         } catch (error) {
           console.error("Error creating demo wallets:", error);
           // Continue and return an empty array
         }
       }
-      
+
       return wallets;
     } catch (error) {
       console.error("Error getting user wallets:", error);
       return [];
     }
   }
-  
+
   async getUserWalletByAddress(address: string, chainType: string, userId?: string): Promise<UserWallet | undefined> {
     try {
       // Use a direct SQL query to avoid TypeScript issues with chainType enum
       let query = `SELECT * FROM user_wallets 
          WHERE address = $1 AND chain_type = $2`;
-      
+
       let params = [address.toLowerCase(), chainType];
-      
+
       // If userId is provided, add it to the query to find wallets for specific user
       if (userId) {
         query += ` AND user_id = $3`;
         params.push(userId);
       }
-      
+
       query += ` LIMIT 1`;
-      
+
       const result = await pool.query(query, params);
-      
+
       if (result.rows && result.rows.length > 0) {
         return result.rows[0] as UserWallet;
       }
-      
+
       return undefined;
     } catch (error) {
       console.error("Error getting wallet by address:", error);
       return undefined;
     }
   }
-  
+
   async addUserWallet(wallet: InsertUserWallet): Promise<UserWallet> {
     try {
       // Check if this wallet address already exists for this specific user
       const existingWallet = await this.getUserWalletByAddress(
-        wallet.address, 
+        wallet.address,
         wallet.chainType,
         wallet.userId
       );
-      
+
       if (existingWallet) {
         throw new Error("This wallet is already connected to your account");
       }
-      
+
       // Use direct SQL queries for better reliability with enums
-      
+
       // If this is the first wallet or marked as default, reset any other default wallet
       if (wallet.isDefault) {
         await pool.query(
@@ -417,7 +417,7 @@ export class DatabaseStorage implements IStorage {
           [wallet.userId]
         );
       }
-      
+
       // Check if this is the first wallet for this user
       const countResult = await pool.query(
         `SELECT COUNT(*) as count
@@ -425,9 +425,9 @@ export class DatabaseStorage implements IStorage {
          WHERE user_id = $1`,
         [wallet.userId]
       );
-      
+
       const isFirstWallet = parseInt(countResult.rows[0].count) === 0;
-      
+
       // Insert the new wallet
       const result = await pool.query(
         `INSERT INTO user_wallets
@@ -436,31 +436,31 @@ export class DatabaseStorage implements IStorage {
          (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
          RETURNING *`,
         [
-          wallet.userId, 
-          wallet.address.toLowerCase(), 
+          wallet.userId,
+          wallet.address.toLowerCase(),
           wallet.chainType,
           isFirstWallet || wallet.isDefault || false
         ]
       );
-      
+
       if (result.rows && result.rows.length > 0) {
         return result.rows[0] as UserWallet;
       }
-      
+
       throw new Error("Failed to create wallet");
     } catch (error) {
       console.error("Error adding user wallet:", error);
       throw error;
     }
   }
-  
+
   async updateUserWallet(id: string, data: Partial<UserWallet>): Promise<UserWallet | undefined> {
     try {
       const updateData: Partial<typeof userWallets.$inferInsert> = {};
-      
+
       if (data.isDefault !== undefined) {
         updateData.isDefault = data.isDefault;
-        
+
         // If setting this wallet as default, unset any other default wallets for this user
         if (data.isDefault) {
           const wallet = await db
@@ -468,7 +468,7 @@ export class DatabaseStorage implements IStorage {
             .from(userWallets)
             .where(eq(userWallets.id, id))
             .limit(1);
-          
+
           if (wallet.length > 0) {
             await db
               .update(userWallets)
@@ -481,32 +481,32 @@ export class DatabaseStorage implements IStorage {
           }
         }
       }
-      
+
       updateData.updatedAt = new Date();
-      
+
       if (Object.keys(updateData).length === 0) {
         const wallet = await db
           .select()
           .from(userWallets)
           .where(eq(userWallets.id, id))
           .limit(1);
-          
+
         return wallet[0];
       }
-      
+
       const [updatedWallet] = await db
         .update(userWallets)
         .set(updateData)
         .where(eq(userWallets.id, id))
         .returning();
-      
+
       return updatedWallet;
     } catch (error) {
       console.error("Error updating user wallet:", error);
       return undefined;
     }
   }
-  
+
   async removeUserWallet(id: string): Promise<boolean> {
     try {
       // Get the wallet first to check if it's default
@@ -515,16 +515,16 @@ export class DatabaseStorage implements IStorage {
         .from(userWallets)
         .where(eq(userWallets.id, id))
         .limit(1);
-      
+
       if (wallet.length === 0) {
         return false;
       }
-      
+
       // Delete the wallet
       await db
         .delete(userWallets)
         .where(eq(userWallets.id, id));
-      
+
       // If this was the default wallet, set another one as default if available
       if (wallet[0].isDefault) {
         const remainingWallets = await db
@@ -532,7 +532,7 @@ export class DatabaseStorage implements IStorage {
           .from(userWallets)
           .where(eq(userWallets.userId, wallet[0].userId))
           .limit(1);
-        
+
         if (remainingWallets.length > 0) {
           await db
             .update(userWallets)
@@ -540,7 +540,7 @@ export class DatabaseStorage implements IStorage {
             .where(eq(userWallets.id, remainingWallets[0].id));
         }
       }
-      
+
       return true;
     } catch (error) {
       console.error("Error removing user wallet:", error);
@@ -553,7 +553,7 @@ export class DatabaseStorage implements IStorage {
     const userPortfolios = await db.select()
       .from(portfolios)
       .where(eq(portfolios.userId, userId));
-    
+
     return userPortfolios;
   }
 
@@ -574,7 +574,7 @@ export class DatabaseStorage implements IStorage {
         isWatchlist: data.isWatchlist || false, // CRITICAL FIX: Include isWatchlist here
       })
       .returning();
-    
+
     return portfolio;
   }
 
@@ -582,65 +582,65 @@ export class DatabaseStorage implements IStorage {
     const [portfolio] = await db.select()
       .from(portfolios)
       .where(eq(portfolios.id, id));
-    
+
     return portfolio;
   }
-  
+
   async updatePortfolio(id: string, data: Partial<Portfolio>): Promise<Portfolio | undefined> {
     const updateData: Partial<typeof portfolios.$inferInsert> = {};
-    
+
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.isDefault !== undefined) updateData.isDefault = data.isDefault;
     if (data.isWatchlist !== undefined) updateData.isWatchlist = data.isWatchlist; // CRITICAL FIX: Include isWatchlist here
-    
+
     console.log("Updating portfolio, data received:", JSON.stringify(data, null, 2));
     console.log("Update data to apply:", JSON.stringify(updateData, null, 2));
-    
+
     if (Object.keys(updateData).length === 0) {
       // No valid update fields provided
       const portfolio = await this.getPortfolioById(id);
       return portfolio;
     }
-    
+
     updateData.updatedAt = new Date();
-    
+
     const [updatedPortfolio] = await db.update(portfolios)
       .set(updateData)
       .where(eq(portfolios.id, id))
       .returning();
-    
+
     return updatedPortfolio;
   }
-  
+
   async deletePortfolio(id: string): Promise<boolean> {
     try {
       const portfolio = await this.getPortfolioById(id);
       if (!portfolio) return false;
-      
+
       // Delete portfolio tokens first (cascading deletion)
       const portfolioTokensInPortfolio = await db
         .select()
         .from(portfolioTokens)
         .where(eq(portfolioTokens.portfolioId, id));
-        
+
       // Delete each token's related transactions
       for (const token of portfolioTokensInPortfolio) {
         await db
           .delete(transactions)
           .where(eq(transactions.portfolioTokenId, token.id));
       }
-      
+
       // Delete portfolio tokens
       await db
         .delete(portfolioTokens)
         .where(eq(portfolioTokens.portfolioId, id));
-      
+
       // Delete the portfolio itself
       await db
         .delete(portfolios)
         .where(eq(portfolios.id, id));
-      
+
       return true;
     } catch (error) {
       console.error('Error deleting portfolio:', error);
@@ -678,7 +678,7 @@ export class DatabaseStorage implements IStorage {
   async getPortfolioAssets(): Promise<PortfolioAsset[]> {
     // First, get the default portfolio or create it if it doesn't exist
     let defaultPortfolio = await this.getDefaultPortfolio();
-    
+
     // Get the portfolio tokens with related token information
     const portfolioTokensWithTokens = await db.query.portfolioTokens.findMany({
       where: eq(portfolioTokens.portfolioId, defaultPortfolio.id),
@@ -731,7 +731,7 @@ export class DatabaseStorage implements IStorage {
   async addPortfolioAsset(assetData: Partial<PortfolioAsset & { portfolioId?: string }>): Promise<PortfolioAsset> {
     // First, get or create the token
     let token = await this.getOrCreateToken(assetData.symbol || 'UNKNOWN', assetData.name || 'Unknown Cryptocurrency');
-    
+
     // Get the portfolio - either specified or default
     let targetPortfolio;
     if (assetData.portfolioId) {
@@ -743,7 +743,7 @@ export class DatabaseStorage implements IStorage {
     } else {
       targetPortfolio = await this.getDefaultPortfolio();
     }
-    
+
     // Check if the portfolio already has this token
     const [existingPortfolioToken] = await db.select()
       .from(portfolioTokens)
@@ -753,18 +753,18 @@ export class DatabaseStorage implements IStorage {
           eq(portfolioTokens.tokenId, token.id)
         )
       );
-      
+
     if (existingPortfolioToken) {
       // Update existing portfolio token
       const newAmount = Number(existingPortfolioToken.amount) + (assetData.quantity || 0);
       const currentPrice = assetData.currentPrice || Number(existingPortfolioToken.currentPrice);
       const totalValue = newAmount * currentPrice;
-      
+
       // Calculate new average buy price based on current and new purchase
       const totalInvestedBefore = Number(existingPortfolioToken.amount) * Number(existingPortfolioToken.averageBuyPrice);
       const newInvestment = (assetData.quantity || 0) * currentPrice;
       const newAverageBuyPrice = (totalInvestedBefore + newInvestment) / newAmount;
-      
+
       const [updatedToken] = await db.update(portfolioTokens)
         .set({
           amount: newAmount.toString(),
@@ -778,7 +778,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(portfolioTokens.id, existingPortfolioToken.id))
         .returning();
-        
+
       // Add transaction
       await this.addTransactionToDb({
         userId: updatedToken.userId,
@@ -791,7 +791,7 @@ export class DatabaseStorage implements IStorage {
         totalValue: ((assetData.quantity || 0) * currentPrice).toString(),
         transactionDate: new Date(),
       });
-      
+
       // Return in expected format
       return {
         id: updatedToken.id,
@@ -810,7 +810,7 @@ export class DatabaseStorage implements IStorage {
       const quantity = assetData.quantity || 0;
       const currentPrice = assetData.currentPrice || 0;
       const totalValue = quantity * currentPrice;
-      
+
       const [newPortfolioToken] = await db.insert(portfolioTokens)
         .values({
           userId: targetPortfolio.userId,
@@ -827,7 +827,7 @@ export class DatabaseStorage implements IStorage {
           lastTradeDate: new Date()
         })
         .returning();
-        
+
       // Add transaction
       await this.addTransactionToDb({
         userId: newPortfolioToken.userId,
@@ -840,7 +840,7 @@ export class DatabaseStorage implements IStorage {
         totalValue: totalValue.toString(),
         transactionDate: new Date(),
       });
-      
+
       // Return in expected format
       return {
         id: newPortfolioToken.id,
@@ -860,65 +860,65 @@ export class DatabaseStorage implements IStorage {
   async updatePortfolioAsset(id: string, data: Partial<PortfolioAsset>): Promise<PortfolioAsset | undefined> {
     const portfolioToken = await this.getPortfolioAsset(id);
     if (!portfolioToken) return undefined;
-    
+
     const updateData: Partial<typeof portfolioTokens.$inferInsert> = {};
-    
+
     // Check if this is a partial sell (quantity is reduced)
     const isPartialSell = data.quantity !== undefined && data.quantity < portfolioToken.quantity;
     const sellQuantity = isPartialSell && data.quantity !== undefined ? portfolioToken.quantity - data.quantity : 0;
-    
+
     if (data.quantity !== undefined) {
       updateData.amount = data.quantity.toString();
       updateData.totalValue = (data.quantity * (data.currentPrice || portfolioToken.currentPrice)).toString();
     }
-    
+
     if (data.currentPrice !== undefined) {
       updateData.currentPrice = data.currentPrice.toString();
       updateData.totalValue = ((data.quantity || portfolioToken.quantity) * data.currentPrice).toString();
     }
-    
+
     if (data.purchasePrice !== undefined) {
       updateData.averageBuyPrice = data.purchasePrice.toString();
       updateData.totalInvested = ((data.quantity || portfolioToken.quantity) * data.purchasePrice).toString();
     }
-    
+
     // Calculate profit/loss if we have enough data
     if (updateData.currentPrice && updateData.averageBuyPrice && updateData.amount) {
       const profitLoss = (Number(updateData.currentPrice) - Number(updateData.averageBuyPrice)) * Number(updateData.amount);
       updateData.profitLoss = profitLoss.toString();
     }
-    
+
     if (Object.keys(updateData).length > 0) {
       updateData.updatedAt = new Date();
-      
+
       // If this is a partial sell, increment the sell count
       if (isPartialSell) {
         const portfolioTokenData = await db.query.portfolioTokens.findFirst({
           where: eq(portfolioTokens.id, id)
         });
-        
+
         if (portfolioTokenData) {
           updateData.sellCount = (Number(portfolioTokenData.sellCount) || 0) + 1;
         }
       }
-      
+
       const [updated] = await db.update(portfolioTokens)
         .set(updateData)
         .where(eq(portfolioTokens.id, id))
         .returning();
-      
+
       if (!updated) return undefined;
-      
+
       // Get the associated token for returning complete info
       const [token] = await db.select().from(tokens).where(eq(tokens.id, updated.tokenId));
-      
+
       // If this was a partial sell, record a sell transaction
       if (isPartialSell && sellQuantity > 0) {
         // Get portfolio (may be needed for transaction)
         const portfolio = await db.query.portfolios.findFirst({
           where: eq(portfolios.id, updated.portfolioId)
         });
-        
+
         if (portfolio) {
           // Add a sell transaction for the portion that was sold
           await this.addTransactionToDb({
@@ -934,7 +934,7 @@ export class DatabaseStorage implements IStorage {
           });
         }
       }
-      
+
       return {
         id: updated.id,
         userId: updated.userId,
@@ -948,7 +948,7 @@ export class DatabaseStorage implements IStorage {
         priceChangePercentage24h: portfolioToken.priceChangePercentage24h // Maintain existing value
       };
     }
-    
+
     return portfolioToken; // Return original if no changes
   }
 
@@ -956,7 +956,7 @@ export class DatabaseStorage implements IStorage {
     // First get the asset details for the sell transaction
     const asset = await this.getPortfolioAsset(id);
     if (!asset) return false;
-    
+
     try {
       // Add a sell transaction
       await this.addTransactionToDb({
@@ -970,7 +970,7 @@ export class DatabaseStorage implements IStorage {
         totalValue: asset.value.toString(),
         transactionDate: new Date(),
       });
-      
+
       // Delete the portfolio token
       await db.delete(portfolioTokens).where(eq(portfolioTokens.id, id));
       return true;
@@ -989,14 +989,14 @@ export class DatabaseStorage implements IStorage {
       },
       orderBy: [desc(transactions.transactionDate)]
     };
-    
+
     // Add userId filter if provided
     if (userId) {
       queryOptions.where = eq(transactions.userId, userId);
     }
-    
+
     const dbTransactions = await db.query.transactions.findMany(queryOptions);
-    
+
     // Get the tokens for these transactions
     return Promise.all(dbTransactions.map(async tx => {
       // Get token data
@@ -1004,7 +1004,7 @@ export class DatabaseStorage implements IStorage {
         .from(tokens)
         .where(eq(tokens.id, tx.tokenId))
         .limit(1);
-      
+
       return {
         id: tx.id,
         userId: tx.userId,
@@ -1024,17 +1024,17 @@ export class DatabaseStorage implements IStorage {
     const [tx] = await db.query.transactions.findMany({
       where: eq(transactions.id, id)
     });
-    
+
     if (!tx) return undefined;
-    
+
     // Get token data
     const [token] = await db.select()
       .from(tokens)
       .where(eq(tokens.id, tx.tokenId))
       .limit(1);
-    
+
     if (!token) return undefined;
-    
+
     return {
       id: tx.id,
       userId: tx.userId,
@@ -1054,10 +1054,10 @@ export class DatabaseStorage implements IStorage {
     const tokenName = transactionData.cryptoName || 'Unknown';
     const tokenSymbol = transactionData.cryptoSymbol || 'UNKNOWN';
     const token = await this.getOrCreateToken(tokenSymbol, tokenName);
-    
+
     // Get default portfolio
     const portfolio = await this.getDefaultPortfolio();
-    
+
     // See if we have an existing portfolio token for this
     let portfolioToken: PortfolioToken | undefined;
     try {
@@ -1069,18 +1069,18 @@ export class DatabaseStorage implements IStorage {
             eq(portfolioTokens.tokenId, token.id)
           )
         );
-      
+
       portfolioToken = existingToken;
     } catch (error) {
       console.error('Error finding portfolio token:', error);
     }
-    
+
     // If we don't have a portfolio token and this is a buy, create one
     if (!portfolioToken && transactionData.type === 'buy') {
       const quantity = transactionData.quantity || 0;
       const price = transactionData.price || 0;
       const value = quantity * price;
-      
+
       const [newToken] = await db.insert(portfolioTokens)
         .values({
           userId: portfolio.userId,
@@ -1097,13 +1097,13 @@ export class DatabaseStorage implements IStorage {
           lastTradeDate: new Date()
         })
         .returning();
-        
+
       portfolioToken = newToken;
     }
-    
+
     // Now add the transaction
     const txDate = transactionData.timestamp ? new Date(transactionData.timestamp) : new Date();
-    
+
     const [newTransaction] = await db.insert(transactions)
       .values({
         userId: portfolio.userId,
@@ -1118,13 +1118,13 @@ export class DatabaseStorage implements IStorage {
         transactionDate: txDate
       })
       .returning();
-    
+
     // Return in the expected format
     return {
       id: newTransaction.id,
       userId: newTransaction.userId,
       cryptoId: token.id,
-      cryptoName: token.name, 
+      cryptoName: token.name,
       cryptoSymbol: token.symbol,
       type: newTransaction.type,
       quantity: Number(newTransaction.amount),
@@ -1144,7 +1144,7 @@ export class DatabaseStorage implements IStorage {
         `SELECT * FROM users WHERE username = $1 LIMIT 1`,
         ['demo']
       );
-      
+
       if (userResult.rows && userResult.rows.length > 0) {
         defaultUser = userResult.rows[0] as User;
       } else {
@@ -1155,7 +1155,7 @@ export class DatabaseStorage implements IStorage {
            RETURNING *`,
           ['demo', 'password']
         );
-        
+
         if (newUserResult.rows && newUserResult.rows.length > 0) {
           defaultUser = newUserResult.rows[0] as User;
         } else {
@@ -1171,14 +1171,14 @@ export class DatabaseStorage implements IStorage {
          RETURNING *`,
         ['demo' + Math.floor(Math.random() * 1000), 'password']
       );
-      
+
       if (newUserResult.rows && newUserResult.rows.length > 0) {
         defaultUser = newUserResult.rows[0] as User;
       } else {
         throw new Error("Failed to create default user after multiple attempts");
       }
     }
-    
+
     // Now get or create the default portfolio
     let defaultPortfolio: Portfolio;
     try {
@@ -1188,7 +1188,7 @@ export class DatabaseStorage implements IStorage {
          LIMIT 1`,
         [defaultUser.id, 'Default Portfolio']
       );
-      
+
       if (portfolioResult.rows && portfolioResult.rows.length > 0) {
         defaultPortfolio = portfolioResult.rows[0] as Portfolio;
       } else {
@@ -1199,7 +1199,7 @@ export class DatabaseStorage implements IStorage {
            RETURNING *`,
           [uuidv4(), defaultUser.id, 'Default Portfolio', 'Your default portfolio', true]
         );
-        
+
         if (newPortfolioResult.rows && newPortfolioResult.rows.length > 0) {
           defaultPortfolio = newPortfolioResult.rows[0] as Portfolio;
         } else {
@@ -1215,31 +1215,31 @@ export class DatabaseStorage implements IStorage {
          RETURNING *`,
         [uuidv4(), defaultUser.id, 'Default Portfolio', 'Your default portfolio', true]
       );
-      
+
       if (newPortfolioResult.rows && newPortfolioResult.rows.length > 0) {
         defaultPortfolio = newPortfolioResult.rows[0] as Portfolio;
       } else {
         throw new Error("Failed to create default portfolio after multiple attempts");
       }
     }
-    
+
     return defaultPortfolio;
   }
-  
+
   private async getOrCreateToken(symbol: string, name: string): Promise<Token> {
     try {
       // Try to find the token first
       const [existingToken] = await db.select()
         .from(tokens)
         .where(eq(tokens.symbol, symbol));
-      
+
       if (existingToken) {
         return existingToken;
       }
     } catch (error) {
       console.error(`Error finding token ${symbol}:`, error);
     }
-    
+
     // Create the token if it doesn't exist
     try {
       const [newToken] = await db.insert(tokens)
@@ -1251,27 +1251,27 @@ export class DatabaseStorage implements IStorage {
           isVerified: true   // For simplicity
         })
         .returning();
-      
+
       return newToken;
     } catch (error) {
       console.error(`Error creating token ${symbol}:`, error);
       throw error;
     }
   }
-  
+
   private async addTransactionToDb(txData: Partial<typeof transactions.$inferInsert>): Promise<SchemaTransaction> {
     // Make sure required fields are present
     if (!txData.type) {
       txData.type = 'buy';
     }
-    
+
     const [tx] = await db.insert(transactions)
       .values(txData as any)
       .returning();
-    
+
     return tx;
   }
-  
+
   // This method would seed initial data if needed
   async seedInitialDataIfNeeded() {
     // Check if we already have users
@@ -1280,23 +1280,23 @@ export class DatabaseStorage implements IStorage {
       const userCountResult = await pool.query(
         `SELECT COUNT(*) FROM users`
       );
-      
+
       const userCount = parseInt(userCountResult.rows[0].count);
-      
+
       // If we have users, don't seed
       if (userCount > 0) {
         return;
       }
-      
+
       // Create default user
       await this.createUser({
         username: 'demo',
-        password: 'password'
+        password: 'password',
       });
-      
+
       // Get the default portfolio for the newly created user
       const defaultPortfolio = await this.getDefaultPortfolio();
-      
+
       // Seed some portfolio assets
       const seedAssets = [
         {

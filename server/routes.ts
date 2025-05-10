@@ -22,7 +22,8 @@ import { TaxCalculationModel } from "./models/TaxCalculationModel";
 import { AlertModel } from "./models/AlertModel";
 import { AlertService } from "./services/AlertService";
 import { db, pool } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
+import * as scrypt from "@node-rs/bcrypt";
 import learningRoutes from "./routes/learningRoutes";
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin";
@@ -55,33 +56,33 @@ const createAdminToken = async (userId: string) => {
   try {
     // Verify the user is an admin first
     const [userRecord] = await db.select({
-        id: users.id,
-        isAdmin: users.isAdmin
-      })
+      id: users.id,
+      isAdmin: users.isAdmin
+    })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
-    
+
     if (!userRecord || !userRecord.isAdmin) {
       throw new Error("User is not an admin");
     }
-    
+
     // Create token payload
     const payload: AdminTokenPayload = {
       userId: userId,
       isAdmin: true,
       tokenVersion: CURRENT_TOKEN_VERSION
     };
-    
+
     // Sign the token with 1 hour expiration
     const token = jwt.sign(
       payload,
       JWT_SECRET,
       { expiresIn: '1h' }
     );
-    
+
     console.log('JWT admin token created for user:', userId);
-    
+
     return token;
   } catch (error) {
     console.error('Error creating admin token:', error);
@@ -175,41 +176,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register achievement routes
   app.use("/api/achievements", achievementRoutes);
-  
+
   // ADMIN AUTH ROUTES
-  
+
   // Admin login - Creates and returns a new admin token
   app.post("/api/admin/login", async (req: Request, res: Response) => {
     try {
       // Check for existing session (user must be authenticated)
       const user = (req as any).user;
-      
-      console.log('Admin login attempt:', { 
+
+      console.log('Admin login attempt:', {
         user: user?.id,
-        session: req.session 
+        session: req.session
       });
-      
+
       if (!user) {
         return res.status(401).json({ message: "Authentication required" });
       }
-      
+
       // Check if user is an admin (directly query the database)
       // Only select the fields we need to avoid column not found errors
       const [userRecord] = await db.select({
-          id: users.id,
-          isAdmin: users.isAdmin
-        })
+        id: users.id,
+        isAdmin: users.isAdmin
+      })
         .from(users)
         .where(eq(users.id, user.id))
         .limit(1);
-      
+
       if (!userRecord || !userRecord.isAdmin) {
         return res.status(403).json({ message: "Admin privileges required" });
       }
-      
+
       // Create a new admin token
       const adminToken = await createAdminToken(user.id);
-      
+
       // Return the admin token with expiry information
       return res.status(200).json({
         adminToken,
@@ -221,16 +222,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Admin logout - With JWT we don't need to invalidate tokens on the server
   // as they're stateless, but we can provide a response for the client to clear the token
   app.post("/api/admin/logout", async (req: Request, res: Response) => {
     try {
       // With JWT, we don't need to store or remove tokens on the server
       // The client should discard the token
-      
+
       console.log('Admin logout request received');
-      
+
       // Simply return success - client should remove the token from storage
       return res.status(200).json({
         message: "Admin logout successful",
@@ -241,33 +242,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Admin token validation function - used by all admin endpoints 
   const validateAdminToken = async (req: Request, res: Response, next: Function) => {
     try {
       // Get the token from the Authorization header
       const authHeader = req.headers.authorization;
-      
-      console.log('Admin authorization check:', { 
+
+      console.log('Admin authorization check:', {
         hasAuthHeader: !!authHeader,
         headerValue: authHeader ? `${authHeader.substring(0, 10)}...` : undefined,
         path: req.path
       });
-      
+
       if (!authHeader || !authHeader.startsWith('AdminToken ')) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           message: 'Admin authentication required',
-          code: 'ADMIN_AUTH_REQUIRED' 
+          code: 'ADMIN_AUTH_REQUIRED'
         });
       }
-      
+
       // Extract the token from the header
       const token = authHeader.substring('AdminToken '.length);
-      
+
       // Try validating as JWT token
       let isValidJwt = false;
       let jwtPayload: AdminTokenPayload | null = null;
-      
+
       try {
         jwtPayload = jwt.verify(token, JWT_SECRET) as AdminTokenPayload;
         isValidJwt = true;
@@ -275,89 +276,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('JWT verification failed:', jwtError.message);
         // We'll handle this below
       }
-      
+
       // If JWT validation succeeded
       if (isValidJwt && jwtPayload) {
         // Check if the token version is current
         if (jwtPayload.tokenVersion !== CURRENT_TOKEN_VERSION) {
           console.log('Token version mismatch:', jwtPayload.tokenVersion, 'vs', CURRENT_TOKEN_VERSION);
-          return res.status(401).json({ 
+          return res.status(401).json({
             message: 'Token version expired, please login again',
             code: 'TOKEN_VERSION_INVALID'
           });
         }
-        
+
         // Verify this is an admin token
         if (!jwtPayload.isAdmin) {
           console.log('Non-admin token used for admin endpoint');
-          return res.status(403).json({ 
+          return res.status(403).json({
             message: 'Admin privileges required',
             code: 'NOT_ADMIN'
           });
         }
-        
+
         // Double check that the user still has admin privileges
         // This ensures the user hasn't lost admin rights since token issuance
         const [userRecord] = await db.select({
-            id: users.id, 
-            isAdmin: users.isAdmin
-          })
+          id: users.id,
+          isAdmin: users.isAdmin
+        })
           .from(users)
           .where(eq(users.id, jwtPayload.userId))
           .limit(1);
-        
+
         if (!userRecord || !userRecord.isAdmin) {
           console.log('User no longer has admin privileges:', jwtPayload.userId);
-          return res.status(403).json({ 
+          return res.status(403).json({
             message: 'Admin privileges required',
             code: 'NOT_ADMIN'
           });
         }
-        
+
         // Add the decoded user info to the request for downstream middleware/routes
         (req as any).adminUser = {
           userId: jwtPayload.userId,
           isAdmin: true
         };
-        
+
         console.log('JWT admin token validated for user:', jwtPayload.userId);
-        
+
         // JWT validated, proceed to next middleware
         return next();
       }
-      
+
       // If we're here, JWT validation failed - try legacy token format
       console.log('Trying legacy token format');
-      
+
       if (token.includes(':')) {
         const [userId] = token.split(':');
         console.log('Extracted userId from legacy token:', userId);
-        
+
         // Check if user is an admin
         const [userRecord] = await db.select()
           .from(users)
           .where(eq(users.id, userId))
           .limit(1);
-        
+
         if (userRecord && userRecord.isAdmin) {
           // Legacy token is valid
           (req as any).adminUser = {
             userId: userId,
             isAdmin: true
           };
-          
+
           console.log('Legacy admin token validated for user:', userId);
-          
+
           // Replace with new JWT token in next response
           (req as any).refreshAdminToken = true;
-          
+
           // Skip to next middleware since we've validated the token
           return next();
         }
       }
-      
+
       // If we get here, neither JWT nor legacy token validation worked
-      return res.status(401).json({ 
+      return res.status(401).json({
         message: 'Invalid admin token',
         code: 'TOKEN_INVALID'
       });

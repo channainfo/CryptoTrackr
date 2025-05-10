@@ -20,16 +20,19 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 export async function createAdminUserIfNeeded() {
+  console.log("Creating admin user if needed...");
   try {
     // Define admin credentials
     const adminUsername = 'admin';
     const adminPassword = 'admin123'; // This would be a secure password in production
-    
+
     // Check if admin already exists
     const existingAdmin = await db.query.users.findFirst({
       where: eq(users.username, adminUsername)
     });
-    
+
+    console.log('Checking for existing admin user...', existingAdmin);
+
     if (existingAdmin) {
       // If admin exists but isn't an admin, make them an admin
       if (!existingAdmin.isAdmin) {
@@ -44,11 +47,11 @@ export async function createAdminUserIfNeeded() {
       }
       return;
     }
-    
+
     // Create admin user
     console.log('Creating admin user...');
     const hashedPassword = await hashPassword(adminPassword);
-    
+
     // Only use fields that actually exist in the database (based on querying the schema)
     const [newAdmin] = await db
       .insert(users)
@@ -61,7 +64,7 @@ export async function createAdminUserIfNeeded() {
         // wallet_type and wallet_address are null
       })
       .returning();
-    
+
     console.log('Admin user created with ID:', newAdmin.id);
   } catch (error) {
     console.error('Error creating admin user:', error);
